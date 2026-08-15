@@ -11,7 +11,7 @@ plannotator guide export --guide guide.json --patch guide.patch
 ## Install
 
 ```bash
-npx skills add backnotprop/plannotator-guide
+npx skills add plannotator/guides
 ```
 
 Also needs git and the plannotator CLI:

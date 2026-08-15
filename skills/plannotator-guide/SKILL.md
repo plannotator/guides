@@ -1,7 +1,7 @@
 ---
 name: plannotator-guide
 description: >
-  Write a Guided Review — a chaptered walkthrough of a changeset with the real diffs inline —
+  Write a Guided Review (a chaptered walkthrough of a changeset with the real diffs inline)
   and turn it into one portable HTML file with `plannotator guide export`. Use when someone asks
   for a guide, walkthrough, tour, or explainer of a diff, branch, PR, or commit, or wants a
   shareable review guide. Needs git and the plannotator CLI.
@@ -9,13 +9,13 @@ description: >
 
 # Plannotator Guide
 
-A guided review is a reading order for a changeset. Instead of a flat file list, the reader gets chapters: each one says what a group of files does together and why, then shows those files' diffs. Plannotator generates these inside its review UI; this skill makes the same thing from any agent session, as a single HTML file anyone can open. The file holds only your guide and the diff — the renderer loads from guides.show.
+A guided review is a reading order for a changeset. Instead of a flat file list, the reader gets chapters. Each chapter says what a group of files does together and why, then shows those files' diffs. Plannotator generates these inside its review UI. This skill produces the same thing from any agent session, as a single HTML file anyone can open. The file holds only your guide and the diff; the renderer loads from guides.show.
 
-Your job is the thinking: read the diff, understand it, write the guide. The CLI validates it, adds provenance, and writes the HTML.
+Your job is the thinking: read the diff, understand it, write the guide. The CLI validates the guide, adds provenance, and writes the HTML.
 
 ## 1. Save the diff
 
-Decide what the guide is of, then save exactly that diff:
+Decide what the guide covers, then save exactly that diff:
 
 ```bash
 git diff origin/main...HEAD > guide.patch    # a branch, since it forked
@@ -23,11 +23,11 @@ git diff HEAD > guide.patch                  # uncommitted work
 git show --format= <sha> > guide.patch       # one commit
 ```
 
-For a PR, check it out (`gh pr checkout <n>`) and diff against its base branch. New files that were never `git add`ed don't appear in `git diff`; run `git add -N <files>` first if the guide should include them.
+For a PR, check it out (`gh pr checkout <n>`) and diff against its base branch. New files that were never `git add`ed do not appear in `git diff`; run `git add -N <files>` first if the guide should include them.
 
 ## 2. Write the guide
 
-Read the whole patch — `git diff --stat` for the map, then the files themselves. Then write `guide.json`:
+Read the whole patch: `git diff --stat` for the map, then the files themselves. Then write `guide.json`:
 
 ```json
 {
@@ -44,7 +44,7 @@ Read the whole patch — `git diff --stat` for the map, then the files themselve
     },
     {
       "title": "Callers wait for a fresh token",
-      "overview": "The API client awaits `waitForToken()` before each request instead of reading the token synchronously. Small change, but it's why the guard works.",
+      "overview": "The API client awaits `waitForToken()` before each request instead of reading the token synchronously. Small change, but it is why the guard works.",
       "diffs": [
         { "file": "src/api/client.ts", "summary": "Awaits the token before sending." }
       ]
@@ -65,11 +65,12 @@ Read the whole patch — `git diff --stat` for the map, then the files themselve
 How to think about it:
 
 - Chapters follow the story, not the directory tree: the core change first, what it forced next, tests and plumbing last. Three to seven chapters is typical.
-- `overview` is a few sentences on what these files do together and why. Markdown is fine. Don't narrate the code line by line — the diff is right there.
-- `summary` is one line about what changed in that file. Optional but worth it.
-- Every file goes in one chapter, using its path exactly as it appears in the patch. Files you leave out land in an automatic "Everything else" chapter — right for lockfiles and generated code, a cop-out for anything else.
+- `overview` is a few sentences on what these files do together and why. Markdown is fine. Do not narrate the code line by line; the diff is right there.
+- `summary` is one line on what changed in that file. Optional but worth it.
+- Every file goes in one chapter, using its path exactly as it appears in the patch. Files you leave out land in an automatic "Everything else" chapter. That is right for lockfiles and generated code and a cop-out for anything else.
 - `review.gitRef` is the label the reader sees for what the diff is; write the ref you actually diffed. `base` is optional.
-- `generator` is provenance: the engine (and `model`, if you know it) that wrote the guide. Optional. `source` (repo, branch, head) is read from git for you; add `"source": { "kind": "pr", "pr": { "url", "number", "title" } }` when the guide is of a pull request.
+- `generator` is provenance: the engine (and `model`, if you know it) that wrote the guide. Optional.
+- `source` (repo, branch, head) is read from git for you. When the guide is of a pull request, add `"source": { "kind": "pr", "pr": { "url", "number", "title" } }`.
 
 ## 3. Export
 
@@ -77,8 +78,8 @@ How to think about it:
 plannotator guide export --guide guide.json --patch guide.patch
 ```
 
-If `plannotator` isn't installed: `curl -fsSL https://plannotator.ai/install.sh | bash -s -- --minimal` (just the binary, nothing else).
+If `plannotator` is not installed: `curl -fsSL https://plannotator.ai/install.sh | bash -s -- --minimal` (just the binary, nothing else).
 
-On success it prints the path of the HTML file. On failure it exits 1 and says what is wrong — a file that isn't in the patch (it lists the files that are), a file placed twice, a missing field. Fix `guide.json` and run it again; never edit the patch to fit the guide. Add `--out <file.html>` to choose where the file goes.
+On success it prints the path of the HTML file. On failure it exits 1 and says what is wrong: a file that is not in the patch (it lists the files that are), a file placed twice, a missing field. Fix `guide.json` and run it again. Never edit the patch to fit the guide. Add `--out <file.html>` to choose where the file goes.
 
 Tell the user where the file is. It opens in any browser, from disk or a link.

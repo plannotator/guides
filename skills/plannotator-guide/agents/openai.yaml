@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plannotator Guide"
+  short_description: "Guided review of a changeset, exported as one HTML file"
+  default_prompt: "Use $plannotator-guide to write a guided review of these changes and export it."

@@ -4,7 +4,7 @@ description: >
   Write a Guided Review — a chaptered walkthrough of a changeset with the real diffs inline —
   and turn it into one portable HTML file with `plannotator guide export`. Use when someone asks
   for a guide, walkthrough, tour, or explainer of a diff, branch, PR, or commit, or wants a
-  shareable review guide. Needs git and the plannotator CLI (`curl -fsSL https://plannotator.ai/install.sh | bash -s -- --minimal`).
+  shareable review guide. Needs git and the plannotator CLI.
 ---
 
 # Plannotator Guide
@@ -76,6 +76,8 @@ How to think about it:
 ```bash
 plannotator guide export --guide guide.json --patch guide.patch
 ```
+
+If `plannotator` isn't installed: `curl -fsSL https://plannotator.ai/install.sh | bash -s -- --minimal` (just the binary, nothing else).
 
 On success it prints the path of the HTML file. On failure it exits 1 and says what is wrong — a file that isn't in the patch (it lists the files that are), a file placed twice, a missing field. Fix `guide.json` and run it again; never edit the patch to fit the guide. Add `--out <file.html>` to choose where the file goes.
 

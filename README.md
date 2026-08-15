@@ -1,3 +1,5 @@
+![plannotator-guide](banner.webp)
+
 # plannotator-guide
 
 An agent skill that writes a **Guided Review** — a chaptered walkthrough of a changeset with the real diffs inline — and exports it as one portable HTML file. The file is small (roughly the size of the diff); the renderer loads from [guides.show](https://guides.show).

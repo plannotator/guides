@@ -2,7 +2,7 @@
 
 # plannotator-guide
 
-An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file. The file is roughly the size of the diff; the renderer loads from [guides.show](https://guides.show), pinned to an exact build, so the file keeps opening as-is.
+An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file. The file is roughly the size of the diff; the renderer loads from [guides.show](https://guides.show), and each file names the exact renderer version it was made with, so it keeps opening the same way later.
 
 The agent reads the diff and writes the guide. The [plannotator](https://plannotator.ai) CLI validates it, adds provenance (repo, branch, head SHA), and writes the HTML:
 

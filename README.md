@@ -4,7 +4,7 @@
 
 An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file.
 
-The file works anywhere: open it from disk, attach it to a PR, email it, drop it in chat. Or ask for a link instead and it is uploaded to [guides.show](https://guides.show), encrypted so the server can't read it. Only people with the link can.
+The HTML opens in a browser from disk or from any web host. If you want a link instead, the guide is uploaded to [guides.show](https://guides.show) encrypted; the server can't read it, only people with the link can.
 
 ## Install
 

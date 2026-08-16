@@ -27,7 +27,7 @@ For a PR, check it out (`gh pr checkout <n>`) and diff against its base branch. 
 
 ## 2. Write the guide
 
-Read the whole patch: `git diff --stat` for the map, then the files themselves. Then write `guide.json`:
+Read the whole patch: `git diff --stat` for the map, then the files themselves. Then write `guide.json`. Every `file` is the path as it appears in the patch after the change; `--stat` prints renames as `dir/{old => new}/file.ts`, which is not a path, so write `dir/new/file.ts`.
 
 ```json
 {

@@ -2,23 +2,9 @@
 
 # plannotator-guide
 
-An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file. The file is roughly the size of the diff; the code that displays it loads from [guides.show](https://guides.show) and never changes out from under a file, so old files keep working.
+An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file.
 
-The agent reads the diff and writes the guide. The [plannotator](https://plannotator.ai) CLI validates it, adds provenance (repo, branch, head SHA), and writes the HTML:
-
-```bash
-plannotator guide export --guide guide.json --patch guide.patch
-```
-
-If a link is easier than a file, the same input can be uploaded instead:
-
-```bash
-plannotator guide share --guide guide.json --patch guide.patch
-```
-
-This prints a `https://guides.show/g/<id>#key=...` URL and a one-time delete token. The upload is encrypted end to end by default: the key lives only in the part of the link after `#`, so the host stores ciphertext it cannot read, and anyone with the full link can open the guide. Add `--public` to store it unencrypted so chat apps can show a title preview. `plannotator guide unshare <id> --token <token>` removes it. Nothing is uploaded unless you ask for a link.
-
-The host is a small Cloudflare Worker you can run yourself. Point the CLI at your deployment with `PLANNOTATOR_GUIDE_SHARE_URL=https://guides.example.com` (and `PLANNOTATOR_GUIDE_VIEWER_URL=https://guides.example.com/v1/` for the files). Recipe: [`apps/guides-show`](https://github.com/backnotprop/plannotator/tree/main/apps/guides-show) in the Plannotator repo.
+The file works anywhere: open it from disk, attach it to a PR, email it, drop it in chat. Or ask for a link instead and it is uploaded to [guides.show](https://guides.show), encrypted so the server can't read it. Only people with the link can.
 
 ## Install
 
@@ -37,6 +23,24 @@ curl -fsSL https://plannotator.ai/install.sh | bash -s -- --minimal
 Ask your agent for a guide, walkthrough, or tour of a branch, PR, commit, or uncommitted work. It saves the diff, writes `guide.json`, runs the export, and gives you the path to the HTML. Open it in any browser, or run the same thing from a PR pipeline with whichever agent you use there.
 
 The guide shape and the full flow are in [`skills/plannotator-guide/SKILL.md`](skills/plannotator-guide/SKILL.md).
+
+## How it works
+
+The agent reads the diff and writes the guide. The [plannotator](https://plannotator.ai) CLI validates it, adds repo, branch and commit, and writes the HTML:
+
+```bash
+plannotator guide export --guide guide.json --patch guide.patch
+```
+
+For a link instead of a file:
+
+```bash
+plannotator guide share --guide guide.json --patch guide.patch
+```
+
+That prints the URL and a delete token. The key is the part of the URL after `#`, which browsers never send to the server, so guides.show only ever holds encrypted data. `--public` skips the encryption so chat apps can show a preview. `plannotator guide unshare <id> --token <token>` removes it. Nothing is uploaded unless you ask for a link.
+
+The code that displays a guide loads from guides.show and never changes out from under a file, so old files keep working. guides.show itself is a small Cloudflare Worker you can run yourself; see [`apps/guides-show`](https://github.com/backnotprop/plannotator/tree/main/apps/guides-show) in the Plannotator repo and set `PLANNOTATOR_GUIDE_SHARE_URL` to your own host.
 
 ## Related
 

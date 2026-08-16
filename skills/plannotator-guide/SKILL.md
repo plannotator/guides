@@ -83,3 +83,11 @@ If `plannotator` is not installed: `curl -fsSL https://plannotator.ai/install.sh
 On success it prints the path of the HTML file. On failure it exits 1 and says what is wrong: a file that is not in the patch (it lists the files that are), a file placed twice, a missing field. Fix `guide.json` and run it again. Never edit the patch to fit the guide. Add `--out <file.html>` to choose where the file goes.
 
 Tell the user where the file is. It opens in any browser, from disk or a link.
+
+## Want a link instead of a file?
+
+```bash
+plannotator guide share --guide guide.json --patch guide.patch
+```
+
+Same validation, but the guide is uploaded to guides.show and the command prints a URL. The upload is end-to-end encrypted by default: the host never sees the code, and the key is the part of the link after `#`, so anyone with the full link can read it. It also prints a delete token; give both to the user (`plannotator guide unshare <id> --token <token>` removes the link). Add `--public` only if the user wants link previews (the guide is then stored unencrypted). Only share when the user asked for a link; a file is the default.

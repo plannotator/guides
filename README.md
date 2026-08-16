@@ -4,7 +4,8 @@
 
 An agent skill that writes a **Guided Review**, a chaptered walkthrough of a diff, and exports it as a single portable HTML file.
 
-If you want a link instead of a file, the guide is uploaded to [guides.show](https://guides.show) encrypted; the server can't read it, only people with the link can.
+Share the HTML or use the optional, encrypted, share service:
+  - (optional) the guide is uploaded to [guides.show](https://guides.show) encrypted; the server can't read it, only people with the link can.
 
 ## Install
 
@@ -24,7 +25,7 @@ Ask your agent for a guide, walkthrough, or tour of a branch, PR, commit, or unc
 
 The guide shape and the full flow are in [`skills/plannotator-guide/SKILL.md`](skills/plannotator-guide/SKILL.md).
 
-## How it works
+## How it works under the hood
 
 The agent reads the diff and writes the guide. The [plannotator](https://plannotator.ai) CLI validates it, adds repo, branch and commit, and writes the HTML:
 

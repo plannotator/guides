@@ -27,8 +27,6 @@ For a PR, check it out (`gh pr checkout <n>`) and diff against its base branch. 
 
 ## 2. Write the guide
 
-These are the same instructions Plannotator's own Guided Review uses (`GUIDE_REVIEW_PROMPT` in `packages/server/guide/guide-review.ts`), with the mechanics of this workflow substituted: your diff is `guide.patch`, and you write `guide.json` instead of returning JSON. Follow them as written.
-
 ### Identity
 You are a senior engineer who deeply understands this changeset and is
 organizing it into a guided review: an ordered sequence of chapters that let

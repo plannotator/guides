@@ -7,6 +7,8 @@ An agent skill that writes a **Guided Review**, a chaptered walkthrough of a dif
 Share the HTML or use the optional, encrypted, share service:
   - (optional) the guide is uploaded to [guides.show](https://guides.show) encrypted; the server can't read it, only people with the link can.
 
+This is also built into [Plannotator Code Review](https://github.com/backnotprop/plannotator)
+
 ## Install
 
 ```bash

@@ -45,6 +45,10 @@ That prints the URL and a delete token. The key is the part of the URL after `#`
 
 The code that displays a guide loads from guides.show and never changes out from under a file, so old files keep working. guides.show itself is a small Cloudflare Worker you can run yourself; see [`apps/guides-show`](https://github.com/backnotprop/plannotator/tree/main/apps/guides-show) in the Plannotator repo and set `PLANNOTATOR_GUIDE_SHARE_URL` to your own host.
 
+## What one looks like
+
+![A guide with two chapters. Left: the chapter title, a short overview, and the files it covers. Right: the diff for each file.](example_guide.png)
+
 ## Related
 
 - [Portable guide format](https://plannotator.ai/docs/reference/portable-guides/): what is in the file, the snapshot format, share links, and guides.show.

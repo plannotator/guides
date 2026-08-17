@@ -9,7 +9,7 @@ Share the HTML or use the optional, encrypted, share service:
 
 This is also built into [Plannotator Code Review](https://github.com/backnotprop/plannotator)
 
-<a href="https://github.com/backnotprop/plannotator"><img src="star-plannotator.svg" width="440" alt="Star Plannotator on GitHub"></a>
+<a href="https://github.com/backnotprop/plannotator"><img src="star-plannotator.svg" width="300" alt="Star Plannotator on GitHub"></a>
 
 ## Install
 

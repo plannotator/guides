@@ -9,6 +9,8 @@ Share the HTML or use the optional, encrypted, share service:
 
 This is also built into [Plannotator Code Review](https://github.com/backnotprop/plannotator)
 
+<a href="https://github.com/backnotprop/plannotator"><img src="star-plannotator.svg" width="440" alt="Star Plannotator on GitHub"></a>
+
 ## Install
 
 ```bash
@@ -53,3 +55,5 @@ The code that displays a guide loads from guides.show and never changes out from
 
 - [Portable guide format](https://plannotator.ai/docs/reference/portable-guides/): what is in the file, the snapshot format, share links, and guides.show.
 - [Plannotator](https://github.com/backnotprop/plannotator): the review tool that generates these guides in-app.
+
+Diffs are rendered with [diffs.com](https://diffs.com/).

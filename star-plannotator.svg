@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="112" viewBox="0 0 440 112" role="img" aria-label="Star Plannotator on GitHub">
+  <rect width="440" height="112" rx="14" fill="#0a0a0a"/>
+  <!-- off-white cut-paper slip: star -->
+  <g transform="rotate(-1.4 90 46)">
+    <polygon points="24,22 156,18 158,72 22,75" fill="#ECEAE3"/>
+    <polygon points="24,22 156,18 158,72 22,75" fill="none" stroke="#000" stroke-opacity=".08"/>
+  </g>
+  <path transform="translate(50,46) scale(1.05)" d="M0,-16 L4.7,-4.9 L16.7,-3.9 L7.6,4 L10.3,15.7 L0,9.5 L-10.3,15.7 L-7.6,4 L-16.7,-3.9 L-4.7,-4.9 Z" fill="#0a0a0a"/>
+  <text x="74" y="58" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="32" font-weight="700" letter-spacing="-1" fill="#0a0a0a">star</text>
+  <!-- orange dot -->
+  <circle cx="177" cy="49" r="8" fill="#E5471F"/>
+  <!-- yellow cut-paper slip: plannotator -->
+  <g transform="rotate(1.2 305 46)">
+    <polygon points="196,20 416,24 414,76 198,72" fill="#F5B800"/>
+    <polygon points="196,20 416,24 414,76 198,72" fill="none" stroke="#000" stroke-opacity=".08"/>
+  </g>
+  <text x="212" y="59" font-family="'Helvetica Neue',Helvetica,Arial,sans-serif" font-size="32" font-weight="700" letter-spacing="-1" fill="#0a0a0a">plannotator</text>
+  <!-- url -->
+  <text x="416" y="98" text-anchor="end" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace" font-size="11.5" fill="#8A8985">github.com/backnotprop/plannotator</text>
+</svg>

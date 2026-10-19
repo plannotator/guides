@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guided Plan"
+  short_description: "A cited, playable plan of a code change, built as one HTML file"
+  default_prompt: "Use $guided-plan to write a guided plan of this change and build it."

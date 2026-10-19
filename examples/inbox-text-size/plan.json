@@ -1,0 +1,1279 @@
+{
+ "format": "guided-plan/1",
+ "title": "Inbox: a text size setting",
+ "intent": "The Inbox draws its text at one size today, and nobody can change it. This plan adds a Text size row to Settings with 12, 13, 14 and 15, where 14 stays the default. A pick changes the whole window at once and is saved for the next time.",
+ "intentCites": [
+  "AG-TS",
+  "TYPES",
+  "AG-CFG"
+ ],
+ "plan": {
+  "name": "PR 1990"
+ },
+ "model": "Claude Opus 5.5",
+ "base": "44210bd309bcb0a4f96ed6dfe787b33052a46e86",
+ "repos": {
+  "plannotator": {
+   "url": "https://github.com/backnotprop/plannotator"
+  }
+ },
+ "sources": {
+  "AG-TS": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "AGENTS.md",
+   "lines": "2161",
+   "label": "Project notes after the change: the Text size setting",
+   "quote": [
+    "a segmented 12 / 13 / 14 / 15 control in Appearance, the Theme control's style, applied at once with no reload",
+    "I could also go to 13 or 15 or even 12"
+   ]
+  },
+  "AG-RAMP": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "AGENTS.md",
+   "lines": "2161",
+   "label": "Project notes after the change: how the sizes scale",
+   "quote": [
+    "so the whole ramp (rows, subjects, the sidebar, message bodies, question cards, Settings, timestamps, chips, badges) keeps its relative steps",
+    "nothing goes under 11 px",
+    "Phone controls' 16 px take `--ib-fs-16-in = max(16px, …)`, so iOS never zooms"
+   ]
+  },
+  "AG-SAME": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "AGENTS.md",
+   "lines": "2161",
+   "label": "Project notes after the change: what stays",
+   "quote": [
+    "at 14 each size is exactly today's (a screenshot at 14 is byte-identical to the window before the setting)",
+    "Row and control heights keep today's pitch, so phones keep 44 px targets"
+   ]
+  },
+  "AG-KEPT": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "AGENTS.md",
+   "lines": "2161",
+   "label": "Project notes after the change: where the size is kept",
+   "quote": [
+    "adopted from the first settings read like the theme (never over a pick made on the page first)",
+    "the `plannotator-inbox-text-size` cookie keeps the last size this browser showed, so a reload paints at it before the read answers"
+   ]
+  },
+  "AG-CFG": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "AGENTS.md",
+   "lines": "226",
+   "label": "Project notes after the change: the config.json key",
+   "quote": [
+    "`inboxTextSize` (12, 13, 14 or 15; default 14)",
+    "anything else is refused with `422`, and an unreadable value reads as 14"
+   ]
+  },
+  "BASE-THEME": {
+   "kind": "git",
+   "at": "44210bd309bcb0a4f96ed6dfe787b33052a46e86",
+   "path": "packages/inbox/components/Settings.tsx",
+   "lines": "198-206",
+   "label": "Settings before the change: Appearance has one row",
+   "quote": [
+    "<h2 id=\"ib-g-appearance\">Appearance</h2>",
+    "Theme"
+   ]
+  },
+  "BASE-CSS": {
+   "kind": "git",
+   "at": "44210bd309bcb0a4f96ed6dfe787b33052a46e86",
+   "path": "packages/inbox/inbox.css",
+   "lines": "225-233",
+   "label": "The stylesheet before the change: one type knob",
+   "quote": [
+    "--ib-type is the window's base size in px, 14 (today's) or 13 when on",
+    "--ib-type: var(--ib-type-s, 14);"
+   ]
+  },
+  "BASE-SOFT": {
+   "kind": "git",
+   "at": "44210bd309bcb0a4f96ed6dfe787b33052a46e86",
+   "path": "packages/inbox/inbox.css",
+   "lines": "66",
+   "label": "The stylesheet before the change: the hidden switch",
+   "quote": [
+    "the type one step down: the 14 px base to 13"
+   ]
+  },
+  "CSS-AFTER": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/inbox/inbox.css",
+   "lines": "231-254",
+   "label": "The stylesheet after the change",
+   "quote": [
+    "--ib-type: var(--inbox-text-size, 14);",
+    "--ib-fs-14: max(11px, calc(14px * var(--ib-type) / 14));"
+   ]
+  },
+  "TS-APPLY": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/inbox/textSize.ts",
+   "lines": "38-56",
+   "label": "textSize.ts: putting the size on the page",
+   "quote": [
+    "At 14 the property is removed",
+    "style.setProperty(TEXT_SIZE_PROPERTY, String(size));"
+   ]
+  },
+  "TS-LOAD": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/inbox/textSize.ts",
+   "lines": "58-79",
+   "label": "textSize.ts: on load, and on a pick",
+   "quote": [
+    "The cookie's size on the document, before the first render.",
+    "config.json's size, from the first settings read only, never over a choice made on this page first.",
+    "The person's choice: shown at once, then saved to config.json."
+   ]
+  },
+  "TYPES": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/core/inbox-types.ts",
+   "lines": "958-960",
+   "label": "The sizes and the default",
+   "quote": [
+    "export const INBOX_TEXT_SIZES = [12, 13, 14, 15] as const;",
+    "export const INBOX_TEXT_SIZE_DEFAULT: InboxTextSize = 14;"
+   ]
+  },
+  "SET-ROW": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/inbox/components/Settings.tsx",
+   "lines": "223-247",
+   "label": "Settings after the change: the Text size row",
+   "quote": [
+    "Text size",
+    "{INBOX_TEXT_SIZES.map((size) => (",
+    "onChange={() => void chooseTextSize(size)}"
+   ]
+  },
+  "SRV-SAVE": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/server/inbox.ts",
+   "lines": "1078-1084",
+   "label": "The server: checking and saving the size",
+   "quote": [
+    "text_size: 12, 13, 14 or 15.",
+    "saveConfig({ inboxTextSize: input });"
+   ]
+  },
+  "SRV-TEST": {
+   "kind": "git",
+   "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+   "path": "packages/server/inbox.test.ts",
+   "lines": "762",
+   "label": "The server's test: values it refuses",
+   "quote": [
+    "for (const bad of [11, 16, 13.5, \"13\", null, true, { size: 13 }]) {"
+   ]
+  },
+  "SHOT-BASE": {
+   "kind": "capture",
+   "path": "assets/settings-base.png",
+   "label": "Screenshot: Settings, Appearance, at the base commit (sample data)"
+  },
+  "SHOT-14": {
+   "kind": "capture",
+   "path": "assets/settings-14.png",
+   "label": "Screenshot: Settings, Appearance, after the change (sample data)"
+  },
+  "SHOT-THREAD": {
+   "kind": "capture",
+   "path": "assets/thread-14.jpg",
+   "label": "Screenshots: one sample thread at each size, after the change"
+  }
+ },
+ "assets": {
+  "settings-base": {
+   "file": "assets/settings-base.png",
+   "from": "SHOT-BASE"
+  },
+  "settings-14": {
+   "file": "assets/settings-14.png",
+   "from": "SHOT-14"
+  },
+  "settings-15": {
+   "file": "assets/settings-15.png",
+   "from": "SHOT-14"
+  },
+  "thread-12": {
+   "file": "assets/thread-12.jpg",
+   "from": "SHOT-THREAD"
+  },
+  "thread-13": {
+   "file": "assets/thread-13.jpg",
+   "from": "SHOT-THREAD"
+  },
+  "thread-14": {
+   "file": "assets/thread-14.jpg",
+   "from": "SHOT-THREAD"
+  },
+  "thread-15": {
+   "file": "assets/thread-15.jpg",
+   "from": "SHOT-THREAD"
+  }
+ },
+ "overview": [
+  {
+   "kind": "Decided",
+   "text": "One setting sizes the whole Inbox: 12, 13, 14 or 15, and 14 is the default.",
+   "section": "why",
+   "cites": [
+    "AG-CFG"
+   ]
+  },
+  {
+   "kind": "Change",
+   "text": "Settings gets a Text size row. A pick shows at once, with no reload.",
+   "section": "setting",
+   "cites": [
+    "AG-TS"
+   ]
+  },
+  {
+   "kind": "Change",
+   "text": "The server saves the size in config.json and refuses any other value.",
+   "section": "saved",
+   "cites": [
+    "SRV-SAVE"
+   ]
+  },
+  {
+   "kind": "Kept",
+   "text": "At 14 the window draws exactly as it does today.",
+   "section": "kept",
+   "cites": [
+    "AG-SAME"
+   ]
+  },
+  {
+   "kind": "Open",
+   "text": "Is 14 the right default? Try each size, then decide.",
+   "section": "open",
+   "cites": [
+    "AG-TS"
+   ]
+  }
+ ],
+ "sections": [
+  {
+   "id": "why",
+   "title": "Why a text size setting",
+   "parts": [
+    {
+     "id": "today",
+     "title": "What a person sees today",
+     "body": [
+      "Settings, General, Appearance holds one row today: Theme. Nothing there changes how large the text is.",
+      "Someone who finds the Inbox too small or too large has no way to change it. The text size is fixed in the stylesheet."
+     ],
+     "cites": [
+      "BASE-THEME",
+      "BASE-CSS"
+     ],
+     "figure": {
+      "type": "screenshot",
+      "asset": "settings-base",
+      "scale": 2,
+      "title": "Appearance today",
+      "caption": "The Appearance group before the change: Theme only.",
+      "cites": [
+       "SHOT-BASE",
+       "BASE-THEME"
+      ]
+     }
+    },
+    {
+     "id": "after",
+     "title": "What the plan adds",
+     "body": [
+      "A second row, Text size, with a button for each size: 12, 13, 14 and 15. It looks like the Theme control above it.",
+      "The size applies to the whole Inbox, at once, with no reload. Use the buttons on the right to compare."
+     ],
+     "cites": [
+      "AG-TS",
+      "TYPES"
+     ],
+     "figure": {
+      "type": "toggle",
+      "title": "Appearance, before and after",
+      "cites": [
+       "SHOT-BASE",
+       "SHOT-14",
+       "AG-TS"
+      ],
+      "states": [
+       {
+        "value": "before",
+        "label": "Before",
+        "caption": "Before: one row, Theme.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "settings-base",
+         "scale": 2,
+         "title": "",
+         "caption": "The Appearance group before the change: Theme only.",
+         "cites": [
+          "SHOT-BASE"
+         ]
+        }
+       },
+       {
+        "value": "after",
+        "label": "After",
+        "caption": "After: a Text size row under Theme, set to 14.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "settings-14",
+         "scale": 2,
+         "title": "",
+         "caption": "The Appearance group after the change: Theme, then Text size set to 14.",
+         "cites": [
+          "SHOT-14"
+         ]
+        }
+       }
+      ],
+      "initial": "after"
+     }
+    }
+   ],
+   "files": [
+    {
+     "name": "Settings.tsx",
+     "note": "Where the new row goes",
+     "path": "packages/inbox/components/Settings.tsx",
+     "repo": "plannotator"
+    }
+   ]
+  },
+  {
+   "id": "background",
+   "title": "How the Inbox sizes its text today",
+   "parts": [
+    {
+     "id": "knob",
+     "title": "One number already drives every size",
+     "body": [
+      "Every text size in the stylesheet already comes from one number, `--ib-type`. Today it is 14.",
+      "A hidden switch can take it down to 13, so the owner could compare. No person can reach that switch from the window."
+     ],
+     "cites": [
+      "BASE-CSS",
+      "BASE-SOFT"
+     ],
+     "figure": {
+      "type": "code",
+      "title": "The type knob at the base commit",
+      "path": "packages/inbox/inbox.css",
+      "at": "44210bd309bcb0a4f96ed6dfe787b33052a46e86",
+      "start": 225,
+      "text": [
+       "  --ib-float-s: var(--ib-soft-float) var(--ib-float-shadow);",
+       "  --ib-float-line-s: var(--ib-soft-float) transparent;",
+       "  /* Type (--ib-soft-type): one knob. --ib-type is the window's base size in px, 14 (today's) or 13 when on, and",
+       "     every size the window sets is N px * --ib-type / 14 (exact: 14 px is 13 px on, N px off), and ui's drawing inside it through its type scale (below); a size never goes under",
+       "     12 px, and sizes already under 12 px are left as they are. Phone inputs keep 16 px (iOS zooms under it).",
+       "     Used as font-size: var(--ib-fs-N, Npx); off, each is exactly today's N px. Row and control heights keep",
+       "     today's pitch, so phones keep their 44 px targets. */",
+       "  --ib-type-s: var(--ib-soft-type) 13;",
+       "  --ib-type: var(--ib-type-s, 14);"
+      ],
+      "caption": "The marked lines go. In their place, the knob reads the person's setting.",
+      "cites": [
+       "BASE-CSS",
+       "CSS-AFTER"
+      ],
+      "marked": [
+       232,
+       233
+      ],
+      "mark": "out"
+     }
+    },
+    {
+     "id": "ramp",
+     "title": "What follows that number",
+     "body": [
+      "The list rows, subjects, the sidebar, message bodies, question cards, Settings, and the small labels all scale from it. Their steps stay the same relative to each other.",
+      "Nothing shrinks past its floor: no text goes under 11 px, and phone controls stay at 16 px, so iOS does not zoom."
+     ],
+     "cites": [
+      "AG-RAMP"
+     ],
+     "figure": {
+      "type": "list",
+      "title": "What scales, and what never shrinks",
+      "cites": [
+       "AG-RAMP"
+      ],
+      "rows": [
+       {
+        "text": "List rows and subjects",
+        "note": "scale with the setting"
+       },
+       {
+        "text": "The sidebar",
+        "note": "scales with the setting"
+       },
+       {
+        "text": "Message bodies and question cards",
+        "note": "scale with the setting"
+       },
+       {
+        "text": "Timestamps, chips, badges",
+        "note": "scale, but never under 11 px",
+        "tag": "floor",
+        "tagAcc": true
+       },
+       {
+        "text": "Phone controls",
+        "note": "never under 16 px, so iOS never zooms",
+        "tag": "floor",
+        "tagAcc": true
+       }
+      ],
+      "caption": "Every size moves together, above its floor."
+     }
+    }
+   ],
+   "files": [
+    {
+     "name": "inbox.css",
+     "note": "The stylesheet and its type knob",
+     "path": "packages/inbox/inbox.css",
+     "repo": "plannotator"
+    }
+   ]
+  },
+  {
+   "id": "compare",
+   "title": "The same thread at each size",
+   "parts": [
+    {
+     "id": "thread",
+     "title": "One thread at each size",
+     "body": [
+      "The screenshots show one sample thread at 12, 13, 14 and 15. Step through them to see the whole window grow, not just one part.",
+      "At 14 the window is exactly what people see today."
+     ],
+     "cites": [
+      "AG-TS",
+      "AG-SAME"
+     ],
+     "figure": {
+      "type": "steps",
+      "label": "Size",
+      "title": "A sample thread, after the change",
+      "cites": [
+       "SHOT-THREAD",
+       "AG-TS",
+       "AG-SAME"
+      ],
+      "initial": "14",
+      "states": [
+       {
+        "value": "12",
+        "label": "12",
+        "caption": "12: the smallest size. More fits on screen.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "thread-12",
+         "scale": 2,
+         "title": "",
+         "caption": "The list and a sample thread at text size 12.",
+         "cites": [
+          "SHOT-THREAD"
+         ]
+        }
+       },
+       {
+        "value": "13",
+        "label": "13",
+        "caption": "13: one step smaller than today.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "thread-13",
+         "scale": 2,
+         "title": "",
+         "caption": "The list and a sample thread at text size 13.",
+         "cites": [
+          "SHOT-THREAD"
+         ]
+        }
+       },
+       {
+        "value": "14",
+        "label": "14",
+        "caption": "14: the default, exactly today's window.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "thread-14",
+         "scale": 2,
+         "title": "",
+         "caption": "The list and a sample thread at text size 14, the default.",
+         "cites": [
+          "SHOT-THREAD"
+         ]
+        }
+       },
+       {
+        "value": "15",
+        "label": "15",
+        "caption": "15: the largest size.",
+        "figure": {
+         "type": "screenshot",
+         "asset": "thread-15",
+         "scale": 2,
+         "title": "",
+         "caption": "The list and a sample thread at text size 15.",
+         "cites": [
+          "SHOT-THREAD"
+         ]
+        }
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "setting",
+   "title": "The setting, from the screen to the page",
+   "parts": [
+    {
+     "id": "row",
+     "title": "The Text size row",
+     "body": [
+      "The row draws its buttons from one shared list of sizes, so the screen and the server agree. A pick calls `chooseTextSize`.",
+      "Its description changes with the pick: at 14 it says this is the default."
+     ],
+     "cites": [
+      "SET-ROW",
+      "TYPES"
+     ],
+     "figure": {
+      "type": "code",
+      "title": "The new row in Settings",
+      "path": "packages/inbox/components/Settings.tsx",
+      "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+      "start": 223,
+      "text": [
+       "          <div className=\"ib-prow\" data-settings-text-size={textSize}>",
+       "            <span className=\"ib-txt\">",
+       "              <span className=\"ib-l\" id=\"ib-text-size-label\">",
+       "                Text size",
+       "              </span>",
+       "              <span className=\"ib-desc\">{textSize === 14 ? 'The default. Applies to the whole Inbox.' : 'Applies to the whole Inbox; 14 is the default.'}</span>",
+       "            </span>",
+       "            <span className=\"ib-ctl\">",
+       "              <span className=\"ib-seg\" role=\"radiogroup\" aria-labelledby=\"ib-text-size-label\">",
+       "                {INBOX_TEXT_SIZES.map((size) => (",
+       "                  <label key={size} className=\"ib-seg-o\" data-on={textSize === size ? '' : undefined}>",
+       "                    <input",
+       "                      type=\"radio\"",
+       "                      name=\"ib-text-size\"",
+       "                      value={size}",
+       "                      checked={textSize === size}",
+       "                      aria-label={`${size} px`}",
+       "                      onChange={() => void chooseTextSize(size)}",
+       "                    />",
+       "                    {size}",
+       "                  </label>",
+       "                ))}",
+       "              </span>",
+       "            </span>",
+       "          </div>"
+      ],
+      "caption": "One button per size in the shared list. A pick shows and saves it.",
+      "cites": [
+       "SET-ROW"
+      ],
+      "marked": [
+       232,
+       240
+      ]
+     }
+    },
+    {
+     "id": "apply",
+     "title": "Shown at once",
+     "body": [
+      "The page puts the size on the document as one style value, `--inbox-text-size`. The stylesheet reads it, so every size changes in the same frame.",
+      "At 14 the value is removed, not set. The stylesheet then falls back to its own 14, which is why 14 draws exactly as today."
+     ],
+     "cites": [
+      "TS-APPLY",
+      "CSS-AFTER",
+      "AG-SAME"
+     ],
+     "figure": {
+      "type": "code",
+      "title": "Putting the size on the page",
+      "path": "packages/inbox/textSize.ts",
+      "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+      "start": 38,
+      "text": [
+       "/**",
+       " * Put `size` on the document. At 14 the property is removed, so the window",
+       " * draws from inbox.css's own default, exactly as before the setting existed.",
+       " */",
+       "function apply(size: InboxTextSize): void {",
+       "  current = size;",
+       "  if (typeof document !== 'undefined') {",
+       "    const style = document.documentElement.style;",
+       "    if (size === INBOX_TEXT_SIZE_DEFAULT) style.removeProperty(TEXT_SIZE_PROPERTY);",
+       "    else style.setProperty(TEXT_SIZE_PROPERTY, String(size));",
+       "  }",
+       "  try {",
+       "    if (size === INBOX_TEXT_SIZE_DEFAULT) storage.removeItem(TEXT_SIZE_COOKIE);",
+       "    else storage.setItem(TEXT_SIZE_COOKIE, String(size));",
+       "  } catch {",
+       "    // A page with no cookies still shows the size; it is only not remembered here.",
+       "  }",
+       "  for (const listener of listeners) listener();",
+       "}"
+      ],
+      "caption": "At 14 the value is removed; at any other size it is set.",
+      "cites": [
+       "TS-APPLY"
+      ],
+      "marked": [
+       46,
+       47
+      ]
+     }
+    },
+    {
+     "id": "pick",
+     "title": "What happens on a pick",
+     "body": [
+      "Step through one pick of 15. The screen changes first, then the page and the server both remember it.",
+      "A cookie lets the next visit paint at 15 at once. config.json is the size every browser on this computer starts from."
+     ],
+     "cites": [
+      "TS-LOAD",
+      "AG-KEPT",
+      "TYPES"
+     ],
+     "figure": {
+      "type": "steps",
+      "label": "Step",
+      "title": "One pick, step by step",
+      "cites": [
+       "TS-LOAD",
+       "AG-KEPT",
+       "TS-APPLY",
+       "TYPES"
+      ],
+      "states": [
+       {
+        "value": "pick",
+        "label": "Pick",
+        "caption": "The person picks 15 in the Text size row.",
+        "figure": {
+         "type": "drawing",
+         "title": "",
+         "cites": [
+          "TS-LOAD"
+         ],
+         "rows": [
+          {
+           "label": "Screen",
+           "nodes": [
+            {
+             "id": "row",
+             "text": "Text size row",
+             "style": "acc",
+             "sub": "15 picked"
+            }
+           ]
+          },
+          {
+           "label": "Kept in",
+           "nodes": [
+            {
+             "id": "doc",
+             "text": "The document",
+             "style": "plain",
+             "sub": "14"
+            },
+            {
+             "id": "cookie",
+             "text": "A cookie",
+             "style": "plain",
+             "sub": "none"
+            },
+            {
+             "id": "config",
+             "text": "config.json",
+             "style": "plain",
+             "sub": "14"
+            }
+           ]
+          }
+         ],
+         "edges": [
+          {
+           "from": "row",
+           "to": "doc",
+           "text": "shown",
+           "style": "plain"
+          },
+          {
+           "from": "row",
+           "to": "cookie",
+           "text": "remembered",
+           "style": "plain"
+          },
+          {
+           "from": "row",
+           "to": "config",
+           "text": "saved",
+           "style": "plain"
+          }
+         ]
+        }
+       },
+       {
+        "value": "shown",
+        "label": "Shown",
+        "caption": "The page sets the size on the document. The whole window grows at once.",
+        "figure": {
+         "type": "drawing",
+         "title": "",
+         "cites": [
+          "TS-APPLY"
+         ],
+         "rows": [
+          {
+           "label": "Screen",
+           "nodes": [
+            {
+             "id": "row",
+             "text": "Text size row",
+             "style": "acc",
+             "sub": "15 picked"
+            }
+           ]
+          },
+          {
+           "label": "Kept in",
+           "nodes": [
+            {
+             "id": "doc",
+             "text": "The document",
+             "style": "acc",
+             "sub": "15"
+            },
+            {
+             "id": "cookie",
+             "text": "A cookie",
+             "style": "plain",
+             "sub": "none"
+            },
+            {
+             "id": "config",
+             "text": "config.json",
+             "style": "plain",
+             "sub": "14"
+            }
+           ]
+          }
+         ],
+         "edges": [
+          {
+           "from": "row",
+           "to": "doc",
+           "text": "shown",
+           "style": "acc"
+          },
+          {
+           "from": "row",
+           "to": "cookie",
+           "text": "remembered",
+           "style": "plain"
+          },
+          {
+           "from": "row",
+           "to": "config",
+           "text": "saved",
+           "style": "plain"
+          }
+         ]
+        }
+       },
+       {
+        "value": "cookie",
+        "label": "Cookie",
+        "caption": "A cookie keeps 15, so a reload paints at 15 before anything else answers.",
+        "figure": {
+         "type": "drawing",
+         "title": "",
+         "cites": [
+          "AG-KEPT"
+         ],
+         "rows": [
+          {
+           "label": "Screen",
+           "nodes": [
+            {
+             "id": "row",
+             "text": "Text size row",
+             "style": "acc",
+             "sub": "15 picked"
+            }
+           ]
+          },
+          {
+           "label": "Kept in",
+           "nodes": [
+            {
+             "id": "doc",
+             "text": "The document",
+             "style": "acc",
+             "sub": "15"
+            },
+            {
+             "id": "cookie",
+             "text": "A cookie",
+             "style": "acc",
+             "sub": "15"
+            },
+            {
+             "id": "config",
+             "text": "config.json",
+             "style": "plain",
+             "sub": "14"
+            }
+           ]
+          }
+         ],
+         "edges": [
+          {
+           "from": "row",
+           "to": "doc",
+           "text": "shown",
+           "style": "acc"
+          },
+          {
+           "from": "row",
+           "to": "cookie",
+           "text": "remembered",
+           "style": "acc"
+          },
+          {
+           "from": "row",
+           "to": "config",
+           "text": "saved",
+           "style": "plain"
+          }
+         ]
+        }
+       },
+       {
+        "value": "saved",
+        "label": "Saved",
+        "caption": "The server saves 15 in config.json for every later visit.",
+        "figure": {
+         "type": "drawing",
+         "title": "",
+         "cites": [
+          "TS-LOAD"
+         ],
+         "rows": [
+          {
+           "label": "Screen",
+           "nodes": [
+            {
+             "id": "row",
+             "text": "Text size row",
+             "style": "acc",
+             "sub": "15 picked"
+            }
+           ]
+          },
+          {
+           "label": "Kept in",
+           "nodes": [
+            {
+             "id": "doc",
+             "text": "The document",
+             "style": "acc",
+             "sub": "15"
+            },
+            {
+             "id": "cookie",
+             "text": "A cookie",
+             "style": "acc",
+             "sub": "15"
+            },
+            {
+             "id": "config",
+             "text": "config.json",
+             "style": "acc",
+             "sub": "15"
+            }
+           ]
+          }
+         ],
+         "edges": [
+          {
+           "from": "row",
+           "to": "doc",
+           "text": "shown",
+           "style": "acc"
+          },
+          {
+           "from": "row",
+           "to": "cookie",
+           "text": "remembered",
+           "style": "acc"
+          },
+          {
+           "from": "row",
+           "to": "config",
+           "text": "saved",
+           "style": "acc"
+          }
+         ]
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "files": [
+    {
+     "name": "textSize.ts",
+     "note": "New: the size on the page, the cookie, the save",
+     "path": "packages/inbox/textSize.ts",
+     "repo": "plannotator",
+     "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+     "tag": "new",
+     "tagAcc": true
+    },
+    {
+     "name": "Settings.tsx",
+     "note": "The Text size row",
+     "part": "row"
+    },
+    {
+     "name": "App.tsx",
+     "note": "Applies the remembered size before the first render",
+     "path": "packages/inbox/App.tsx",
+     "repo": "plannotator"
+    }
+   ]
+  },
+  {
+   "id": "saved",
+   "title": "The server keeps the size",
+   "parts": [
+    {
+     "id": "check",
+     "title": "Only the listed sizes are saved",
+     "body": [
+      "The settings route takes `text_size` and saves it in config.json as `inboxTextSize`. Anything but 12, 13, 14 or 15 is refused with 422, and nothing is saved.",
+      "Try a value on the right to see the answer."
+     ],
+     "cites": [
+      "SRV-SAVE",
+      "AG-CFG",
+      "SRV-TEST"
+     ],
+     "figure": {
+      "type": "list",
+      "title": "What the server answers",
+      "cites": [
+       "SRV-SAVE",
+       "AG-CFG",
+       "SRV-TEST"
+      ],
+      "controls": [
+       {
+        "key": "v",
+        "label": "Send",
+        "options": [
+         {
+          "value": "15",
+          "text": "15"
+         },
+         {
+          "value": "16",
+          "text": "16"
+         },
+         {
+          "value": "13.5",
+          "text": "13.5"
+         },
+         {
+          "value": "str",
+          "text": "\"13\""
+         }
+        ]
+       }
+      ],
+      "rows": [
+       {
+        "id": "req",
+        "text": "Request",
+        "note": "text_size: 15"
+       },
+       {
+        "id": "ans",
+        "text": "Answer",
+        "note": "saved"
+       },
+       {
+        "id": "cfg",
+        "text": "config.json",
+        "note": "inboxTextSize: 15"
+       }
+      ],
+      "rules": [
+       {
+        "if": {
+         "v": "15"
+        },
+        "then": {
+         "caption": "15 is in the list, so it is saved."
+        }
+       },
+       {
+        "if": {
+         "v": "16"
+        },
+        "then": {
+         "set": {
+          "req": "text_size: 16",
+          "ans": "refused with 422",
+          "cfg": "not changed"
+         },
+         "gone": [
+          "cfg"
+         ],
+         "caption": "16 is not in the list: refused, nothing saved."
+        }
+       },
+       {
+        "if": {
+         "v": "13.5"
+        },
+        "then": {
+         "set": {
+          "req": "text_size: 13.5",
+          "ans": "refused with 422",
+          "cfg": "not changed"
+         },
+         "gone": [
+          "cfg"
+         ],
+         "caption": "Only whole sizes are kept: 13.5 is refused."
+        }
+       },
+       {
+        "then": {
+         "set": {
+          "req": "text_size: \"13\"",
+          "ans": "refused with 422",
+          "cfg": "not changed"
+         },
+         "gone": [
+          "cfg"
+         ],
+         "caption": "A number written as text is refused too."
+        }
+       }
+      ]
+     }
+    },
+    {
+     "id": "code",
+     "title": "The check, in the code",
+     "body": [
+      "One function checks the value, saves it, and reads the file back. If the file did not change, the route says so instead of claiming success."
+     ],
+     "cites": [
+      "SRV-SAVE"
+     ],
+     "figure": {
+      "type": "code",
+      "title": "Checking and saving the size",
+      "path": "packages/server/inbox.ts",
+      "at": "4507cdc4516f13e5dca7689ca34ee9b74355687a",
+      "start": 1078,
+      "text": [
+       "  const saveTextSize = (input: unknown, validateOnly = false): InboxTextSize => {",
+       "    if (!isInboxTextSize(input)) throw new InboxError(\"validation_error\", \"text_size: 12, 13, 14 or 15.\", { field: \"text_size\" });",
+       "    if (validateOnly) return textSizeState();",
+       "    saveConfig({ inboxTextSize: input });",
+       "    if (loadConfig().inboxTextSize !== input) throw new InboxError(\"config_not_saved\", \"config.json could not be written; nothing changed.\");",
+       "    return input;",
+       "  };"
+      ],
+      "caption": "Refuse anything else, save, then confirm the file really changed.",
+      "cites": [
+       "SRV-SAVE"
+      ],
+      "marked": [
+       1079,
+       1081,
+       1082
+      ]
+     }
+    },
+    {
+     "id": "load",
+     "title": "Which size a new visit shows",
+     "body": [
+      "On the next visit, the cookie paints the page before the first render. Then the first settings read answers with config.json's size, and that wins.",
+      "One exception: a size the person picked on this page before that read answered is never undone by it."
+     ],
+     "cites": [
+      "TS-LOAD",
+      "AG-KEPT"
+     ],
+     "figure": {
+      "type": "timeline",
+      "title": "A new visit, in order",
+      "cites": [
+       "TS-LOAD",
+       "AG-KEPT"
+      ],
+      "stops": [
+       {
+        "label": "Cookie",
+        "sub": "paints first"
+       },
+       {
+        "label": "First render",
+        "sub": "at that size"
+       },
+       {
+        "label": "Settings read",
+        "sub": "config.json wins",
+        "mark": "acc"
+       }
+      ],
+      "caption": "The cookie avoids a jump; config.json has the last word."
+     }
+    }
+   ],
+   "files": [
+    {
+     "name": "inbox.ts",
+     "note": "The settings route",
+     "path": "packages/server/inbox.ts",
+     "repo": "plannotator"
+    },
+    {
+     "name": "config.ts",
+     "note": "The new `inboxTextSize` key",
+     "path": "packages/shared/config.ts",
+     "repo": "plannotator"
+    }
+   ]
+  },
+  {
+   "id": "kept",
+   "title": "What stays the same",
+   "parts": [
+    {
+     "id": "same",
+     "title": "Today's window, untouched",
+     "body": [
+      "Nobody has to do anything. Until someone picks a size, the window is 14, and at 14 every size is exactly today's.",
+      "Row and control heights do not change at any size, so phones keep their 44 px targets."
+     ],
+     "cites": [
+      "AG-SAME",
+      "AG-CFG"
+     ],
+     "figure": {
+      "type": "chips",
+      "title": "The sizes",
+      "cites": [
+       "TYPES",
+       "AG-CFG"
+      ],
+      "chips": [
+       {
+        "text": "12"
+       },
+       {
+        "text": "13"
+       },
+       {
+        "text": "14 default",
+        "acc": true
+       },
+       {
+        "text": "15"
+       }
+      ],
+      "caption": "14 is the default, and today's window."
+     }
+    }
+   ]
+  },
+  {
+   "id": "open",
+   "title": "Open question",
+   "parts": [
+    {
+     "id": "default",
+     "title": "Is 14 the right default?",
+     "body": [
+      "The setting exists so the sizes can be tried for real before the default is chosen. The plan keeps 14 for now.",
+      "Before changing it, use each size for a while on a real Inbox, then decide."
+     ],
+     "cites": [
+      "AG-TS",
+      "AG-SAME"
+     ],
+     "figure": {
+      "type": "timeline",
+      "title": "Deciding the default",
+      "cites": [
+       "AG-TS"
+      ],
+      "stops": [
+       {
+        "label": "Ship",
+        "sub": "14 stays"
+       },
+       {
+        "label": "Try",
+        "sub": "each size"
+       },
+       {
+        "label": "Decide",
+        "sub": "keep or change",
+        "mark": "ask"
+       }
+      ],
+      "caption": "The default is the one thing left to decide."
+     }
+    }
+   ]
+  }
+ ]
+}

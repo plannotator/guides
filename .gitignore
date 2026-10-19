@@ -2,3 +2,4 @@
 guide.patch
 guide.json
 *.html
+!examples/**/*.html

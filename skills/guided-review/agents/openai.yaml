@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guided Review"
+  short_description: "Guided review of a changeset, exported as one HTML file"
+  default_prompt: "Use $guided-review to write a guided review of these changes and export it."

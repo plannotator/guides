@@ -5,7 +5,7 @@
 Two agent skills that turn a code change into one HTML page a person can read in one sitting:
 
 - **[guided-review](skills/guided-review/SKILL.md)**: a chaptered walkthrough of a diff that is already written, with the real diffs inline.
-- **[guided-plan](skills/guided-plan/SKILL.md)**: a plan for a change, taught in plain words, where every claim is cited and re-checked against the code and the behaviour can be played with.
+- **[guided-plan](skills/guided-plan/SKILL.md)**: a guided plan for a change, taught in plain words, with big pictures and few words, where every claim is cited and re-checked against the code.
 
 Share the HTML file, or (for guided reviews) use the optional encrypted share service:
   - (optional) the guide is uploaded to [guides.show](https://guides.show) encrypted; the server can't read it, only people with the link can.
@@ -71,33 +71,49 @@ The code that displays a guide loads from guides.show and never changes out from
 
 ## Guided plans
 
-Ask your agent for a guided plan of a change: an issue, a PR you are about to open, or a plan document. It reads the change and the code it touches, writes `plan.json`, re-checks every citation, and builds `plan.html`.
+Ask your agent for a guided plan of a change: an issue, a PR you are about to open, or a plan document. It reads the change and the code it touches, writes `plan.json`, re-checks every citation, and builds `guided-plan.html`.
 
-The page has the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is a card: the story on the left in lettered parts, with its files and sources; on the right a picture for the selected part. The pictures are a fixed set any plan can use: a screenshot, a code excerpt, a list, chips, a timeline, a drawing of boxes and arrows, a before-and-after toggle, and a step-through. A list, chips, timeline or drawing can also take controls, so a reader can try the change's behaviour. `j` and `k` move between sections. Light and dark, and a phone layout.
+The page opens with the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is a card that reads on its own: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls. The pictures are a fixed set any guided plan can use: a screenshot, a code excerpt, a list, a table, chips, a timeline, a flow of steps, layers, and a pair that sets two to four of them side by side (before and after). `j` and `k` move between sections. Light and dark; on a phone every picture reflows and nothing scrolls sideways.
 
 What the build guarantees:
 
-- **Cited.** Every part names its sources; each source is a path and lines at a commit, with the exact text it relies on. `build.mjs --check` reopens each one with git and confirms the text is there, and that every code excerpt matches its commit byte for byte.
+- **Cited.** Every section, card and picture names its sources; each source is a path and lines at a commit, with the exact text it relies on. `build.mjs --check` reopens each one with git and confirms the text is there, and that every code excerpt matches its commit byte for byte.
 - **Plain words.** The build refuses house jargon, dashes standing in for commas, and any number on the page that is not inside a cited quote.
-- **Deterministic and offline.** The same `plan.json` gives the same bytes. Screenshots are embedded, so the page is one file with no network requests.
+- **Deterministic and offline.** The same `plan.json` gives the same bytes. Screenshots are embedded, so the page is one file with no network requests. `plan.json` and its screenshots are the source of the page; the HTML can always be built again from them.
 
 ```bash
-node skills/guided-plan/system/build.mjs plan.json plan.html
+node skills/guided-plan/system/build.mjs plan.json guided-plan.html
+node skills/guided-plan/system/build.mjs --lint plan.json
 node skills/guided-plan/system/build.mjs --check plan.json [--repo name=/path/to/clone]
 ```
 
-The method, the content format and every picture type are in [`skills/guided-plan/SKILL.md`](skills/guided-plan/SKILL.md).
+The method, the content format (`guided-plan/2`) and every picture type are in [`skills/guided-plan/SKILL.md`](skills/guided-plan/SKILL.md). A `guided-plan/1` file (the earlier layout with lettered parts) is refused with a message that says what to change.
 
-### Example
+### Examples
 
-[`examples/inbox-text-size`](examples/inbox-text-size) is the guided plan for a real, merged change in the open-source [Plannotator](https://github.com/backnotprop/plannotator) repository: the Inbox's Text size setting ([PR 1990](https://github.com/backnotprop/plannotator/pull/1990)), written as the plan it was. It cites the base commit `44210bd` for what existed and the merge commit `4507cdc` for what the plan adds. The screenshots show a scratch Inbox with sample threads. Open `guided-plan.html` in a browser, or check it yourself:
+- [`examples/paste-expiry`](examples/paste-expiry) is the worked example the skill points to: an invented small pastebin, pastebox, and a change that lets pastes expire. It uses every picture type. pastebox does not exist, so its repository is made on the spot, with the same commit hash every time:
+
+  ```bash
+  node skills/guided-plan/test/make-example-repo.mjs        # writes examples/paste-expiry/.repo
+  cd examples/paste-expiry && node ../../skills/guided-plan/system/build.mjs --check plan.json
+  ```
+
+- [`examples/inbox-text-size`](examples/inbox-text-size) is the guided plan for a real, merged change in the open-source [Plannotator](https://github.com/backnotprop/plannotator) repository: the Inbox's Text size setting ([PR 1990](https://github.com/backnotprop/plannotator/pull/1990)), written as the plan it was. It cites the base commit `44210bd` for what existed and the merge commit `4507cdc` for what the change adds. The screenshots show a scratch Inbox with sample threads. Open `guided-plan.html` in a browser, or check it yourself:
+
+  ```bash
+  git clone https://github.com/backnotprop/plannotator
+  node skills/guided-plan/system/build.mjs --check examples/inbox-text-size/plan.json --repo plannotator=plannotator
+  ```
+
+![A guided plan: the title, a paragraph, the Decided, Change, Kept and Open rows, then section cards with a heading and a paragraph on the left and a before-and-after pair of screenshots on the right.](example_plan.png)
+
+### Tests
 
 ```bash
-git clone https://github.com/backnotprop/plannotator
-node skills/guided-plan/system/build.mjs --check examples/inbox-text-size/plan.json --repo plannotator=plannotator
+node --test skills/guided-plan/test/*.test.mjs
 ```
 
-![A guided plan: the title, a paragraph, the Decided, Change, Kept and Open rows, then a section card with its text on the left and a step-through of screenshots on the right.](example_plan.png)
+They cover the format's refusals, the word lint on every text field, same input same bytes (and that the committed examples are current), `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
 
 ## Related
 

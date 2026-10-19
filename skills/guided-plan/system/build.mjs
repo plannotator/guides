@@ -2,6 +2,7 @@
 // Build a guided plan from its content file, and re-check the sources it cites.
 //
 //   node build.mjs plan.json plan.html            validate, lint, embed the screenshots, write one HTML file
+//   node build.mjs --lint plan.json               validate and lint only; write nothing
 //   node build.mjs --check plan.json              reopen every source: each quote sits in its cited lines,
 //                                                 each code excerpt matches its commit, each file exists
 //
@@ -17,7 +18,7 @@ import { dirname, join, resolve as rpath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { render, resolve, initialValues, figureIds, layoutDrawing, layoutTimeline, FORMAT } from "./renderer.mjs";
+import { render, citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -25,11 +26,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const argv = process.argv.slice(2);
 const checkMode = argv.includes("--check");
+const lintMode = argv.includes("--lint");
 const repoArgs = {};
 const pos = [];
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
-  if (a === "--check") continue;
+  if (a === "--check" || a === "--lint") continue;
   if (a === "--repo") {
     const v = argv[++i] || "";
     const eq = v.indexOf("=");
@@ -41,10 +43,10 @@ for (let i = 0; i < argv.length; i++) {
   pos.push(a);
 }
 function usage(code) {
-  console.error("usage: node build.mjs plan.json plan.html [--repo name=DIR]\n       node build.mjs --check plan.json [--repo name=DIR]");
+  console.error("usage: node build.mjs plan.json plan.html [--repo name=DIR]\n       node build.mjs --lint plan.json\n       node build.mjs --check plan.json [--repo name=DIR]");
   process.exit(code);
 }
-if (!pos[0] || (!checkMode && !pos[1])) usage(1);
+if (!pos[0] || (!checkMode && !lintMode && !pos[1])) usage(1);
 
 const specPath = rpath(pos[0]);
 const specDir = dirname(specPath);
@@ -72,7 +74,7 @@ function repoDir(name) {
 }
 function git(name, args) {
   const dir = repoDir(name);
-  if (!dir) throw new Error(`no git repository for "${name || "the plan"}"; run from inside it or pass --repo ${name ? name + "=" : ""}DIR`);
+  if (!dir) throw new Error(`no git repository for "${name || "the guided plan"}"; run from inside it or pass --repo ${name ? name + "=" : ""}DIR`);
   return execFileSync("git", ["-C", dir, ...args], { encoding: "utf8", maxBuffer: 64 << 20, stdio: ["ignore", "pipe", "pipe"] });
 }
 
@@ -80,27 +82,30 @@ function git(name, args) {
 
 const SECTION_ID = /^[a-z][a-z0-9-]*$/;
 const KINDS = ["Decided", "Change", "Kept", "Open"];
-const STATIC = ["screenshot", "code", "list", "chips", "timeline", "drawing"];
-const PLAYABLE = ["list", "chips", "timeline", "drawing"];
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
-// Control keys and values, and state values, end up in attributes and page pins: keep them to a safe set.
-const SAFE = /^[A-Za-z0-9_.-]{1,40}$/;
-// Longest text a button or a control's name can hold (they wrap on a phone, but must stay one line each).
-const MAX_BUTTON = 20, MAX_CONTROL_LABEL = 16;
-const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; the most that fits is ${max}`); };
+const words = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
+const MAX_HEADING_WORDS = 8;
+const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; keep it to ${max} or fewer`); };
 
-function validateFigure(f, where, errs, nested) {
+// What a guided-plan/1 file needs to become a guided-plan/2 file, said once.
+const MIGRATE = `guided-plan/2 draws each section as one card that reads: give each section "heading" (a few words), "lead" (one paragraph), "cites" and one "figure"; its other parts become "cards": [{ "id", "title", "body", "cites", "figure"? }]. "parts" are gone. A toggle or steps becomes a "pair" figure (each state side by side), a drawing becomes a "flow" or "layers" figure, and controls and rules are gone. See SKILL.md, section 5`;
+
+function validateFigure(f, where, errs, { nested = false } = {}) {
   if (!f || typeof f !== "object") { errs.push(`${where}: no figure`); return; }
-  if (!isStr(f.title) && !nested) errs.push(`${where}: figure needs a title`);
-  if (!nested && !(Array.isArray(f.cites) && f.cites.length)) errs.push(`${where}: figure has no cites`);
   const t = f.type;
-  if (nested && !STATIC.includes(t)) { errs.push(`${where}: a state holds one of ${STATIC.join(", ")}, not ${t}`); return; }
-  if (nested && (f.controls || f.rules)) errs.push(`${where}: a state's figure takes no controls or rules`);
+  if (["toggle", "steps"].includes(t)) { errs.push(`${where}: ${t} is gone in ${FORMAT}; draw the states side by side with a "pair" figure: { "type": "pair", "sides": [{ "label": "Before", "figure": {...}, "caption": "..." }, ...] }`); return; }
+  if (t === "drawing") { errs.push(`${where}: drawing is gone in ${FORMAT}; use "flow" (steps in order, with arrows) or "layers" (labelled rows with a tag each)`); return; }
+  if (f.controls || f.rules) errs.push(`${where}: figures take no controls or rules in ${FORMAT}; show each case instead: a "pair", or a "table" with a row per case`);
+  if (nested && t === "pair") { errs.push(`${where}: a pair's side holds ${SIDE_TYPES.join(", ")}, not another pair`); return; }
+  if (!FIGURE_TYPES.includes(t)) { errs.push(`${where}: unknown figure type ${t}; use one of ${FIGURE_TYPES.join(", ")}`); return; }
+  if (!nested && !isStr(f.title)) errs.push(`${where}: figure needs a title`);
+  if (!nested && !(Array.isArray(f.cites) && f.cites.length)) errs.push(`${where}: figure has no cites`);
   switch (t) {
     case "screenshot":
       if (!spec.assets || !spec.assets[f.asset]) errs.push(`${where}: unknown asset ${f.asset}`);
       if (!isStr(f.alt) && !isStr(f.caption)) errs.push(`${where}: a screenshot needs alt or a caption (what it shows, for screen readers)`);
       if (f.ring && !(Array.isArray(f.ring) && f.ring.length === 4 && f.ring.every(Number.isFinite))) errs.push(`${where}: ring is [x, y, width, height] in image pixels`);
+      if (f.scale !== undefined && !(typeof f.scale === "number" && f.scale > 0)) errs.push(`${where}: scale is a number above 0 (2 for a 2x capture)`);
       break;
     case "code":
       if (!isStr(f.path)) errs.push(`${where}: code needs path`);
@@ -112,92 +117,70 @@ function validateFigure(f, where, errs, nested) {
       if (f.repo !== undefined && !(spec.repos || {})[f.repo]) errs.push(`${where}: unknown repo ${f.repo}`);
       break;
     case "list":
-      if (!Array.isArray(f.rows) || !f.rows.length || !f.rows.every((r) => isStr(r.text))) errs.push(`${where}: list needs rows, each with text`);
+      if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 12 || !f.rows.every((r) => r && isStr(r.text))) errs.push(`${where}: list needs 1 to 12 rows, each with text`);
+      else f.rows.forEach((r, i) => { if (r.mark !== undefined && !["out", "new", "acc"].includes(r.mark)) errs.push(`${where}.rows[${i}]: mark is "out", "new" or "acc"`); });
       break;
+    case "table": {
+      const cols = f.columns;
+      if (!Array.isArray(cols) || cols.length < 2 || cols.length > 5) { errs.push(`${where}: table needs 2 to 5 columns`); break; }
+      cols.forEach((c, i) => { if (!(isStr(c) || (c && typeof c === "object" && isStr(c.label)))) errs.push(`${where}.columns[${i}]: a column is its label, or { "label", "mono", "acc", "end", "fill" }`); });
+      if (cols.filter((c) => c && typeof c === "object" && c.fill).length > 1) errs.push(`${where}: only one column may "fill"`);
+      if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 20) { errs.push(`${where}: table needs 1 to 20 rows`); break; }
+      f.rows.forEach((r, i) => {
+        if (!Array.isArray(r) || r.length !== cols.length) { errs.push(`${where}.rows[${i}]: a row is a list of ${cols.length} cells, one per column`); return; }
+        r.forEach((c, j) => { if (!(typeof c === "string" || (c && typeof c === "object" && typeof c.text === "string"))) errs.push(`${where}.rows[${i}][${j}]: a cell is text, or { "text", "mono", "acc" }`); });
+      });
+      break;
+    }
     case "chips":
-      if (!Array.isArray(f.chips) || !f.chips.length || !f.chips.every((c) => isStr(c.text))) errs.push(`${where}: chips needs chips, each with text`);
+      if (!Array.isArray(f.chips) || !f.chips.length || f.chips.length > 40 || !f.chips.every((c) => c && isStr(c.text))) errs.push(`${where}: chips needs 1 to 40 chips, each with text`);
+      else f.chips.forEach((c, i) => { if (c.mark !== undefined && !["out", "changed", "new", "acc"].includes(c.mark)) errs.push(`${where}.chips[${i}]: mark is "out", "changed", "new" or "acc"`); });
+      (f.legend || []).forEach((l, i) => { if (!l || !isStr(l.text) || !["out", "changed", "new", "acc", undefined].includes(l.mark)) errs.push(`${where}.legend[${i}]: a legend item is { "mark", "text" }`); });
       break;
     case "timeline":
-      if (!Array.isArray(f.stops) || f.stops.length < 1 || f.stops.length > 6 || !f.stops.every((s) => isStr(s.label))) errs.push(`${where}: timeline needs 1 to 6 stops, each with a label`);
-      else if (!(f.bands || []).every((b) => Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}: band needs label, and from and to as stop indexes`);
-      else {
-        const T = layoutTimeline(f);
-        for (const st of f.stops) for (const k of ["label", "sub", "sub2"]) tooLong(errs, where, `timeline ${k}`, st[k], T.stopChars);
-        for (const st of f.stops) for (const v of (f.rules || []).map((r) => r.then && r.then.set && st.id ? r.then.set[st.id] : undefined)) tooLong(errs, where, "timeline sub", v, T.stopChars);
-        T.bands.forEach((b) => tooLong(errs, where, "band label", b.label, b.chars));
-      }
-      break;
-    case "drawing": {
-      if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 5) { errs.push(`${where}: drawing needs 1 to 5 rows`); break; }
-      for (const r of f.rows) if (!Array.isArray(r.nodes) || !r.nodes.length || r.nodes.length > 4 || !r.nodes.every((n) => isStr(n.text))) errs.push(`${where}: each drawing row needs 1 to 4 boxes, each with text`);
-      const L = layoutDrawing(f);
-      L.errs.forEach((e) => errs.push(`${where}: ${e}`));
-      break;
-    }
-    case "toggle":
-    case "steps": {
-      const [lo, hi] = t === "toggle" ? [2, 4] : [2, 8];
-      if (!Array.isArray(f.states) || f.states.length < lo || f.states.length > hi) { errs.push(`${where}: ${t} needs ${lo} to ${hi} states`); break; }
-      const seen = new Set();
-      f.states.forEach((s, i) => {
-        if (!isStr(s.value) || !SAFE.test(s.value) || seen.has(s.value)) errs.push(`${where}.states[${i}]: needs a unique value of letters, digits, dot, dash or underscore`);
-        seen.add(s.value);
-        if (!isStr(s.label)) errs.push(`${where}.states[${i}]: needs a label (the button text)`);
-        tooLong(errs, `${where}.states[${i}]`, "label", s.label, MAX_BUTTON);
-        if (!isStr(s.caption)) errs.push(`${where}.states[${i}]: needs a caption`);
-        validateFigure(s.figure, `${where}.states[${i}]`, errs, true);
+      if (!Array.isArray(f.stops) || f.stops.length < 1 || f.stops.length > 6 || !f.stops.every((s) => s && isStr(s.label))) { errs.push(`${where}: timeline needs 1 to 6 stops, each with a label`); break; }
+      f.stops.forEach((s, i) => {
+        if (s.mark !== undefined && !["acc", "ask"].includes(s.mark)) errs.push(`${where}.stops[${i}]: mark is "acc" or "ask"`);
+        tooLong(errs, `${where}.stops[${i}]`, "label", s.label, 40);
+        tooLong(errs, `${where}.stops[${i}]`, "sub", s.sub, 60);
+        tooLong(errs, `${where}.stops[${i}]`, "sub2", s.sub2, 60);
       });
-      if (f.initial !== undefined && !seen.has(f.initial)) errs.push(`${where}: initial names no state`);
-      tooLong(errs, where, "control label", f.label, MAX_CONTROL_LABEL);
-      if (f.controls || f.rules) errs.push(`${where}: ${t} makes its own control; use states`);
+      (f.bands || []).forEach((b, i) => { if (!(b && Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}.bands[${i}]: a band needs label, and from and to as stop indexes`); });
       break;
-    }
-    default:
-      errs.push(`${where}: unknown figure type ${t}; use one of ${[...STATIC, "toggle", "steps"].join(", ")}`);
-  }
-  if (f.controls || f.rules) {
-    if (!PLAYABLE.includes(t)) { errs.push(`${where}: only ${PLAYABLE.join(", ")} take controls and rules`); return; }
-    const ids = figureIds(f);
-    const controls = f.controls || [];
-    for (const c of controls) {
-      if (!isStr(c.key) || !isStr(c.label) || !Array.isArray(c.options) || c.options.length < 2 || !c.options.every((o) => isStr(o.value) && isStr(o.text))) { errs.push(`${where}: a control needs key, label and 2 or more options, each with value and text`); continue; }
-      if (!SAFE.test(c.key) || !c.options.every((o) => SAFE.test(o.value))) errs.push(`${where}: control ${c.key}: key and values are letters, digits, dot, dash or underscore`);
-      if (c.key === "state") errs.push(`${where}: "state" is the key toggle and steps use; name the control something else`);
-      if (new Set(c.options.map((o) => o.value)).size !== c.options.length) errs.push(`${where}: control ${c.key} has the same value twice`);
-      tooLong(errs, where, "control label", c.label, MAX_CONTROL_LABEL);
-      c.options.forEach((o) => tooLong(errs, where, "button", o.text, MAX_BUTTON));
-    }
-    if (f.initial !== undefined) {
-      if (typeof f.initial !== "object" || f.initial === null || Array.isArray(f.initial)) errs.push(`${where}: initial is { control key: value }`);
-      else for (const [k, v] of Object.entries(f.initial)) {
-        const c = controls.find((x) => x.key === k);
-        if (!c) errs.push(`${where}: initial names unknown control ${k}`);
-        else if (!c.options.some((o) => o.value === v)) errs.push(`${where}: initial names unknown value ${k}=${v}`);
-      }
-    }
-    for (const r of f.rules || []) {
-      for (const [k, v] of Object.entries(r.if || {})) {
-        const c = controls.find((x) => x.key === k);
-        if (!c) errs.push(`${where}: rule names unknown control ${k}`);
-        else if (!c.options.some((o) => o.value === v)) errs.push(`${where}: rule names unknown value ${k}=${v}`);
-      }
-      const then = r.then || {};
-      (then.gone || []).forEach((id) => { if (!ids.el.includes(id)) errs.push(`${where}: rule ghosts unknown element ${id}${ids.opt.includes(id) ? " (it is optional; use show)" : ""}`); });
-      (then.show || []).forEach((id) => { if (!ids.opt.includes(id)) errs.push(`${where}: rule shows ${id}, which is not an optional element`); });
-      Object.keys(then.set || {}).forEach((id) => { if (!ids.slot.includes(id)) errs.push(`${where}: rule sets text of unknown element ${id}`); });
-    }
-    const rules = f.rules || [];
-    if (rules.length && rules[rules.length - 1].if !== undefined && Object.keys(rules[rules.length - 1].if).length) warns.push(`${where}: the last rule has a condition; some control values may match nothing`);
-    if (controls.length) {
-      const combos = controls.reduce((acc, c) => acc.flatMap((a) => c.options.map((o) => ({ ...a, [c.key]: o.value }))), [{}]);
-      combos.forEach((v) => { if (!resolve(f, v).caption && !f.caption) errs.push(`${where}: no caption for ${JSON.stringify(v)}`); });
-      initialValues(f);
-    }
+    case "flow":
+      if (!Array.isArray(f.steps) || f.steps.length < 2 || f.steps.length > 6 || !f.steps.every((s) => s && isStr(s.label))) { errs.push(`${where}: flow needs 2 to 6 steps, each with a label`); break; }
+      f.steps.forEach((s, i) => {
+        if (s.mark !== undefined && !["plain", "acc", "new", "gone", "muted"].includes(s.mark)) errs.push(`${where}.steps[${i}]: mark is plain, acc, new, gone or muted`);
+        if (i === 0 && s.via) errs.push(`${where}.steps[0]: via labels the arrow into a step; the first step has none`);
+        tooLong(errs, `${where}.steps[${i}]`, "label", s.label, 40);
+        tooLong(errs, `${where}.steps[${i}]`, "sub", s.sub, 60);
+        tooLong(errs, `${where}.steps[${i}]`, "via", s.via, 16);
+      });
+      break;
+    case "layers":
+      if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 5 || !f.rows.every((r) => r && isStr(r.label))) { errs.push(`${where}: layers needs 1 to 5 rows, each with a label`); break; }
+      f.rows.forEach((r, i) => {
+        if (!isStr(r.text) && !(r.items || []).length) errs.push(`${where}.rows[${i}]: a layer needs text, items, or both`);
+        (r.items || []).forEach((it, j) => { if (!(isStr(it) || (it && isStr(it.text) && ["out", "changed", "new", "acc", undefined].includes(it.mark)))) errs.push(`${where}.rows[${i}].items[${j}]: an item is text, or { "text", "mark" }`); });
+        tooLong(errs, `${where}.rows[${i}]`, "label", r.label, 24);
+        tooLong(errs, `${where}.rows[${i}]`, "tag", r.tag, 24);
+      });
+      break;
+    case "pair":
+      if (!Array.isArray(f.sides) || f.sides.length < 2 || f.sides.length > 4) { errs.push(`${where}: pair needs 2 to 4 sides`); break; }
+      f.sides.forEach((s, i) => {
+        const w = `${where}.sides[${i}]`;
+        if (!s || !isStr(s.label)) { errs.push(`${w}: a side needs a label ("Before", "After", "Today")`); return; }
+        tooLong(errs, w, "label", s.label, 40);
+        validateFigure(s.figure, w, errs, { nested: true });
+      });
+      break;
   }
 }
 
 function validate() {
   const errs = [];
+  if (spec.format === "guided-plan/1") return [`format: this file is guided-plan/1 (lettered parts). ${MIGRATE}`];
   if (spec.format !== FORMAT) errs.push(`format: expected "${FORMAT}"`);
   for (const k of ["title", "intent", "base"]) if (!isStr(spec[k])) errs.push(`${k}: required`);
   if (spec.base && !/^[0-9a-f]{7,40}$/.test(spec.base)) errs.push("base: a commit hash (7 to 40 hex characters)");
@@ -206,6 +189,11 @@ function validate() {
   const cite = (where, ids, required) => {
     if (required && !(Array.isArray(ids) && ids.length)) errs.push(`${where}: no cites`);
     (ids || []).forEach((id) => { if (!known.has(id)) errs.push(`${where}: unknown source ${id}`); });
+  };
+  const citeFigure = (where, f) => {
+    if (!f) return;
+    cite(`${where}.figure`, f.cites, false);
+    (f.sides || []).forEach((s, i) => cite(`${where}.figure.sides[${i}]`, s && s.figure && s.figure.cites, false));
   };
   for (const [id, s] of Object.entries(spec.sources || {})) {
     if (!["git", "file", "capture"].includes(s.kind)) errs.push(`sources.${id}: kind is git, file or capture`);
@@ -232,29 +220,39 @@ function validate() {
   if (!Array.isArray(spec.overview) || !spec.overview.length) errs.push("overview: at least one row");
   const secIds = new Set();
   for (const s of spec.sections) {
-    if (!SECTION_ID.test(s.id || "")) errs.push(`section ${s.id}: id is lower case letters, digits and dashes`);
-    if (secIds.has(s.id)) errs.push(`section ${s.id}: id used twice`);
-    secIds.add(s.id);
-    if (!isStr(s.title)) errs.push(`${s.id}: title required`);
-    if (!Array.isArray(s.parts) || !s.parts.length || s.parts.length > 6) { errs.push(`${s.id}: 1 to 6 parts`); continue; }
-    const partIds = new Set();
-    for (const p of s.parts) {
-      const where = `${s.id}.${p.id}`;
-      if (!SECTION_ID.test(p.id || "") || partIds.has(p.id)) errs.push(`${where}: part id is unique, lower case letters, digits and dashes`);
-      partIds.add(p.id);
-      if (!isStr(p.title)) errs.push(`${where}: title required`);
-      if (!Array.isArray(p.body) || !p.body.length || !p.body.every(isStr)) errs.push(`${where}: body is a list of paragraphs`);
-      cite(where, p.cites, true);
-      if (p.figure) {
-        cite(`${where}.figure`, p.figure.cites, false);
-        for (const st of p.figure.states || []) cite(`${where}.figure.state`, st.figure && st.figure.cites, false);
-      }
-      validateFigure(p.figure, where, errs, false);
+    const sid = s.id;
+    if (!SECTION_ID.test(sid || "")) errs.push(`section ${sid}: id is lower case letters, digits and dashes`);
+    if (secIds.has(sid)) errs.push(`section ${sid}: id used twice`);
+    secIds.add(sid);
+    if (s.parts) { errs.push(`${sid}: "parts" are gone in ${FORMAT}. ${MIGRATE}`); continue; }
+    if (!isStr(s.title)) errs.push(`${sid}: title required (the small label above the heading)`);
+    if (!isStr(s.heading)) errs.push(`${sid}: heading required (the story in a few words)`);
+    else if (words(s.heading) > MAX_HEADING_WORDS) errs.push(`${sid}: heading "${s.heading}" is ${words(s.heading)} words; say it in ${MAX_HEADING_WORDS} or fewer`);
+    if (Array.isArray(s.lead)) errs.push(`${sid}: lead is one paragraph, a string; put more in a card`);
+    else if (!isStr(s.lead)) errs.push(`${sid}: lead required (one paragraph)`);
+    if (s.question !== undefined && !isStr(s.question)) errs.push(`${sid}: question is text`);
+    cite(sid, s.cites, true);
+    validateFigure(s.figure, sid, errs);
+    citeFigure(sid, s.figure);
+    const cards = s.cards || [];
+    if (!Array.isArray(cards) || cards.length > 6) { errs.push(`${sid}: cards is a list of 0 to 6`); continue; }
+    const cardIds = new Set();
+    for (const c of cards) {
+      const where = `${sid}.${c && c.id}`;
+      if (!c || !SECTION_ID.test(c.id || "") || cardIds.has(c.id)) { errs.push(`${where}: card id is unique, lower case letters, digits and dashes`); continue; }
+      cardIds.add(c.id);
+      if (!isStr(c.title)) errs.push(`${where}: title required`);
+      if (!Array.isArray(c.body) || !c.body.length || c.body.length > 3 || !c.body.every(isStr)) errs.push(`${where}: body is a list of 1 to 3 paragraphs`);
+      cite(where, c.cites, true);
+      if (c.figure !== undefined) { validateFigure(c.figure, where, errs); citeFigure(where, c.figure); }
+      if (c.fold && !c.figure) errs.push(`${where}: fold folds the card's figure; this card has none`);
+      if (c.wide !== undefined && typeof c.wide !== "boolean") errs.push(`${where}: wide is true or false`);
     }
     for (const a of s.files || []) {
-      if (!isStr(a.name)) errs.push(`${s.id}: a file needs name`);
-      if (a.part && !partIds.has(a.part)) errs.push(`${s.id}: file ${a.name} points at unknown part ${a.part}`);
-      if (a.repo !== undefined && a.repo !== true && !(spec.repos || {})[a.repo]) errs.push(`${s.id}: file ${a.name} names unknown repo ${a.repo}`);
+      if (!isStr(a.name)) errs.push(`${sid}: a file needs name`);
+      if (a.part) errs.push(`${sid}: file ${a.name} names a part; in ${FORMAT} a file points at a card with "card"`);
+      if (a.card && !cardIds.has(a.card)) errs.push(`${sid}: file ${a.name} points at unknown card ${a.card}`);
+      if (a.repo !== undefined && a.repo !== true && !(spec.repos || {})[a.repo]) errs.push(`${sid}: file ${a.name} names unknown repo ${a.repo}`);
     }
   }
   (spec.overview || []).forEach((o, i) => {
@@ -272,23 +270,34 @@ function validate() {
 const BANNED = ["doors?", "prefix(es)?", "seams?", "census", "specs?", "rulings?", "goldens?", "lanes?", "stub", "canonical"];
 const NUMWORDS = { two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10" };
 
-function figureStrings(f, add) {
+// Every string a figure draws: add(where, text, isCode, toy)
+function figureStrings(f, add, toy) {
   if (!f) return;
-  add("figure.title", f.title);
-  add("figure.caption", f.caption);
-  add("figure.alt", f.alt);
-  (f.controls || []).forEach((c) => { add("control", c.label); c.options.forEach((o) => add("control", o.text)); });
-  (f.rules || []).forEach((r) => { const t = r.then || {}; add("rule.caption", t.caption); Object.values(t.set || {}).forEach((v) => add("rule.set", v)); });
-  (f.rows || []).forEach((r) => {
-    if (r.nodes) { add("row.label", r.label); r.nodes.forEach((n) => { add("box", n.text); add("box", n.sub); }); }
-    else { add("row", r.text, r.mono); add("row", r.note); add("row", r.tag); }
-  });
-  (f.edges || []).forEach((e) => add("arrow", e.text));
-  (f.chips || []).forEach((c) => add("chip", c.text));
-  (f.stops || []).forEach((s) => { add("stop", s.label, s.mono); add("stop", s.sub); add("stop", s.sub2); });
-  (f.bands || []).forEach((b) => add("band", b.label));
-  (f.states || []).forEach((s) => { add("state", s.label); add("state.caption", s.caption); figureStrings(s.figure, add); });
+  toy = toy || Boolean(f.toy);
+  const a = (w, t, code) => add(w, t, code, toy);
+  a("figure.title", f.title);
+  a("figure.caption", f.caption);
+  a("figure.alt", f.alt);
+  switch (f.type) {
+    case "list": (f.rows || []).forEach((r) => { a("row", r.text, r.mono); a("row", r.note); a("row", r.tag); }); break;
+    case "table": {
+      const cols = (f.columns || []).map((c) => (typeof c === "string" ? { label: c } : c || {}));
+      cols.forEach((c) => a("column", c.label));
+      (f.rows || []).forEach((r) => (Array.isArray(r) ? r : []).forEach((c, j) => {
+        const cc = c && typeof c === "object" ? c : { text: c };
+        a("cell", cc.text, cc.mono ?? (cols[j] || {}).mono);
+      }));
+      break;
+    }
+    case "chips": (f.chips || []).forEach((c) => a("chip", c.text, c.mono)); (f.legend || []).forEach((l) => a("legend", l.text)); break;
+    case "timeline": (f.stops || []).forEach((s) => { a("stop", s.label, s.mono); a("stop", s.sub); a("stop", s.sub2); }); (f.bands || []).forEach((b) => a("band", b.label)); break;
+    case "flow": (f.steps || []).forEach((s) => { a("step", s.label, s.mono); a("step", s.sub); a("step", s.via); }); break;
+    case "layers": (f.rows || []).forEach((r) => { a("layer", r.label); a("layer", r.sub); a("layer", r.text); a("layer", r.tag); (r.items || []).forEach((it) => a("layer.item", typeof it === "string" ? it : it && it.text, typeof it === "object" && it ? it.mono : false)); }); break;
+    case "pair": (f.sides || []).forEach((s) => { if (!s) return; const st = toy || Boolean(s.toy); add("side", s.label, false, st); add("side", s.note, false, st); add("side.caption", s.caption, false, st); figureStrings(s.figure, add, st); }); break;
+  }
 }
+
+const figureCites = (f) => citesOfFigure(f, []);
 
 function readerStrings() {
   // [where, text, citeIds or null, isCode, toy, inFigure, isTitle]
@@ -297,14 +306,18 @@ function readerStrings() {
   out.push(["intent", spec.intent, spec.intentCites || [], false, false]);
   (spec.overview || []).forEach((o, i) => out.push([`overview[${i}]`, o.text, o.cites || [], false, false]));
   for (const s of spec.sections) {
+    // The label cites nothing; the heading, question and lead lean on the section's cites and its figure's.
+    const sc = [...(s.cites || []), ...figureCites(s.figure)];
     out.push([`${s.id}.title`, s.title, [], false, false, false, true]);
-    for (const p of s.parts) {
-      const c = [...(p.cites || []), ...((p.figure && p.figure.cites) || [])];
-      for (const st of (p.figure && p.figure.states) || []) c.push(...((st.figure && st.figure.cites) || []));
-      out.push([`${s.id}.${p.id}.title`, p.title, c, false, false, false, true]);
-      (p.body || []).forEach((b, i) => out.push([`${s.id}.${p.id}.body[${i}]`, b, p.cites || [], false, false]));
-      const toy = Boolean(p.figure && p.figure.toy);
-      figureStrings(p.figure, (w, t, code) => { if (isStr(t)) out.push([`${s.id}.${p.id}.${w}`, t, c, Boolean(code), toy, true]); });
+    out.push([`${s.id}.heading`, s.heading, sc, false, false, false, true]);
+    if (s.question) out.push([`${s.id}.question`, s.question, s.cites || [], false, false]);
+    out.push([`${s.id}.lead`, s.lead, s.cites || [], false, false]);
+    figureStrings(s.figure, (w, t, code, toy) => { if (isStr(t)) out.push([`${s.id}.${w}`, t, sc, Boolean(code), toy, true]); });
+    for (const c of s.cards || []) {
+      const cc = [...(c.cites || []), ...figureCites(c.figure)];
+      out.push([`${s.id}.${c.id}.title`, c.title, cc, false, false, false, true]);
+      (c.body || []).forEach((b, i) => out.push([`${s.id}.${c.id}.body[${i}]`, b, c.cites || [], false, false]));
+      figureStrings(c.figure, (w, t, code, toy) => { if (isStr(t)) out.push([`${s.id}.${c.id}.${w}`, t, cc, Boolean(code), toy, true]); });
     }
     (s.files || []).forEach((a) => a.note && out.push([`${s.id}.files`, a.note, null, false, false]));
   }
@@ -316,12 +329,13 @@ function lint() {
   const errs = [];
   const banned = [...BANNED, ...(spec.ban || []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))].map((w) => new RegExp(`\\b${w}\\b`, "i"));
   for (const [where, text, ids, isCode, toy, inFigure, isTitle] of readerStrings()) {
+    if (!isStr(text)) continue;
     // code in backticks and code-like names (mono) are not prose, so the word list does not apply to them
     const prose = isCode ? "" : text.replace(/`[^`]*`/g, " ");
     for (const re of banned) if (re.test(prose)) errs.push(`${where}: jargon "${prose.match(re)[0]}" in "${text}"; say it in plain words`);
     if (/—/.test(text) || /\s--\s/.test(text)) errs.push(`${where}: a dash standing in for a comma; use a comma, a colon or two sentences: "${text}"`);
-    if (/body/.test(where) && text.split(/\s+/).length > 70) warns.push(`${where}: paragraph of ${text.split(/\s+/).length} words`);
-    for (const sent of text.split(/(?<=[.?!])\s+/)) if (sent.split(/\s+/).length > 28) warns.push(`${where}: sentence over 28 words: "${sent.slice(0, 60)}..."`);
+    if (/(body|lead)/.test(where) && words(text) > 70) warns.push(`${where}: paragraph of ${words(text)} words`);
+    for (const sent of text.split(/(?<=[.?!])\s+/)) if (words(sent) > 28) warns.push(`${where}: sentence over 28 words: "${sent.slice(0, 60)}..."`);
     if (inFigure && !isCode && /`/.test(text)) errs.push(`${where}: figure text is plain; drop the backticks: "${text}"`);
     if (isCode) continue;
     // A number a reader sees comes from a cited quote. Code in backticks, "PR 123", "#123", dates and years are exempt.
@@ -331,14 +345,14 @@ function lint() {
       continue;
     }
     if (ids === null) continue;
-    // Digits always count. Number words count too, except in section and part titles ("Two ways in").
+    // Digits always count. Number words count too, except in titles and headings ("Two ways in").
     const nums = [...stripped.matchAll(/(?<![A-Za-z_.\d])(\d+(?:\.\d+)?)(?![\d])|\b(two|three|four|five|six|seven|eight|nine|ten)\b/gi)].filter((m) => m[1] || !isTitle).map((m) => (m[1] || m[2]).toLowerCase());
     if (!nums.length) continue;
     const quotes = ids.flatMap((id) => [].concat((spec.sources[id] || {}).quote || [])).join(" ").toLowerCase();
     for (const n of nums) {
       const alt = NUMWORDS[n] || Object.keys(NUMWORDS).find((k) => NUMWORDS[k] === n);
       const forms = [n, alt].filter(Boolean).map((x) => x.replace(/\./g, "\\."));
-      if (!new RegExp(`(?<![\\d.])(${forms.join("|")})(?![\\d])`).test(quotes)) errs.push(`${where}: the number "${n}" is not in any quote this part cites: "${text}"`);
+      if (!new RegExp(`(?<![\\d.])(${forms.join("|")})(?![\\d])`).test(quotes)) errs.push(`${where}: the number "${n}" is not in any quote ${ids.length ? "this text cites" : "(a section label cites nothing, so it may not hold a digit)"}: "${text}"`);
     }
   }
   return errs;
@@ -375,11 +389,12 @@ function check() {
   }
   // Code excerpts must match the commit byte for byte, tabs included.
   const codeFigs = [];
-  for (const sec of spec.sections) for (const p of sec.parts) {
-    const f = p.figure;
+  const collect = (f) => {
+    if (!f) return;
     if (f.type === "code") codeFigs.push(f);
-    for (const st of f.states || []) if (st.figure.type === "code") codeFigs.push(st.figure);
-  }
+    for (const s of f.sides || []) collect(s.figure);
+  };
+  for (const sec of spec.sections) { collect(sec.figure); for (const c of sec.cards || []) collect(c.figure); }
   for (const f of codeFigs) {
     const at = f.at || spec.base;
     try {
@@ -457,6 +472,7 @@ if (!errs.length) errs.push(...lint());
 warns.forEach((w) => console.error("warn: " + w));
 if (errs.length) { console.error("Errors:\n  " + errs.join("\n  ")); process.exit(2); }
 if (checkMode) process.exit(check() ? 1 : 0);
+if (lintMode) { console.log(`${pos[0]}: structure and words are clean.`); process.exit(0); }
 const outPath = rpath(pos[1]);
 const html = render(spec, {
   css: readFileSync(join(here, "guide.css"), "utf8"),

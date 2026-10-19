@@ -4,8 +4,8 @@
 <meta name="generator" content="guided-plan/1">
 <title>Inbox: a text size setting · guided plan</title>
 <script>(function(){var q=new URLSearchParams(location.search).get('theme');document.documentElement.dataset.theme=q||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');})();</script>
-<style>:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.64);--ink3:rgba(29,29,31,.42);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.12);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.5;--shot-dim:1}
-:root[data-theme=dark]{color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.66);--ink3:rgba(241,241,242,.42);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.13);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}
+<style>:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.64);--ink3:rgba(29,29,31,.62);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.12);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.5;--shot-dim:1}
+:root[data-theme=dark]{color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.66);--ink3:rgba(241,241,242,.52);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.13);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5}
@@ -81,6 +81,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 .f-n{grid-area:n;font-size:12px;font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .f-d{grid-area:d;font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .f-p{font-size:11px}
+.f-d code{background:none;padding:0;color:var(--ink2)}
 .file .tag{grid-area:tag;align-self:center}
 .tag{font-size:11px;color:var(--ink3);border:1px solid var(--hair);border-radius:10px;padding:0 7px;white-space:nowrap;font-family:ui-monospace,"SF Mono",Menlo,monospace}
 .tag-acc{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
@@ -195,6 +196,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 .ln .tx{white-space:pre;color:var(--ink2)}
 .ln.out{background:var(--accent-soft)}
 .ln.out .tx{color:var(--ink)}
+.ln.out .no,.ln.hl .no{color:var(--ink2)}
 .ln.hl{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
 .ln.hl .tx{color:var(--ink)}
 
@@ -233,6 +235,8 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   .foot{padding:6px 18px 18px;border-right:0}
   .fig-h{gap:10px}
   .ctl{flex-wrap:wrap}
+  .seg{flex-wrap:wrap;border-radius:14px}
+  .seg-b{border-radius:11px}
   .fig-b{overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch}
   .pic{min-width:500px}
   .fig-timeline .pic,.fig-drawing .pic,.state .pic{min-width:460px}
@@ -244,7 +248,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 <body>
 <main class="page">
 <header class="top">
-  <button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
+  <button type="button" class="theme" id="theme" aria-label="Switch to dark">Dark</button>
   <h1>Inbox: a text size setting</h1>
   <p class="intent">The Inbox draws its text at one size today, and nobody can change it. This plan adds a Text size row to Settings with 12, 13, 14 and 15, where 14 stays the default. A pick changes the whole window at once and is saved for the next time.</p>
   <ol class="overview" aria-label="Decisions and changes"><li class="ov ov-decided"><a href="#why" data-jump="why"><span class="ov-k">Decided</span><span class="ov-t">One setting sizes the whole Inbox: 12, 13, 14 or 15, and 14 is the default.</span><span class="ov-n">01</span></a></li><li class="ov ov-change"><a href="#setting" data-jump="setting"><span class="ov-k">Change</span><span class="ov-t">Settings gets a Text size row. A pick shows at once, with no reload.</span><span class="ov-n">04</span></a></li><li class="ov ov-change"><a href="#saved" data-jump="saved"><span class="ov-k">Change</span><span class="ov-t">The server saves the size in config.json and refuses any other value.</span><span class="ov-n">05</span></a></li><li class="ov ov-kept"><a href="#kept" data-jump="kept"><span class="ov-k">Kept</span><span class="ov-t">At 14 the window draws exactly as it does today.</span><span class="ov-n">06</span></a></li><li class="ov ov-open"><a href="#open" data-jump="open"><span class="ov-k">Open</span><span class="ov-t">Is 14 the right default? Try each size, then decide.</span><span class="ov-n">07</span></a></li></ol>
@@ -254,14 +258,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 <div class="cards">
 <section class="card" id="why" data-sec="0" aria-labelledby="why-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark Why a text size setting as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘Why a text size setting’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>Why a text size setting</button>
     <span class="row-m">read · 01 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="why-h" tabindex="-1">Why a text size setting</h2>
-      <div class="meta"><span class="pos">01 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">01 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘Why a text size setting’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="today">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="why-today-t why-today-f"><span class="part-i">a</span><span class="part-t">What a person sees today</span></button>
       <div class="part-body" id="why-today-t"><p>Settings, General, Appearance holds one row today: Theme. Nothing there changes how large the text is.</p><p>Someone who finds the Inbox too small or too large has no way to change it. The text size is fixed in the stylesheet.</p></div>
@@ -287,14 +291,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="background" data-sec="1" aria-labelledby="background-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark How the Inbox sizes its text today as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘How the Inbox sizes its text today’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>How the Inbox sizes its text today</button>
     <span class="row-m">read · 02 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="background-h" tabindex="-1">How the Inbox sizes its text today</h2>
-      <div class="meta"><span class="pos">02 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">02 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘How the Inbox sizes its text today’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="knob">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="background-knob-t background-knob-f"><span class="part-i">a</span><span class="part-t">One number already drives every size</span></button>
       <div class="part-body" id="background-knob-t"><p>Every text size in the stylesheet already comes from one number, <code>--ib-type</code>. Today it is 14.</p><p>A hidden switch can take it down to 13, so the owner could compare. No person can reach that switch from the window.</p></div>
@@ -320,14 +324,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="compare" data-sec="2" aria-labelledby="compare-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark The same thread at each size as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The same thread at each size’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>The same thread at each size</button>
     <span class="row-m">read · 03 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="compare-h" tabindex="-1">The same thread at each size</h2>
-      <div class="meta"><span class="pos">03 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">03 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The same thread at each size’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="thread">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="compare-thread-t compare-thread-f"><span class="part-i">a</span><span class="part-t">One thread at each size</span></button>
       <div class="part-body" id="compare-thread-t"><p>The screenshots show one sample thread at 12, 13, 14 and 15. Step through them to see the whole window grow, not just one part.</p><p>At 14 the window is exactly what people see today.</p></div>
@@ -345,14 +349,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="setting" data-sec="3" aria-labelledby="setting-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark The setting, from the screen to the page as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The setting, from the screen to the page’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>The setting, from the screen to the page</button>
     <span class="row-m">read · 04 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="setting-h" tabindex="-1">The setting, from the screen to the page</h2>
-      <div class="meta"><span class="pos">04 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">04 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The setting, from the screen to the page’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="row">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="setting-row-t setting-row-f"><span class="part-i">a</span><span class="part-t">The Text size row</span></button>
       <div class="part-body" id="setting-row-t"><p>The row draws its buttons from one shared list of sizes, so the screen and the server agree. A pick calls <code>chooseTextSize</code>.</p><p>Its description changes with the pick: at 14 it says this is the default.</p></div>
@@ -374,7 +378,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   <figcaption data-cap aria-live="polite">At 14 the value is removed; at any other size it is set.</figcaption>
 </figure></div><div class="panel" id="setting-pick-f" data-panel="pick" hidden><figure class="fig fig-steps" data-fig="setting-pick">
   <div class="fig-h"><span class="fig-t"><span class="fig-k">Step through</span>One pick, step by step</span><div class="ctl"><span class="ctl-l" id="setting-pick-state">Step</span><span class="seg" role="group" aria-labelledby="setting-pick-state"><button type="button" class="seg-b" data-key="state" data-val="pick" aria-pressed="true">Pick</button><button type="button" class="seg-b" data-key="state" data-val="shown" aria-pressed="false">Shown</button><button type="button" class="seg-b" data-key="state" data-val="cookie" aria-pressed="false">Cookie</button><button type="button" class="seg-b" data-key="state" data-val="saved" aria-pressed="false">Saved</button></span><span class="step"><button type="button" class="nav-b" data-step="state" data-d="-1" aria-label="Back one">←</button><button type="button" class="nav-b" data-step="state" data-d="1" aria-label="Forward one">→</button></span></div></div>
-  <div class="fig-b"><div class="state" data-when="state=pick"><svg class="pic" viewBox="0 0 620 190" role="img" aria-label=""><desc>Screen: Text size row (15 picked). Kept in: The document (14), A cookie (none), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-plain"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-plain"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-plain" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">14</text></g><g class="node n-plain" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">none</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=shown" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label=""><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (none), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-plain"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-plain" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">none</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=cookie" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label=""><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (15), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-acc"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-acc" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">15</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=saved" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label=""><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (15), config.json (15). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-acc"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-acc"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-acc" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">15</text></g><g class="node n-acc" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">15</text></g></svg></div></div>
+  <div class="fig-b" tabindex="0" role="group" aria-label="One pick, step by step; scrolls sideways on a narrow screen"><div class="state" data-when="state=pick"><svg class="pic" viewBox="0 0 620 190" role="img" aria-label="One pick, step by step: Pick"><desc>Screen: Text size row (15 picked). Kept in: The document (14), A cookie (none), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-plain"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-plain"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-plain" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">14</text></g><g class="node n-plain" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">none</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=shown" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label="One pick, step by step: Shown"><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (none), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-plain"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-plain" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">none</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=cookie" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label="One pick, step by step: Cookie"><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (15), config.json (14). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-acc"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-plain"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-acc" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">15</text></g><g class="node n-plain" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">14</text></g></svg></div><div class="state" data-when="state=saved" hidden><svg class="pic" viewBox="0 0 620 190" role="img" aria-label="One pick, step by step: Saved"><desc>Screen: Text size row (15 picked). Kept in: The document (15), A cookie (15), config.json (15). Text size row to The document: shown. Text size row to A cookie: remembered. Text size row to config.json: saved.</desc><text x="0" y="40" class="lab ink"><tspan x="0" dy="0">Screen</tspan></text><text x="0" y="158" class="lab ink"><tspan x="0" dy="0">Kept in</tspan></text><g class="edge e-acc"><path d="M364,64 C364,95 187.5,95 187.5,126" class="ep"/><path d="M183.5,120 L187.5,126 L191.5,120" class="ep"/><text x="194.5" y="115" class="elab" text-anchor="start">shown</text></g><g class="edge e-acc"><path d="M364,64 C364,95 364.5,95 364.5,126" class="ep"/><path d="M360.5,120 L364.5,126 L368.5,120" class="ep"/><text x="371.5" y="115" class="elab" text-anchor="start">remembered</text></g><g class="edge e-acc"><path d="M364,64 C364,95 541.5,95 541.5,126" class="ep"/><path d="M537.5,120 L541.5,126 L545.5,120" class="ep"/><text x="548.5" y="115" class="elab" text-anchor="start">saved</text></g><g class="node n-acc" data-el="row"><rect x="269" y="8" width="190" height="56" rx="10"/><text x="364" y="33" class="nt" text-anchor="middle"><tspan x="364" dy="0">Text size row</tspan></text><text x="364" y="50" class="ns" text-anchor="middle" data-slot="row">15 picked</text></g><g class="node n-acc" data-el="doc"><rect x="109" y="126" width="157" height="56" rx="10"/><text x="187.5" y="151" class="nt" text-anchor="middle"><tspan x="187.5" dy="0">The document</tspan></text><text x="187.5" y="168" class="ns" text-anchor="middle" data-slot="doc">15</text></g><g class="node n-acc" data-el="cookie"><rect x="286" y="126" width="157" height="56" rx="10"/><text x="364.5" y="151" class="nt" text-anchor="middle"><tspan x="364.5" dy="0">A cookie</tspan></text><text x="364.5" y="168" class="ns" text-anchor="middle" data-slot="cookie">15</text></g><g class="node n-acc" data-el="config"><rect x="463" y="126" width="157" height="56" rx="10"/><text x="541.5" y="151" class="nt" text-anchor="middle"><tspan x="541.5" dy="0">config.json</tspan></text><text x="541.5" y="168" class="ns" text-anchor="middle" data-slot="config">15</text></g></svg></div></div>
   <figcaption data-cap aria-live="polite">The person picks 15 in the Text size row.</figcaption><script type="application/json" data-rules>{"rules":[{"if":{"state":"pick"},"then":{"caption":"The person picks 15 in the Text size row."}},{"if":{"state":"shown"},"then":{"caption":"The page sets the size on the document. The whole window grows at once."}},{"if":{"state":"cookie"},"then":{"caption":"A cookie keeps 15, so a reload paints at 15 before anything else answers."}},{"if":{"state":"saved"},"then":{"caption":"The server saves 15 in config.json for every later visit."}}],"controls":[{"key":"state","options":["pick","shown","cookie","saved"]}],"values":{"state":"pick"}}</script>
 </figure></div></div>
     <div class="foot">
@@ -385,14 +389,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="saved" data-sec="4" aria-labelledby="saved-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark The server keeps the size as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The server keeps the size’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>The server keeps the size</button>
     <span class="row-m">read · 05 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="saved-h" tabindex="-1">The server keeps the size</h2>
-      <div class="meta"><span class="pos">05 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">05 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘The server keeps the size’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="check">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="saved-check-t saved-check-f"><span class="part-i">a</span><span class="part-t">Only the listed sizes are saved</span></button>
       <div class="part-body" id="saved-check-t"><p>The settings route takes <code>text_size</code> and saves it in config.json as <code>inboxTextSize</code>. Anything but 12, 13, 14 or 15 is refused with 422, and nothing is saved.</p><p>Try a value on the right to see the answer.</p></div>
@@ -414,7 +418,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   <figcaption data-cap aria-live="polite">Refuse anything else, save, then confirm the file really changed.</figcaption>
 </figure></div><div class="panel" id="saved-load-f" data-panel="load" hidden><figure class="fig fig-timeline" data-fig="saved-load">
   <div class="fig-h"><span class="fig-t"><span class="fig-k">Timeline</span>A new visit, in order</span></div>
-  <div class="fig-b"><svg class="pic" viewBox="0 0 620 140" role="img" aria-label="A new visit, in order"><desc>Cookie, paints first; First render, at that size; Settings read, config.json wins</desc><line x1="60" y1="50" x2="560" y2="50" class="track"/><g><circle cx="110" cy="50" r="7" class="dot"/><text x="110" y="84" text-anchor="middle" class="lab ink">Cookie</text><text x="110" y="104" text-anchor="middle" class="lab">paints first</text></g><g><circle cx="310" cy="50" r="7" class="dot"/><text x="310" y="84" text-anchor="middle" class="lab ink">First render</text><text x="310" y="104" text-anchor="middle" class="lab">at that size</text></g><g><circle cx="510" cy="50" r="7" class="dot-acc"/><text x="510" y="84" text-anchor="middle" class="lab ink">Settings read</text><text x="510" y="104" text-anchor="middle" class="lab">config.json wins</text></g></svg></div>
+  <div class="fig-b" tabindex="0" role="group" aria-label="A new visit, in order; scrolls sideways on a narrow screen"><svg class="pic" viewBox="0 0 620 140" role="img" aria-label="A new visit, in order"><desc>Cookie, paints first; First render, at that size; Settings read, config.json wins</desc><line x1="60" y1="50" x2="560" y2="50" class="track"/><g><circle cx="110" cy="50" r="7" class="dot"/><text x="110" y="84" text-anchor="middle" class="lab ink">Cookie</text><text x="110" y="104" text-anchor="middle" class="lab">paints first</text></g><g><circle cx="310" cy="50" r="7" class="dot"/><text x="310" y="84" text-anchor="middle" class="lab ink">First render</text><text x="310" y="104" text-anchor="middle" class="lab">at that size</text></g><g><circle cx="510" cy="50" r="7" class="dot-acc"/><text x="510" y="84" text-anchor="middle" class="lab ink">Settings read</text><text x="510" y="104" text-anchor="middle" class="lab">config.json wins</text></g></svg></div>
   <figcaption data-cap aria-live="polite">The cookie avoids a jump; config.json has the last word.</figcaption>
 </figure></div></div>
     <div class="foot">
@@ -425,14 +429,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="kept" data-sec="5" aria-labelledby="kept-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark What stays the same as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘What stays the same’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>What stays the same</button>
     <span class="row-m">read · 06 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="kept-h" tabindex="-1">What stays the same</h2>
-      <div class="meta"><span class="pos">06 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">06 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘What stays the same’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="same">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="kept-same-t kept-same-f"><span class="part-i">a</span><span class="part-t">Today's window, untouched</span></button>
       <div class="part-body" id="kept-same-t"><p>Nobody has to do anything. Until someone picks a size, the window is 14, and at 14 every size is exactly today's.</p><p>Row and control heights do not change at any size, so phones keep their 44 px targets.</p></div>
@@ -450,14 +454,14 @@ button.file:hover,a.file:hover{border-color:var(--line)}
 </section>
 <section class="card" id="open" data-sec="6" aria-labelledby="open-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark Open question as read"><span class="box-c"></span></button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘Open question’ read"><span class="box-c"></span></button>
     <button type="button" class="row-t" data-open>Open question</button>
     <span class="row-m">read · 07 / 07</span>
   </div>
   <div class="card-grid">
     <div class="left">
       <h2 id="open-h" tabindex="-1">Open question</h2>
-      <div class="meta"><span class="pos">07 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <div class="meta"><span class="pos">07 / 07</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘Open question’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section"><li class="part is-sel" data-part="default">
       <button type="button" class="part-b" aria-expanded="true" aria-controls="open-default-t open-default-f"><span class="part-i">a</span><span class="part-t">Is 14 the right default?</span></button>
       <div class="part-body" id="open-default-t"><p>The setting exists so the sizes can be tried for real before the default is chosen. The plan keeps 14 for now.</p><p>Before changing it, use each size for a while on a real Inbox, then decide.</p></div>
@@ -465,7 +469,7 @@ button.file:hover,a.file:hover{border-color:var(--line)}
     </div>
     <div class="right"><div class="panel" id="open-default-f" data-panel="default"><figure class="fig fig-timeline" data-fig="open-default">
   <div class="fig-h"><span class="fig-t"><span class="fig-k">Timeline</span>Deciding the default</span></div>
-  <div class="fig-b"><svg class="pic" viewBox="0 0 620 140" role="img" aria-label="Deciding the default"><desc>Ship, 14 stays; Try, each size; Decide, keep or change</desc><line x1="60" y1="50" x2="560" y2="50" class="track"/><g><circle cx="110" cy="50" r="7" class="dot"/><text x="110" y="84" text-anchor="middle" class="lab ink">Ship</text><text x="110" y="104" text-anchor="middle" class="lab">14 stays</text></g><g><circle cx="310" cy="50" r="7" class="dot"/><text x="310" y="84" text-anchor="middle" class="lab ink">Try</text><text x="310" y="104" text-anchor="middle" class="lab">each size</text></g><g><circle cx="510" cy="50" r="11" class="mark"/><text x="510" y="54.5" class="markt">?</text><text x="510" y="84" text-anchor="middle" class="lab ink">Decide</text><text x="510" y="104" text-anchor="middle" class="lab">keep or change</text></g></svg></div>
+  <div class="fig-b" tabindex="0" role="group" aria-label="Deciding the default; scrolls sideways on a narrow screen"><svg class="pic" viewBox="0 0 620 140" role="img" aria-label="Deciding the default"><desc>Ship, 14 stays; Try, each size; Decide, keep or change</desc><line x1="60" y1="50" x2="560" y2="50" class="track"/><g><circle cx="110" cy="50" r="7" class="dot"/><text x="110" y="84" text-anchor="middle" class="lab ink">Ship</text><text x="110" y="104" text-anchor="middle" class="lab">14 stays</text></g><g><circle cx="310" cy="50" r="7" class="dot"/><text x="310" y="84" text-anchor="middle" class="lab ink">Try</text><text x="310" y="104" text-anchor="middle" class="lab">each size</text></g><g><circle cx="510" cy="50" r="11" class="mark"/><text x="510" y="54.5" class="markt">?</text><text x="510" y="84" text-anchor="middle" class="lab ink">Decide</text><text x="510" y="104" text-anchor="middle" class="lab">keep or change</text></g></svg></div>
   <figcaption data-cap aria-live="polite">The default is the one thing left to decide.</figcaption>
 </figure></div></div>
     <div class="foot">
@@ -489,7 +493,11 @@ var resolve=function resolve(fig, values) {
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var root = document.documentElement;
   var themeBtn = document.getElementById('theme');
-  function paintTheme() { themeBtn.textContent = root.dataset.theme === 'dark' ? 'Light' : 'Dark'; }
+  function paintTheme() {
+    var dark = root.dataset.theme === 'dark';
+    themeBtn.textContent = dark ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+  }
   themeBtn.addEventListener('click', function () { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; paintTheme(); });
   paintTheme();
 
@@ -539,6 +547,11 @@ var resolve=function resolve(fig, values) {
         var c = cfg.controls.filter(function (x) { return x.key === b.dataset.step; })[0];
         var i = c.options.indexOf(values[c.key]) + Number(b.dataset.d);
         if (i >= 0 && i < c.options.length) { values[c.key] = c.options[i]; apply(); }
+        // at the first or last state this button disables itself: keep focus on the other one
+        if (b.disabled) {
+          var other = fig.querySelector('[data-step="' + b.dataset.step + '"][data-d="' + (-Number(b.dataset.d)) + '"]');
+          if (other && !other.disabled) other.focus();
+        }
       }
     });
     // left and right move between the choices of one control, and pick
@@ -590,7 +603,14 @@ var resolve=function resolve(fig, values) {
       var b = e.target.closest('button');
       if (!b) return;
       if (b.classList.contains('part-b')) selectPart(card, b.parentNode.dataset.part, false);
-      else if (b.classList.contains('check')) setRead(card, b.getAttribute('aria-checked') !== 'true');
+      else if (b.classList.contains('check')) {
+        setRead(card, b.getAttribute('aria-checked') !== 'true');
+        // the box pressed may now be hidden (the card collapsed or opened): focus the one that shows
+        if (!b.offsetParent) {
+          var shown = Array.prototype.filter.call(card.querySelectorAll('.check'), function (x) { return x.offsetParent; })[0];
+          if (shown) shown.focus();
+        }
+      }
       else if (b.hasAttribute('data-open')) { setRead(card, false); scrollToCard(card); }
       else if (b.dataset.goto) { selectPart(card, b.dataset.goto.split('.')[1], true); if (matchMedia('(max-width: 760px)').matches) card.querySelector('.panel:not([hidden])').scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' }); }
     });
@@ -643,10 +663,12 @@ var resolve=function resolve(fig, values) {
     var p = s.split('.'); var card = document.getElementById(p[0]); if (card && p[1]) selectPart(card, p[1], false);
   });
   (q.get('fig') || '').split(',').filter(Boolean).forEach(function (s) {
-    var i = s.indexOf(':'); if (i < 0) return;
-    var fig = document.querySelector('[data-fig="' + s.slice(0, i) + '"]'); if (!fig) return;
-    var kv = s.slice(i + 1).split('=');
-    var b = fig.querySelector('.seg-b[data-key="' + kv[0] + '"][data-val="' + kv.slice(1).join('=') + '"]'); if (b) b.click();
+    try {
+      var i = s.indexOf(':'); if (i < 0) return;
+      var fig = document.querySelector('[data-fig="' + CSS.escape(s.slice(0, i)) + '"]'); if (!fig) return;
+      var kv = s.slice(i + 1).split('=');
+      var b = fig.querySelector('.seg-b[data-key="' + CSS.escape(kv[0]) + '"][data-val="' + CSS.escape(kv.slice(1).join('=')) + '"]'); if (b) b.click();
+    } catch (e) { /* a bad pin is ignored */ }
   });
   (q.get('read') || '').split(',').filter(Boolean).forEach(function (s) { var c = document.getElementById(s); if (c) setRead(c, true); });
   paintCount();

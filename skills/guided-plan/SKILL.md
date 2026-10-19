@@ -41,10 +41,11 @@ Usually 4 to 8 sections, never more than 10. Each section has 1 to 6 parts; each
 ## 3. Words
 
 - Short sentences, plain words. Say what a thing does the first time you name it, then use the same name.
-- Code names go in backticks in `body`, `intent` and `overview` text. Figure text (titles, captions, boxes, rows) is plain: no backticks.
+- Code names go in backticks in `body`, `intent`, `overview` text and file notes, where they are drawn as code. Figure text (titles, captions, buttons, boxes, rows) is plain: the build refuses backticks there. Section and part titles are plain too: backticks in them are removed, not drawn.
 - No dashes standing in for commas (`—` or ` -- `). No emoji. No selling words.
 - The build refuses house jargon: door, prefix, seam, census, spec, ruling, golden, lane, stub, canonical. Add your team's own words with `"ban": ["word"]`.
-- **Every number a reader sees must appear in a quote that the same part cites.** Code in backticks, `PR 123`, `#123`, dates and years are exempt. A figure marked `"toy": true` shows invented data and may not show any digit.
+- **Every number a reader sees must appear in a quote that the same part cites.** This covers the intent, overview rows, part titles, body text and every figure string, chips included. Exempt: code in backticks, rows or stops marked `"mono": true`, `PR 123`, `#123`, dates, years, and file notes (they label a file, they make no claim). Number words (two to ten) count as numbers, except in section and part titles ("Two ways in" is fine). A section title cites nothing, so it may not hold a digit. A source's `label` is yours, so it never vouches for a number; only `quote` does. A figure marked `"toy": true` shows invented data and may not show any digit.
+- Jargon is checked in prose only; code in backticks and `mono` text are skipped.
 
 ## 4. Cite every claim, then re-check
 
@@ -104,11 +105,12 @@ It reopens every source at its commit and confirms each quote is there, each cod
 ```
 
 - `base`: the commit the plan is written against. Code excerpts and repository files are checked there unless they name their own `at`.
-- `repos`: optional. `url` turns every source and file into a link at its commit. `path` (relative to `plan.json`) says where the clone is, if not the current repository.
+- `repos`: optional. `url` (`https://` only) turns every source and file into a link at its commit. `path` (relative to `plan.json`) says where the clone is, if not the current repository.
+- `sources.<id>.lines`: `"N"` or `"N-M"` with M not before N.
 - `overview` kinds: `Decided`, `Change`, `Kept`, `Open` (Open is drawn in the accent colour).
 - Section and part ids: lower case letters, digits and dashes. They become the page's anchors (`#why`).
 - `files`: what a reviewer opens. `repo` (a repo name, or `true` for the only one) checks the path at `base` (or the file's own `at`) and links it. `part` instead turns the file into a button that opens that part. `tag` adds a small label; `tagAcc: true` colours it.
-- Screenshots are embedded in the page, so the page works offline and can be sent as one file.
+- `assets`: the screenshots, by id: `{ "settings": { "file": "assets/settings.png", "from": "SHOT" } }`. `file` is a PNG or JPEG next to `plan.json`; the build embeds it, so the page works offline and can be sent as one file. `from` (optional) names the `capture` source that vouches for it, so it shows in the section's sources and `--check` confirms the file exists. A `screenshot` figure names the asset id in `asset`, and cites the capture source in its `cites`.
 
 ## 6. The pictures
 
@@ -127,7 +129,9 @@ Every figure has `type`, `title`, `cites`, and usually a `caption` (the one line
 
 Drawing box `style`: `plain`, `acc` (what changes), `new` (dashed accent: added), `muted`, `gone` (dashed ghost: removed). An arrow joins boxes in the same row or the next one; arrow `style` is `plain`, `acc` or `gone`. The build refuses a box text that would not fit, so keep box text to a few words and put detail in `sub`.
 
-A state in `toggle` or `steps` holds one of the first six types (no controls of its own).
+A state in `toggle` or `steps` holds one of the first six types (no controls of its own). A state's `value` is letters, digits, dot, dash or underscore; `initial` names the state shown first.
+
+Text has to fit where it is drawn, and the build refuses text that will not: buttons (a state's `label`, an option's `text`) hold at most 20 characters, a control's `label` 16, and a timeline label, `sub` or band label as many as fit its spacing (fewer stops leave more room). The error says how many fit.
 
 **Make it playable when the change has behaviour.** A value that changes an answer, a permission that depends on who asks, a size that crosses a line, a sort, a cache hit or miss: let the reader move it. A `list`, `chips`, `timeline` or `drawing` takes `controls` and `rules`:
 
@@ -138,6 +142,8 @@ A state in `toggle` or `steps` holds one of the first six types (no controls of 
   { "then": { "set": { "ans": "refused with 422" }, "gone": ["cfg"], "caption": "16 is not in the list: refused." } }
 ]
 ```
+
+Control keys and option values are letters, digits, dot, dash or underscore; `state` is reserved. `initial` picks what shows first: `"initial": { "v": "16" }` (the first option otherwise).
 
 The first rule whose `if` matches wins; end with a rule that has no `if`. `gone` ghosts elements by id, `show` reveals elements marked `"optional": true`, `set` replaces the second line of an element (a row's note, a stop's `sub`, a box's `sub`, an arrow's text), `caption` replaces the caption. Every combination of control values must end with a caption. Rules are data; there is no code.
 
@@ -151,7 +157,7 @@ node <skill>/system/build.mjs plan.json plan.html
 
 `<skill>` is this skill's folder. It validates the file, lints the words, embeds the screenshots and writes one HTML file. The same input gives the same bytes. Errors name the field and say what to fix; fix `plan.json` and run it again. Never edit the HTML by hand.
 
-Pins for links: `plan.html#why` opens a section, `?sel=why.today` selects a part, `?fig=section-part:key=value` sets a control, `?theme=dark`.
+Pins for links: `plan.html#why` opens a section, `?sel=why.today` selects a part, `?fig=section-part:key=value` sets a control (for `toggle` and `steps` the key is `state`: `?fig=why-after:state=before`), `?read=why` marks sections read, `?theme=dark`.
 
 ## 8. Hand it over
 

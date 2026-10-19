@@ -2,7 +2,11 @@
   var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var root = document.documentElement;
   var themeBtn = document.getElementById('theme');
-  function paintTheme() { themeBtn.textContent = root.dataset.theme === 'dark' ? 'Light' : 'Dark'; }
+  function paintTheme() {
+    var dark = root.dataset.theme === 'dark';
+    themeBtn.textContent = dark ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+  }
   themeBtn.addEventListener('click', function () { root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark'; paintTheme(); });
   paintTheme();
 
@@ -52,6 +56,11 @@
         var c = cfg.controls.filter(function (x) { return x.key === b.dataset.step; })[0];
         var i = c.options.indexOf(values[c.key]) + Number(b.dataset.d);
         if (i >= 0 && i < c.options.length) { values[c.key] = c.options[i]; apply(); }
+        // at the first or last state this button disables itself: keep focus on the other one
+        if (b.disabled) {
+          var other = fig.querySelector('[data-step="' + b.dataset.step + '"][data-d="' + (-Number(b.dataset.d)) + '"]');
+          if (other && !other.disabled) other.focus();
+        }
       }
     });
     // left and right move between the choices of one control, and pick
@@ -103,7 +112,14 @@
       var b = e.target.closest('button');
       if (!b) return;
       if (b.classList.contains('part-b')) selectPart(card, b.parentNode.dataset.part, false);
-      else if (b.classList.contains('check')) setRead(card, b.getAttribute('aria-checked') !== 'true');
+      else if (b.classList.contains('check')) {
+        setRead(card, b.getAttribute('aria-checked') !== 'true');
+        // the box pressed may now be hidden (the card collapsed or opened): focus the one that shows
+        if (!b.offsetParent) {
+          var shown = Array.prototype.filter.call(card.querySelectorAll('.check'), function (x) { return x.offsetParent; })[0];
+          if (shown) shown.focus();
+        }
+      }
       else if (b.hasAttribute('data-open')) { setRead(card, false); scrollToCard(card); }
       else if (b.dataset.goto) { selectPart(card, b.dataset.goto.split('.')[1], true); if (matchMedia('(max-width: 760px)').matches) card.querySelector('.panel:not([hidden])').scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' }); }
     });
@@ -156,10 +172,12 @@
     var p = s.split('.'); var card = document.getElementById(p[0]); if (card && p[1]) selectPart(card, p[1], false);
   });
   (q.get('fig') || '').split(',').filter(Boolean).forEach(function (s) {
-    var i = s.indexOf(':'); if (i < 0) return;
-    var fig = document.querySelector('[data-fig="' + s.slice(0, i) + '"]'); if (!fig) return;
-    var kv = s.slice(i + 1).split('=');
-    var b = fig.querySelector('.seg-b[data-key="' + kv[0] + '"][data-val="' + kv.slice(1).join('=') + '"]'); if (b) b.click();
+    try {
+      var i = s.indexOf(':'); if (i < 0) return;
+      var fig = document.querySelector('[data-fig="' + CSS.escape(s.slice(0, i)) + '"]'); if (!fig) return;
+      var kv = s.slice(i + 1).split('=');
+      var b = fig.querySelector('.seg-b[data-key="' + CSS.escape(kv[0]) + '"][data-val="' + CSS.escape(kv.slice(1).join('=')) + '"]'); if (b) b.click();
+    } catch (e) { /* a bad pin is ignored */ }
   });
   (q.get('read') || '').split(',').filter(Boolean).forEach(function (s) { var c = document.getElementById(s); if (c) setRead(c, true); });
   paintCount();

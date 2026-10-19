@@ -17,7 +17,7 @@ import { dirname, join, resolve as rpath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { render, resolve, initialValues, figureIds, layoutDrawing, FORMAT } from "./renderer.mjs";
+import { render, resolve, initialValues, figureIds, layoutDrawing, layoutTimeline, FORMAT } from "./renderer.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -83,6 +83,11 @@ const KINDS = ["Decided", "Change", "Kept", "Open"];
 const STATIC = ["screenshot", "code", "list", "chips", "timeline", "drawing"];
 const PLAYABLE = ["list", "chips", "timeline", "drawing"];
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
+// Control keys and values, and state values, end up in attributes and page pins: keep them to a safe set.
+const SAFE = /^[A-Za-z0-9_.-]{1,40}$/;
+// Longest text a button or a control's name can hold (they wrap on a phone, but must stay one line each).
+const MAX_BUTTON = 20, MAX_CONTROL_LABEL = 16;
+const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; the most that fits is ${max}`); };
 
 function validateFigure(f, where, errs, nested) {
   if (!f || typeof f !== "object") { errs.push(`${where}: no figure`); return; }
@@ -114,7 +119,13 @@ function validateFigure(f, where, errs, nested) {
       break;
     case "timeline":
       if (!Array.isArray(f.stops) || f.stops.length < 1 || f.stops.length > 6 || !f.stops.every((s) => isStr(s.label))) errs.push(`${where}: timeline needs 1 to 6 stops, each with a label`);
-      else for (const b of f.bands || []) if (!(Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}: band needs label, and from and to as stop indexes`);
+      else if (!(f.bands || []).every((b) => Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}: band needs label, and from and to as stop indexes`);
+      else {
+        const T = layoutTimeline(f);
+        for (const st of f.stops) for (const k of ["label", "sub", "sub2"]) tooLong(errs, where, `timeline ${k}`, st[k], T.stopChars);
+        for (const st of f.stops) for (const v of (f.rules || []).map((r) => r.then && r.then.set && st.id ? r.then.set[st.id] : undefined)) tooLong(errs, where, "timeline sub", v, T.stopChars);
+        T.bands.forEach((b) => tooLong(errs, where, "band label", b.label, b.chars));
+      }
       break;
     case "drawing": {
       if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 5) { errs.push(`${where}: drawing needs 1 to 5 rows`); break; }
@@ -129,13 +140,15 @@ function validateFigure(f, where, errs, nested) {
       if (!Array.isArray(f.states) || f.states.length < lo || f.states.length > hi) { errs.push(`${where}: ${t} needs ${lo} to ${hi} states`); break; }
       const seen = new Set();
       f.states.forEach((s, i) => {
-        if (!isStr(s.value) || seen.has(s.value)) errs.push(`${where}.states[${i}]: needs a unique value`);
+        if (!isStr(s.value) || !SAFE.test(s.value) || seen.has(s.value)) errs.push(`${where}.states[${i}]: needs a unique value of letters, digits, dot, dash or underscore`);
         seen.add(s.value);
         if (!isStr(s.label)) errs.push(`${where}.states[${i}]: needs a label (the button text)`);
+        tooLong(errs, `${where}.states[${i}]`, "label", s.label, MAX_BUTTON);
         if (!isStr(s.caption)) errs.push(`${where}.states[${i}]: needs a caption`);
         validateFigure(s.figure, `${where}.states[${i}]`, errs, true);
       });
-      if (f.initial && !seen.has(f.initial)) errs.push(`${where}: initial names no state`);
+      if (f.initial !== undefined && !seen.has(f.initial)) errs.push(`${where}: initial names no state`);
+      tooLong(errs, where, "control label", f.label, MAX_CONTROL_LABEL);
       if (f.controls || f.rules) errs.push(`${where}: ${t} makes its own control; use states`);
       break;
     }
@@ -146,7 +159,22 @@ function validateFigure(f, where, errs, nested) {
     if (!PLAYABLE.includes(t)) { errs.push(`${where}: only ${PLAYABLE.join(", ")} take controls and rules`); return; }
     const ids = figureIds(f);
     const controls = f.controls || [];
-    for (const c of controls) if (!isStr(c.key) || !isStr(c.label) || !Array.isArray(c.options) || c.options.length < 2 || !c.options.every((o) => isStr(o.value) && isStr(o.text))) errs.push(`${where}: a control needs key, label and 2 or more options, each with value and text`);
+    for (const c of controls) {
+      if (!isStr(c.key) || !isStr(c.label) || !Array.isArray(c.options) || c.options.length < 2 || !c.options.every((o) => isStr(o.value) && isStr(o.text))) { errs.push(`${where}: a control needs key, label and 2 or more options, each with value and text`); continue; }
+      if (!SAFE.test(c.key) || !c.options.every((o) => SAFE.test(o.value))) errs.push(`${where}: control ${c.key}: key and values are letters, digits, dot, dash or underscore`);
+      if (c.key === "state") errs.push(`${where}: "state" is the key toggle and steps use; name the control something else`);
+      if (new Set(c.options.map((o) => o.value)).size !== c.options.length) errs.push(`${where}: control ${c.key} has the same value twice`);
+      tooLong(errs, where, "control label", c.label, MAX_CONTROL_LABEL);
+      c.options.forEach((o) => tooLong(errs, where, "button", o.text, MAX_BUTTON));
+    }
+    if (f.initial !== undefined) {
+      if (typeof f.initial !== "object" || f.initial === null || Array.isArray(f.initial)) errs.push(`${where}: initial is { control key: value }`);
+      else for (const [k, v] of Object.entries(f.initial)) {
+        const c = controls.find((x) => x.key === k);
+        if (!c) errs.push(`${where}: initial names unknown control ${k}`);
+        else if (!c.options.some((o) => o.value === v)) errs.push(`${where}: initial names unknown value ${k}=${v}`);
+      }
+    }
     for (const r of f.rules || []) {
       for (const [k, v] of Object.entries(r.if || {})) {
         const c = controls.find((x) => x.key === k);
@@ -183,12 +211,14 @@ function validate() {
     if (!["git", "file", "capture"].includes(s.kind)) errs.push(`sources.${id}: kind is git, file or capture`);
     if (!isStr(s.path)) errs.push(`sources.${id}: path required`);
     if (s.kind !== "capture" && !(isStr(s.quote) || (Array.isArray(s.quote) && s.quote.length && s.quote.every(isStr)))) errs.push(`sources.${id}: quote required (exact text inside the lines)`);
-    if (s.lines !== undefined && !/^[0-9]+(-[0-9]+)?$/.test(String(s.lines))) errs.push(`sources.${id}: lines is "N" or "N-M"`);
+    if (s.lines !== undefined && !/^[1-9][0-9]*(-[1-9][0-9]*)?$/.test(String(s.lines))) errs.push(`sources.${id}: lines is "N" or "N-M"`);
+    else if (s.lines !== undefined && String(s.lines).includes("-") && Number(String(s.lines).split("-")[1]) < Number(String(s.lines).split("-")[0])) errs.push(`sources.${id}: lines "${s.lines}" ends before it starts`);
     if (s.kind === "git") {
       if (s.at !== undefined && !/^[0-9a-f]{7,40}$/.test(s.at)) errs.push(`sources.${id}: at is a commit hash`);
       if (s.repo !== undefined && !(spec.repos || {})[s.repo]) errs.push(`sources.${id}: unknown repo ${s.repo}`);
     }
   }
+  for (const [name, r] of Object.entries(spec.repos || {})) if (r.url !== undefined && !(typeof r.url === "string" && /^https:\/\/[^\s"<>]+$/.test(r.url))) errs.push(`repos.${name}: url must start with https://`);
   if (Object.keys(spec.repos || {}).length > 1) {
     for (const [id, s] of Object.entries(spec.sources || {})) if (s.kind === "git" && s.repo === undefined) errs.push(`sources.${id}: name its repo; this plan has more than one`);
   }
@@ -254,24 +284,24 @@ function figureStrings(f, add) {
     else { add("row", r.text, r.mono); add("row", r.note); add("row", r.tag); }
   });
   (f.edges || []).forEach((e) => add("arrow", e.text));
-  (f.chips || []).forEach((c) => add("chip", c.text, true));
+  (f.chips || []).forEach((c) => add("chip", c.text));
   (f.stops || []).forEach((s) => { add("stop", s.label, s.mono); add("stop", s.sub); add("stop", s.sub2); });
   (f.bands || []).forEach((b) => add("band", b.label));
   (f.states || []).forEach((s) => { add("state", s.label); add("state.caption", s.caption); figureStrings(s.figure, add); });
 }
 
 function readerStrings() {
-  // [where, text, citeIds or null, isCode, toy, inFigure]
+  // [where, text, citeIds or null, isCode, toy, inFigure, isTitle]
   const out = [];
   out.push(["title", spec.title, spec.intentCites || [], false, false]);
   out.push(["intent", spec.intent, spec.intentCites || [], false, false]);
   (spec.overview || []).forEach((o, i) => out.push([`overview[${i}]`, o.text, o.cites || [], false, false]));
   for (const s of spec.sections) {
-    out.push([`${s.id}.title`, s.title, [], false, false]);
+    out.push([`${s.id}.title`, s.title, [], false, false, false, true]);
     for (const p of s.parts) {
       const c = [...(p.cites || []), ...((p.figure && p.figure.cites) || [])];
       for (const st of (p.figure && p.figure.states) || []) c.push(...((st.figure && st.figure.cites) || []));
-      out.push([`${s.id}.${p.id}.title`, p.title, c, false, false]);
+      out.push([`${s.id}.${p.id}.title`, p.title, c, false, false, false, true]);
       (p.body || []).forEach((b, i) => out.push([`${s.id}.${p.id}.body[${i}]`, b, p.cites || [], false, false]));
       const toy = Boolean(p.figure && p.figure.toy);
       figureStrings(p.figure, (w, t, code) => { if (isStr(t)) out.push([`${s.id}.${p.id}.${w}`, t, c, Boolean(code), toy, true]); });
@@ -285,8 +315,10 @@ const warns = [];
 function lint() {
   const errs = [];
   const banned = [...BANNED, ...(spec.ban || []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))].map((w) => new RegExp(`\\b${w}\\b`, "i"));
-  for (const [where, text, ids, isCode, toy, inFigure] of readerStrings()) {
-    for (const re of banned) if (re.test(text)) errs.push(`${where}: jargon "${text.match(re)[0]}" in "${text}"; say it in plain words`);
+  for (const [where, text, ids, isCode, toy, inFigure, isTitle] of readerStrings()) {
+    // code in backticks and code-like names (mono) are not prose, so the word list does not apply to them
+    const prose = isCode ? "" : text.replace(/`[^`]*`/g, " ");
+    for (const re of banned) if (re.test(prose)) errs.push(`${where}: jargon "${prose.match(re)[0]}" in "${text}"; say it in plain words`);
     if (/—/.test(text) || /\s--\s/.test(text)) errs.push(`${where}: a dash standing in for a comma; use a comma, a colon or two sentences: "${text}"`);
     if (/body/.test(where) && text.split(/\s+/).length > 70) warns.push(`${where}: paragraph of ${text.split(/\s+/).length} words`);
     for (const sent of text.split(/(?<=[.?!])\s+/)) if (sent.split(/\s+/).length > 28) warns.push(`${where}: sentence over 28 words: "${sent.slice(0, 60)}..."`);
@@ -299,7 +331,8 @@ function lint() {
       continue;
     }
     if (ids === null) continue;
-    const nums = [...stripped.matchAll(/(?<![A-Za-z_.\d])(\d+(?:\.\d+)?)(?![\d])|\b(two|three|four|five|six|seven|eight|nine|ten)\b/gi)].map((m) => (m[1] || m[2]).toLowerCase());
+    // Digits always count. Number words count too, except in section and part titles ("Two ways in").
+    const nums = [...stripped.matchAll(/(?<![A-Za-z_.\d])(\d+(?:\.\d+)?)(?![\d])|\b(two|three|four|five|six|seven|eight|nine|ten)\b/gi)].filter((m) => m[1] || !isTitle).map((m) => (m[1] || m[2]).toLowerCase());
     if (!nums.length) continue;
     const quotes = ids.flatMap((id) => [].concat((spec.sources[id] || {}).quote || [])).join(" ").toLowerCase();
     for (const n of nums) {
@@ -398,7 +431,7 @@ function loadAssets() {
 // ---------- links ----------
 
 function linksFor() {
-  const url = (name) => ((spec.repos || {})[name] || {}).url;
+  const url = (name) => { const u = ((spec.repos || {})[name] || {}).url; return typeof u === "string" && /^https:\/\//.test(u) ? u.replace(/\/+$/, "") : null; };
   const range = (lines) => {
     if (!lines) return "";
     const [a, b] = String(lines).split("-");
@@ -432,4 +465,4 @@ const html = render(spec, {
   links: linksFor(),
 });
 writeFileSync(outPath, html);
-console.log(`${pos[1]}  ${html.length} bytes  sha256 ${createHash("sha256").update(html).digest("hex").slice(0, 16)}`);
+console.log(`${pos[1]}  ${Buffer.byteLength(html)} bytes  sha256 ${createHash("sha256").update(html).digest("hex").slice(0, 16)}`);

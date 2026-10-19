@@ -30,6 +30,8 @@ export function initialValues(fig) {
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const pad2 = (n) => String(n).padStart(2, "0");
+// Titles are plain text: backticks are removed, not drawn as code.
+export const plain = (s) => String(s).replace(/`/g, "");
 
 // `code` only; everything else is plain text.
 function inline(s) {
@@ -220,17 +222,31 @@ function drawDrawing(fig, st) {
   return `<svg class="pic" viewBox="0 0 ${L.W} ${L.height}" role="img" aria-label="${esc(fig.title)}"><desc>${esc(said)}</desc>${labels}${spine}${edges}${boxes}</svg>`;
 }
 
-function drawTimeline(fig, st) {
-  const h = mk(st);
-  const stops = fig.stops;
+// Where the stops sit, and how many characters a label, a second line or a band can hold there.
+export function layoutTimeline(fig) {
+  const stops = fig.stops || [];
   const n = stops.length;
   const x0 = 110, x1 = 510;
   const xs = stops.map((_, i) => (n === 1 ? (x0 + x1) / 2 : x0 + ((x1 - x0) * i) / (n - 1)));
-  const hasBands = (fig.bands || []).length > 0;
-  const ly = hasBands ? 92 : 50;
+  const spacing = n === 1 ? 400 : (x1 - x0) / (n - 1);
+  const stopChars = Math.floor(Math.min(spacing - 10, 190) / CHAR);
   const bands = (fig.bands || []).map((b) => {
     const a = b.from === 0 ? xs[0] - 50 : (xs[b.from - 1] + xs[b.from]) / 2;
     const z = b.to === n - 1 ? xs[n - 1] + 50 : (xs[b.to] + xs[b.to + 1]) / 2;
+    return { ...b, a, z, chars: Math.floor((z - a - 14) / CHAR) };
+  });
+  return { xs, stopChars, bands };
+}
+
+function drawTimeline(fig, st) {
+  const h = mk(st);
+  const stops = fig.stops;
+  const T = layoutTimeline(fig);
+  const xs = T.xs;
+  const hasBands = T.bands.length > 0;
+  const ly = hasBands ? 92 : 50;
+  const bands = T.bands.map((b) => {
+    const { a, z } = b;
     return `<rect x="${a}" y="${ly - 58}" width="${z - a}" height="28" rx="6" class="${b.acc ? "band-acc" : "band"}"/><text x="${(a + z) / 2}" y="${ly - 39.5}" text-anchor="middle" class="lab${b.acc ? " acc" : " ink"}">${esc(b.label)}</text>`;
   }).join("");
   const dots = stops.map((s, i) => {
@@ -316,7 +332,7 @@ function figureHtml(fig, fid, spec, assets) {
   const st = resolve(live, values);
   let body;
   if (composite) {
-    body = fig.states.map((s) => `<div class="state" data-when="state=${esc(s.value)}"${values.state === s.value ? "" : " hidden"}>${drawStatic(s.figure, spec, assets, {})}</div>`).join("");
+    body = fig.states.map((s) => `<div class="state" data-when="state=${esc(s.value)}"${values.state === s.value ? "" : " hidden"}>${drawStatic({ ...s.figure, title: s.figure.title || `${plain(fig.title)}: ${s.label}` }, spec, assets, {})}</div>`).join("");
   } else {
     body = drawStatic(fig, spec, assets, st);
   }
@@ -326,7 +342,7 @@ function figureHtml(fig, fid, spec, assets) {
   if (fig.toy) kind += " \u00b7 illustration";
   return `<figure class="fig fig-${fig.type}" data-fig="${fid}">
   <div class="fig-h"><span class="fig-t"><span class="fig-k">${kind}</span>${esc(fig.title)}</span>${controlsHtml(live.controls || [], values, fid)}</div>
-  <div class="fig-b">${body}</div>
+  <div class="fig-b"${/<svg class="pic"/.test(body) ? ` tabindex="0" role="group" aria-label="${esc(plain(fig.title))}; scrolls sideways on a narrow screen"` : ""}>${body}</div>
   <figcaption data-cap aria-live="polite">${esc(caption)}</figcaption>${script}
 </figure>`;
 }
@@ -345,8 +361,8 @@ function sourcesFor(sec) {
   return ids;
 }
 
-function sourceRow(id, s, links) {
-  const where = s.kind === "git" ? `${s.path}${s.lines ? ":" + s.lines : ""} at ${String(s.at).slice(0, 9)}` : `${s.path}${s.lines ? ":" + s.lines : ""}`;
+function sourceRow(id, s, links, base) {
+  const where = s.kind === "git" ? `${s.path}${s.lines ? ":" + s.lines : ""} at ${String(s.at || base).slice(0, 9)}` : `${s.path}${s.lines ? ":" + s.lines : ""}`;
   const href = links.source(s);
   const w = href ? `<a class="s-w" href="${esc(href)}">${esc(where)}</a>` : `<span class="s-w">${esc(where)}</span>`;
   const quotes = [].concat(s.quote || []).map((q) => `<q>${esc(String(q).replace(/\s+/g, " "))}</q>`).join(" ");
@@ -368,7 +384,7 @@ function sectionHtml(sec, i, n, spec, assets, links) {
   const parts = sec.parts.map((p, j) => {
     const sel = j === 0;
     return `<li class="part${sel ? " is-sel" : ""}" data-part="${esc(p.id)}">
-      <button type="button" class="part-b" aria-expanded="${sel}" aria-controls="${esc(sec.id)}-${esc(p.id)}-t ${esc(sec.id)}-${esc(p.id)}-f"><span class="part-i">${String.fromCharCode(97 + j)}</span><span class="part-t">${esc(p.title)}</span></button>
+      <button type="button" class="part-b" aria-expanded="${sel}" aria-controls="${esc(sec.id)}-${esc(p.id)}-t ${esc(sec.id)}-${esc(p.id)}-f"><span class="part-i">${String.fromCharCode(97 + j)}</span><span class="part-t">${esc(plain(p.title))}</span></button>
       <div class="part-body" id="${esc(sec.id)}-${esc(p.id)}-t"${sel ? "" : " hidden"}>${p.body.map((b) => `<p>${inline(b)}</p>`).join("")}</div>
     </li>`;
   }).join("");
@@ -377,20 +393,20 @@ function sectionHtml(sec, i, n, spec, assets, links) {
   const files = sec.files || [];
   return `<section class="card" id="${esc(sec.id)}" data-sec="${i}" aria-labelledby="${esc(sec.id)}-h">
   <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ${esc(sec.title)} as read"><span class="box-c"></span></button>
-    <button type="button" class="row-t" data-open>${esc(sec.title)}</button>
+    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘${esc(plain(sec.title))}’ read"><span class="box-c"></span></button>
+    <button type="button" class="row-t" data-open>${esc(plain(sec.title))}</button>
     <span class="row-m">read \u00b7 ${pos}</span>
   </div>
   <div class="card-grid">
     <div class="left">
-      <h2 id="${esc(sec.id)}-h" tabindex="-1">${esc(sec.title)}</h2>
-      <div class="meta"><span class="pos">${pos}</span><button type="button" class="check" role="checkbox" aria-checked="false"><span class="box-c"></span>Read</button></div>
+      <h2 id="${esc(sec.id)}-h" tabindex="-1">${esc(plain(sec.title))}</h2>
+      <div class="meta"><span class="pos">${pos}</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘${esc(plain(sec.title))}’ read"><span class="box-c"></span>Read</button></div>
       <ol class="parts" aria-label="Parts of this section">${parts}</ol>
     </div>
     <div class="right">${figs}</div>
     <div class="foot">${files.length ? `
       <p class="files-h">Files</p><ul class="files">${files.map((a) => fileHtml(a, sec.id, links)).join("")}</ul>` : ""}
-      <details class="src"><summary>Sources \u00b7 ${srcIds.length}</summary><ul>${srcIds.map((id) => sourceRow(id, spec.sources[id], links)).join("")}</ul></details>
+      <details class="src"><summary>Sources \u00b7 ${srcIds.length}</summary><ul>${srcIds.map((id) => sourceRow(id, spec.sources[id], links, spec.base)).join("")}</ul></details>
     </div>
   </div>
 </section>`;
@@ -402,7 +418,7 @@ export function render(spec, opts) {
   const n = spec.sections.length;
   const secIndex = Object.fromEntries(spec.sections.map((s, i) => [s.id, i]));
   const overview = spec.overview.map((o) => `<li class="ov ov-${esc(o.kind.toLowerCase())}"><a href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="ov-k">${esc(o.kind)}</span><span class="ov-t">${inline(o.text)}</span><span class="ov-n">${pad2(secIndex[o.section] + 1)}</span></a></li>`).join("");
-  const intentSrc = (spec.intentCites || []).map((id) => sourceRow(id, spec.sources[id], links)).join("");
+  const intentSrc = (spec.intentCites || []).map((id) => sourceRow(id, spec.sources[id], links, spec.base)).join("");
   const meta = [`${n} section${n === 1 ? "" : "s"}`, spec.plan && spec.plan.name ? `from ${esc(spec.plan.name)}` : "", spec.model ? `generated by ${esc(spec.model)}` : ""].filter(Boolean).join(" \u00b7 ");
   return `<!doctype html>
 <!-- Guided plan (${FORMAT}). Built by the guided-plan skill's system/build.mjs from a content file. Do not edit by hand. -->
@@ -414,7 +430,7 @@ export function render(spec, opts) {
 <body>
 <main class="page">
 <header class="top">
-  <button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
+  <button type="button" class="theme" id="theme" aria-label="Switch to dark">Dark</button>
   <h1>${esc(spec.title)}</h1>
   <p class="intent">${inline(spec.intent)}</p>
   <ol class="overview" aria-label="Decisions and changes">${overview}</ol>

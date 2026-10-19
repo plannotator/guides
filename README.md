@@ -39,7 +39,7 @@ npx skills remove plannotator-guide        # add -g if you installed it globally
 npx skills add plannotator/guides
 ```
 
-Until you do, the old copy keeps working, since the `plannotator guide export` command it runs has not changed. `npx skills update` will report that `plannotator-guide` was deleted upstream and offer to remove it; it does not install the new name for you.
+Until you do, the old copy keeps working, since the `plannotator guide export` command it runs has not changed. `npx skills update` reports that `plannotator-guide` was deleted upstream. Run in a terminal, it offers to remove the old copy; with `-y` or without a terminal it only reports it and removes nothing. It never installs the new name for you.
 
 ## Guided reviews
 

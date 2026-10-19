@@ -13,8 +13,8 @@
 // Needs Node 18+ and git. No dependencies. Only reads: files next to the content file, and
 // `git show` / `git cat-file` at named commits. It never fetches. The same input gives the same bytes.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { dirname, join, resolve as rpath } from "node:path";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { dirname, join, relative, isAbsolute, sep, resolve as rpath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -85,6 +85,16 @@ const KINDS = ["Decided", "Change", "Kept", "Open"];
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
 const words = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
 const MAX_HEADING_WORDS = 8;
+const COMMIT = /^[0-9a-f]{7,40}$/;
+// A path the build reads beside the content file stays inside its folder (no "..", no absolute
+// path, no symlink out), so a guided plan cannot embed or probe other files on the computer.
+const leaves = (r) => r === ".." || r.startsWith(".." + sep) || isAbsolute(r);
+function insideSpecDir(p) {
+  if (typeof p !== "string" || !p || isAbsolute(p)) return false;
+  if (leaves(relative(specDir, rpath(specDir, p)))) return false;
+  try { return !leaves(relative(realpathSync(specDir), realpathSync(rpath(specDir, p)))); }
+  catch { return true; } // missing: existence is reported elsewhere
+}
 const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; keep it to ${max} or fewer`); };
 
 // What a guided-plan/1 file needs to become a guided-plan/2 file, said once.
@@ -115,6 +125,7 @@ function validateFigure(f, where, errs, { nested = false } = {}) {
       if (f.mark && !["hl", "out"].includes(f.mark)) errs.push(`${where}: mark is "hl" or "out"`);
       if (f.marked && f.marked !== "all" && !(Array.isArray(f.marked) && f.marked.every((n) => Number.isInteger(n) && n >= f.start && n < f.start + (f.text || []).length))) errs.push(`${where}: marked is "all" or line numbers inside the excerpt`);
       if (f.repo !== undefined && !(spec.repos || {})[f.repo]) errs.push(`${where}: unknown repo ${f.repo}`);
+      if (f.at !== undefined && !(typeof f.at === "string" && COMMIT.test(f.at))) errs.push(`${where}: at is a commit hash (7 to 40 hex characters)`);
       break;
     case "list":
       if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 12 || !f.rows.every((r) => r && isStr(r.text))) errs.push(`${where}: list needs 1 to 12 rows, each with text`);
@@ -198,6 +209,7 @@ function validate() {
   for (const [id, s] of Object.entries(spec.sources || {})) {
     if (!["git", "file", "capture"].includes(s.kind)) errs.push(`sources.${id}: kind is git, file or capture`);
     if (!isStr(s.path)) errs.push(`sources.${id}: path required`);
+    else if (s.kind !== "git" && !insideSpecDir(s.path)) errs.push(`sources.${id}: path ${s.path} must be inside the folder of the content file`);
     if (s.kind !== "capture" && !(isStr(s.quote) || (Array.isArray(s.quote) && s.quote.length && s.quote.every(isStr)))) errs.push(`sources.${id}: quote required (exact text inside the lines)`);
     if (s.lines !== undefined && !/^[1-9][0-9]*(-[1-9][0-9]*)?$/.test(String(s.lines))) errs.push(`sources.${id}: lines is "N" or "N-M"`);
     else if (s.lines !== undefined && String(s.lines).includes("-") && Number(String(s.lines).split("-")[1]) < Number(String(s.lines).split("-")[0])) errs.push(`sources.${id}: lines "${s.lines}" ends before it starts`);
@@ -212,6 +224,7 @@ function validate() {
   }
   for (const [id, a] of Object.entries(spec.assets || {})) {
     if (!isStr(a.file)) errs.push(`assets.${id}: file required`);
+    else if (!insideSpecDir(a.file)) errs.push(`assets.${id}: ${a.file} must be inside the folder of the content file`);
     else if (!existsSync(join(specDir, a.file))) errs.push(`assets.${id}: ${a.file} not found next to the content file`);
     if (a.from !== undefined && !known.has(a.from)) errs.push(`assets.${id}: unknown source ${a.from}`);
   }
@@ -253,6 +266,8 @@ function validate() {
       if (a.part) errs.push(`${sid}: file ${a.name} names a part; in ${FORMAT} a file points at a card with "card"`);
       if (a.card && !cardIds.has(a.card)) errs.push(`${sid}: file ${a.name} points at unknown card ${a.card}`);
       if (a.repo !== undefined && a.repo !== true && !(spec.repos || {})[a.repo]) errs.push(`${sid}: file ${a.name} names unknown repo ${a.repo}`);
+      if (a.at !== undefined && !(typeof a.at === "string" && COMMIT.test(a.at))) errs.push(`${sid}: file ${a.name}: at is a commit hash (7 to 40 hex characters)`);
+      if (a.path !== undefined && a.repo === undefined && !insideSpecDir(a.path)) errs.push(`${sid}: file ${a.name}: path ${a.path} must be inside the folder of the content file`);
     }
   }
   (spec.overview || []).forEach((o, i) => {

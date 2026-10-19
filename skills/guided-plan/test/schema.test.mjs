@@ -73,3 +73,24 @@ test("the section shown in SKILL.md is valid and passes the lint", async () => {
   const r = lintWith((p) => { p.sections = p.sections.map((s) => (s.id === shown.id ? shown : s)); });
   assert.equal(r.code, 0, r.out);
 });
+
+test("commit names are hashes, so --check never hands git an option", () => {
+  const r = lintWith((p) => { const c = section(p, "server").cards.find((x) => x.figure && x.figure.type === "code"); c.figure.at = "--output=x"; });
+  assert.equal(r.code, 2, r.out);
+  assert.match(r.out, /at is a commit hash/);
+  const f = lintWith((p) => { section(p, "server").files[0].at = "--textconv"; });
+  assert.equal(f.code, 2, f.out);
+  assert.match(f.out, /at is a commit hash/);
+});
+
+test("files the build reads stay inside the folder of the content file", () => {
+  for (const edit of [
+    (p) => { for (const a of Object.values(p.assets)) a.file = "../outside.png"; },
+    (p) => { p.sources.ISSUE.path = "../../etc/hosts"; },
+    (p) => { section(p, "why").files = [{ name: "x", path: "/etc/hosts" }]; },
+  ]) {
+    const r = lintWith(edit);
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, /inside the folder of the content file/);
+  }
+});

@@ -1,13 +1,14 @@
 ---
-name: plannotator-guide
+name: guided-review
 description: >
   Write a Guided Review (a chaptered walkthrough of a changeset with the real diffs inline)
   and turn it into one portable HTML file with `plannotator guide export`. Use when someone asks
   for a guide, walkthrough, tour, or explainer of a diff, branch, PR, or commit, or wants a
-  shareable review guide. Needs git and the plannotator CLI.
+  shareable review guide. For a plan of a change that is not made yet, use guided-plan.
+  Needs git and the plannotator CLI.
 ---
 
-# Plannotator Guide
+# Guided Review
 
 A guided review is a reading order for a changeset. Instead of a flat file list, the reader gets chapters. Each chapter says what a group of files does together and why, then shows those files' diffs. The result is one HTML file anyone can open in a browser.
 

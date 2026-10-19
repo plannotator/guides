@@ -1,7 +1,7 @@
 {
   "format": "guided-plan/2",
   "title": "pastebox: let pastes expire",
-  "intent": "pastebox keeps every paste until someone deletes it, and the issue reports a disk 90% full. This guided plan lets the writer pick when a paste expires, deletes expired pastes in a cleanup job, and keeps never as the default.",
+  "intent": "pastebox keeps every paste until someone deletes it, and the issue reports a disk 90% full. The change lets the writer pick when a paste expires, deletes expired pastes in a cleanup job, and keeps never as the default.",
   "intentCites": ["ISSUE", "PLAN-FORM", "PLAN-JOB"],
   "plan": { "name": "PLAN.md" },
   "model": "Claude Opus 5.5",
@@ -108,7 +108,7 @@
       ],
       "files": [
         { "name": "store.js", "note": "The pastes table", "path": "src/store.js", "repo": "pastebox" },
-        { "name": "issue-41.md", "note": "The issue this guided plan answers", "path": "issue-41.md" }
+        { "name": "issue-41.md", "note": "The issue the change answers", "path": "issue-41.md" }
       ]
     },
     {
@@ -125,7 +125,7 @@
           { "label": "Table", "sub": "what is stored", "items": ["id", "body", "created_at", { "text": "expires_at", "mark": "new" }], "tag": "new column", "tagAcc": true },
           { "label": "Cleanup job", "sub": "runs on its own", "text": "Deletes the pastes whose expires_at has passed.", "tag": "new", "tagAcc": true }
         ],
-        "caption": "Blue marks what this guided plan adds or changes.",
+        "caption": "Blue marks what the change adds or changes.",
         "cites": ["PLAN-FORM", "PLAN-COLUMN", "PLAN-410", "PLAN-JOB"]
       },
       "cards": [
@@ -161,7 +161,7 @@
             "caption": "A text box and Save."
           },
           {
-            "label": "After this guided plan", "acc": true,
+            "label": "After the change", "acc": true,
             "figure": { "type": "list", "rows": [{ "text": "Text", "note": "the paste" }, { "text": "Expires after", "note": "1 hour, 1 day, 1 week, never", "mark": "new", "tag": "new", "tagAcc": true }, { "text": "Save" }] },
             "caption": "The choice sits above Save, with never selected."
           }
@@ -208,7 +208,7 @@
       },
       "cards": [
         {
-          "id": "read", "title": "The check on every read",
+          "id": "check", "title": "The check on every read",
           "body": ["Today a read answers 404 when the row is missing. The expiry check goes right beside it. The raw route calls the same function, so it gets the check too."],
           "cites": ["SHOW"],
           "figure": {
@@ -261,7 +261,7 @@
       },
       "cards": [
         {
-          "id": "routes", "title": "Every route, after this guided plan",
+          "id": "routes", "title": "Every route, after the change",
           "body": ["The same routes, with the same names. The reads and the save change what they do; nothing is added or removed."],
           "cites": ["ROUTES", "PLAN-KEPT"],
           "figure": {

@@ -24,3 +24,19 @@ test("the overflow check catches a page that is too wide", { skip: chromium ? fa
     assert.ok(problems.some((p) => /scrolls sideways/.test(p)), problems.join("\n"));
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("in forced colours the marks still show as borders", { skip: chromium ? false : "Playwright not found; set PLAYWRIGHT", timeout: 120000 }, async () => {
+  const { pathToFileURL } = await import("node:url");
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.emulateMedia({ forcedColors: "active" });
+    await page.goto(pathToFileURL(join(EXAMPLE, "guided-plan.html")).href);
+    const widths = await page.evaluate(() => Object.fromEntries([".ln.hl", ".fl-acc", ".band.acc", ".rows li.new", ".stop .dot.acc"].map((s) => {
+      const e = document.querySelector(s);
+      const cs = e && getComputedStyle(e);
+      return [s, cs ? Math.max(parseFloat(cs.borderLeftWidth), parseFloat(cs.borderTopWidth)) : -1];
+    })));
+    for (const [sel, w] of Object.entries(widths)) assert.ok(w >= 3, `${sel}: border ${w}`);
+  } finally { await browser.close(); }
+});

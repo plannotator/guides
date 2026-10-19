@@ -94,3 +94,39 @@ test("files the build reads stay inside the folder of the content file", () => {
     assert.match(r.out, /inside the folder of the content file/);
   }
 });
+
+test("unknown fields are errors, with the field named", () => {
+  refused((p) => { section(p, "why").cards[1].figure.rows[3].tagacc = true; }, 'why.ask.figure.rows[3]: unknown field "tagacc"; did you mean "tagAcc"?');
+  refused((p) => { p.titel = "x"; }, 'unknown field "titel"');
+  refused((p) => { section(p, "why").leed = "x"; }, 'unknown field "leed"');
+  refused((p) => { p.sources.ISSUE.quotes = ["x"]; }, 'sources.ISSUE: unknown field "quotes"');
+});
+
+test("a chip may say acc", () => {
+  const r = lintWith((p) => { section(p, "kept").cards[0].figure.chips[4].acc = true; });
+  assert.equal(r.code, 0, r.out);
+});
+
+test("ids the page uses itself, and ids that collide, are refused", () => {
+  refused((p) => { section(p, "open").id = "theme"; p.overview.at(-1).section = "theme"; }, '"theme" is reserved');
+  for (const id of ["h", "f", "read"]) refused((p) => { section(p, "why").cards[0].id = id; }, `card id "${id}" is reserved`);
+  // section "why-table" would share its id with card "table" of section "why"
+  refused((p) => { section(p, "kept").id = "why-table"; p.overview.find((o) => o.section === "kept").section = "why-table"; }, 'page id "why-table" is already used');
+});
+
+test("keys every object already has are refused as source, asset or repo names", () => {
+  refused((p) => { p.assets.constructor = { file: "assets/new-paste.png" }; }, "assets.constructor: a key is");
+  refused((p) => { p.repos.prototype = { path: "." }; }, "repos.prototype: a key is");
+  refused((p) => { p.sources.toString = { kind: "file", path: "PLAN.md", quote: "Plan" }; }, "sources.toString: a key is");
+  // and a figure that names one finds nothing
+  refused((p) => { section(p, "why").figure.asset = "constructor"; }, "unknown asset constructor");
+});
+
+test("the JSON Schema file is generated from the same field table", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { dirname, join } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const { jsonSchema } = await import("../system/schema.mjs");
+  const file = join(dirname(fileURLToPath(import.meta.url)), "../system/guided-plan.schema.json");
+  assert.equal(readFileSync(file, "utf8"), JSON.stringify(jsonSchema(), null, 2) + "\n", "guided-plan.schema.json is stale; run: node skills/guided-plan/system/schema.mjs > skills/guided-plan/system/guided-plan.schema.json");
+});

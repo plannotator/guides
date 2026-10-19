@@ -19,6 +19,11 @@ import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { render, citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
+import { unknownFields, MAP_KEY } from "./schema.mjs";
+
+// Lookups by a key the content file chose are own-property lookups, so "constructor" or
+// "__proto__" never finds something the file did not write.
+const ownIn = (o, k) => (o && typeof o === "object" && typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined);
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -68,7 +73,7 @@ const toplevel = (() => {
 function repoDir(name) {
   if (repoArgs[name]) return repoArgs[name];
   if (repoArgs[""] && (name === defaultRepoName() || name === "")) return repoArgs[""];
-  const conf = (spec.repos || {})[name];
+  const conf = ownIn(spec.repos, name);
   if (conf && conf.path) return rpath(specDir, conf.path);
   return toplevel;
 }
@@ -85,6 +90,11 @@ const KINDS = ["Decided", "Change", "Kept", "Open"];
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
 const words = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
 const MAX_HEADING_WORDS = 8;
+const RESERVED_KEYS = ["__proto__", "constructor", "prototype", "hasOwnProperty", "toString", "valueOf"];
+// Page ids the renderer uses itself; a section id may not be one of them.
+const RESERVED_SECTION_IDS = ["theme", "read"];
+// Card ids the renderer uses inside a section ("<section>-h" is the heading, "<section>-f" the figure).
+const RESERVED_CARD_IDS = ["h", "f", "read"];
 const COMMIT = /^[0-9a-f]{7,40}$/;
 // A path the build reads beside the content file stays inside its folder (no "..", no absolute
 // path, no symlink out), so a guided plan cannot embed or probe other files on the computer.
@@ -98,7 +108,7 @@ function insideSpecDir(p) {
 const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; keep it to ${max} or fewer`); };
 
 // What a guided-plan/1 file needs to become a guided-plan/2 file, said once.
-const MIGRATE = `guided-plan/2 draws each section as one card that reads: give each section "heading" (a few words), "lead" (one paragraph), "cites" and one "figure"; its other parts become "cards": [{ "id", "title", "body", "cites", "figure"? }]. "parts" are gone. A toggle or steps becomes a "pair" figure (each state side by side), a drawing becomes a "flow" or "layers" figure, and controls and rules are gone. See SKILL.md, section 5`;
+const MIGRATE = `guided-plan/2 draws each section as one card with its story on the left and its figures on the right: give each section "heading" (a few words), "lead" (one paragraph), "cites" and one "figure"; its other parts become "cards": [{ "id", "title", "body", "cites", "figure"? }]. "parts" are gone. A toggle or steps becomes a "pair" figure (each state side by side), a drawing becomes a "flow" or "layers" figure, and controls and rules are gone. See SKILL.md, section 5`;
 
 function validateFigure(f, where, errs, { nested = false } = {}) {
   if (!f || typeof f !== "object") { errs.push(`${where}: no figure`); return; }
@@ -112,7 +122,7 @@ function validateFigure(f, where, errs, { nested = false } = {}) {
   if (!nested && !(Array.isArray(f.cites) && f.cites.length)) errs.push(`${where}: figure has no cites`);
   switch (t) {
     case "screenshot":
-      if (!spec.assets || !spec.assets[f.asset]) errs.push(`${where}: unknown asset ${f.asset}`);
+      if (!ownIn(spec.assets, f.asset)) errs.push(`${where}: unknown asset ${f.asset}`);
       if (!isStr(f.alt) && !isStr(f.caption)) errs.push(`${where}: a screenshot needs alt or a caption (what it shows, for screen readers)`);
       if (f.ring && !(Array.isArray(f.ring) && f.ring.length === 4 && f.ring.every(Number.isFinite))) errs.push(`${where}: ring is [x, y, width, height] in image pixels`);
       if (f.scale !== undefined && !(typeof f.scale === "number" && f.scale > 0)) errs.push(`${where}: scale is a number above 0 (2 for a 2x capture)`);
@@ -124,7 +134,7 @@ function validateFigure(f, where, errs, { nested = false } = {}) {
       else if (f.text.length > 40) errs.push(`${where}: code excerpt of ${f.text.length} lines; keep it to 40 or fewer`);
       if (f.mark && !["hl", "out"].includes(f.mark)) errs.push(`${where}: mark is "hl" or "out"`);
       if (f.marked && f.marked !== "all" && !(Array.isArray(f.marked) && f.marked.every((n) => Number.isInteger(n) && n >= f.start && n < f.start + (f.text || []).length))) errs.push(`${where}: marked is "all" or line numbers inside the excerpt`);
-      if (f.repo !== undefined && !(spec.repos || {})[f.repo]) errs.push(`${where}: unknown repo ${f.repo}`);
+      if (f.repo !== undefined && !ownIn(spec.repos, f.repo)) errs.push(`${where}: unknown repo ${f.repo}`);
       if (f.at !== undefined && !(typeof f.at === "string" && COMMIT.test(f.at))) errs.push(`${where}: at is a commit hash (7 to 40 hex characters)`);
       break;
     case "list":
@@ -191,8 +201,18 @@ function validateFigure(f, where, errs, { nested = false } = {}) {
 
 function validate() {
   const errs = [];
+  if (!spec || typeof spec !== "object" || Array.isArray(spec)) return ["the content file is a JSON object"];
   if (spec.format === "guided-plan/1") return [`format: this file is guided-plan/1 (lettered parts). ${MIGRATE}`];
   if (spec.format !== FORMAT) errs.push(`format: expected "${FORMAT}"`);
+  errs.push(...unknownFields(spec));
+  // Keys of sources, assets and repos become ids and lookups: a safe set, and never a name every object already has.
+  const keyRe = new RegExp(MAP_KEY);
+  for (const m of ["sources", "assets", "repos"]) {
+    const v = spec[m];
+    if (v === undefined) continue;
+    if (!v || typeof v !== "object" || Array.isArray(v)) { errs.push(`${m}: an object keyed by id`); continue; }
+    for (const k of Object.keys(v)) if (!keyRe.test(k) || RESERVED_KEYS.includes(k)) errs.push(`${m}.${k}: a key is 1 to 64 letters, digits, dot, dash or underscore, starting with a letter or digit, and not ${RESERVED_KEYS.join(", ")}`);
+  }
   for (const k of ["title", "intent", "base"]) if (!isStr(spec[k])) errs.push(`${k}: required`);
   if (spec.base && !/^[0-9a-f]{7,40}$/.test(spec.base)) errs.push("base: a commit hash (7 to 40 hex characters)");
   if (!spec.sources || typeof spec.sources !== "object") errs.push("sources: required");
@@ -215,12 +235,12 @@ function validate() {
     else if (s.lines !== undefined && String(s.lines).includes("-") && Number(String(s.lines).split("-")[1]) < Number(String(s.lines).split("-")[0])) errs.push(`sources.${id}: lines "${s.lines}" ends before it starts`);
     if (s.kind === "git") {
       if (s.at !== undefined && !/^[0-9a-f]{7,40}$/.test(s.at)) errs.push(`sources.${id}: at is a commit hash`);
-      if (s.repo !== undefined && !(spec.repos || {})[s.repo]) errs.push(`sources.${id}: unknown repo ${s.repo}`);
+      if (s.repo !== undefined && !ownIn(spec.repos, s.repo)) errs.push(`sources.${id}: unknown repo ${s.repo}`);
     }
   }
   for (const [name, r] of Object.entries(spec.repos || {})) if (r.url !== undefined && !(typeof r.url === "string" && /^https:\/\/[^\s"<>]+$/.test(r.url))) errs.push(`repos.${name}: url must start with https://`);
   if (Object.keys(spec.repos || {}).length > 1) {
-    for (const [id, s] of Object.entries(spec.sources || {})) if (s.kind === "git" && s.repo === undefined) errs.push(`sources.${id}: name its repo; this plan has more than one`);
+    for (const [id, s] of Object.entries(spec.sources || {})) if (s.kind === "git" && s.repo === undefined) errs.push(`sources.${id}: name its repo; this guided plan has more than one`);
   }
   for (const [id, a] of Object.entries(spec.assets || {})) {
     if (!isStr(a.file)) errs.push(`assets.${id}: file required`);
@@ -265,9 +285,25 @@ function validate() {
       if (!isStr(a.name)) errs.push(`${sid}: a file needs name`);
       if (a.part) errs.push(`${sid}: file ${a.name} names a part; in ${FORMAT} a file points at a card with "card"`);
       if (a.card && !cardIds.has(a.card)) errs.push(`${sid}: file ${a.name} points at unknown card ${a.card}`);
-      if (a.repo !== undefined && a.repo !== true && !(spec.repos || {})[a.repo]) errs.push(`${sid}: file ${a.name} names unknown repo ${a.repo}`);
+      if (a.repo !== undefined && a.repo !== true && !ownIn(spec.repos, a.repo)) errs.push(`${sid}: file ${a.name} names unknown repo ${a.repo}`);
       if (a.at !== undefined && !(typeof a.at === "string" && COMMIT.test(a.at))) errs.push(`${sid}: file ${a.name}: at is a commit hash (7 to 40 hex characters)`);
       if (a.path !== undefined && a.repo === undefined && !insideSpecDir(a.path)) errs.push(`${sid}: file ${a.name}: path ${a.path} must be inside the folder of the content file`);
+    }
+  }
+  // Every id the page will carry is unique: sections, their headings and figures, cards and their figures.
+  const pageIds = new Map([["theme", "the theme button"]]);
+  const claim = (id, what) => {
+    if (pageIds.has(id)) errs.push(`${what}: its page id "${id}" is already used by ${pageIds.get(id)}; rename one`);
+    else pageIds.set(id, what);
+  };
+  for (const s of spec.sections) {
+    if (!s || typeof s !== "object" || !SECTION_ID.test(s.id || "")) continue;
+    if (RESERVED_SECTION_IDS.includes(s.id)) { errs.push(`section ${s.id}: "${s.id}" is reserved by the page; pick another id`); continue; }
+    claim(s.id, `section ${s.id}`); claim(`${s.id}-h`, `section ${s.id}'s heading`); claim(`${s.id}-f`, `section ${s.id}'s figure`);
+    for (const c of Array.isArray(s.cards) ? s.cards : []) {
+      if (!c || !SECTION_ID.test(c.id || "")) continue;
+      if (RESERVED_CARD_IDS.includes(c.id)) { errs.push(`${s.id}.${c.id}: card id "${c.id}" is reserved (the section's heading, figure or read state use it); pick another`); continue; }
+      claim(`${s.id}-${c.id}`, `card ${s.id}.${c.id}`); claim(`${s.id}-${c.id}-f`, `card ${s.id}.${c.id}'s figure`);
     }
   }
   (spec.overview || []).forEach((o, i) => {
@@ -363,7 +399,7 @@ function lint() {
     // Digits always count. Number words count too, except in titles and headings ("Two ways in").
     const nums = [...stripped.matchAll(/(?<![A-Za-z_.\d])(\d+(?:\.\d+)?)(?![\d])|\b(two|three|four|five|six|seven|eight|nine|ten)\b/gi)].filter((m) => m[1] || !isTitle).map((m) => (m[1] || m[2]).toLowerCase());
     if (!nums.length) continue;
-    const quotes = ids.flatMap((id) => [].concat((spec.sources[id] || {}).quote || [])).join(" ").toLowerCase();
+    const quotes = ids.flatMap((id) => [].concat((ownIn(spec.sources, id) || {}).quote || [])).join(" ").toLowerCase();
     for (const n of nums) {
       const alt = NUMWORDS[n] || Object.keys(NUMWORDS).find((k) => NUMWORDS[k] === n);
       const forms = [n, alt].filter(Boolean).map((x) => x.replace(/\./g, "\\."));
@@ -461,7 +497,7 @@ function loadAssets() {
 // ---------- links ----------
 
 function linksFor() {
-  const url = (name) => { const u = ((spec.repos || {})[name] || {}).url; return typeof u === "string" && /^https:\/\//.test(u) ? u.replace(/\/+$/, "") : null; };
+  const url = (name) => { const u = (ownIn(spec.repos, name) || {}).url; return typeof u === "string" && /^https:\/\//.test(u) ? u.replace(/\/+$/, "") : null; };
   const range = (lines) => {
     if (!lines) return "";
     const [a, b] = String(lines).split("-");

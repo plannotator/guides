@@ -1,4 +1,4 @@
-:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.66);--ink3:rgba(29,29,31,.6);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.1);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.55;--shot-dim:1}
+:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.66);--ink3:rgba(29,29,31,.64);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.1);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.55;--shot-dim:1}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}}
 :root[data-theme=dark]{color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}
 *{box-sizing:border-box}
@@ -259,5 +259,28 @@ a.file:hover{border-color:var(--line)}
   .fig{padding:16px}
   .side{padding:16px}
   .keys{display:none}
+}
+/* Windows high contrast and other forced colours: colour and shadows are dropped, so every mark
+   that relies on them gets a border or outline in system colours (and words for a screen reader). */
+@media (forced-colors:active){
+  .ln.hl,.ln.out{box-shadow:none;border-left:3px solid Highlight}
+  .ln.out .tx{text-decoration:line-through}
+  .rows li.new,.rows li.acc{box-shadow:none;border-left:4px solid Highlight}
+  .rows li.out .t,.rows li.out .mono-t{text-decoration:line-through}
+  .fl-acc{border:3px solid Highlight}
+  .fl-new{border:3px dashed Highlight}
+  .fl-gone{border:1.5px dashed GrayText}
+  .band{border:1px solid CanvasText}
+  .band.acc{box-shadow:none;border:3px solid Highlight}
+  .stop .dot.acc{border:3px solid Highlight}
+  .stop .dot.ask{border:2px solid Highlight}
+  .stop::before{background:CanvasText}
+  .chip.acc,.chip.new{border:2px solid Highlight}
+  .chip.out{border:2px dashed Highlight}
+  .chip.changed i{forced-color-adjust:none;background:Highlight;border-color:Canvas}
+  .td.acc{text-decoration:underline}
+  .tag-acc,.pr-tag.acc{border:1px solid Highlight}
+  .shot .ring rect{stroke:Highlight}
+  .fl-a,.fl-a .fl-v{forced-color-adjust:none;color:CanvasText}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}

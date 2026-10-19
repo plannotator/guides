@@ -11,7 +11,7 @@ description: >
 
 # Guided Plan
 
-A guided plan explains a change before (or as) it is made. The top of the page has the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Below, each section is a card that reads on its own: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls.
+A guided plan explains a change before (or as) it is made. The top of the page has the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Below, each section is one card: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls.
 
 You write one file, `plan.json` (plus its screenshots, if any). It is the guided plan's source of truth. The build script in this skill draws everything else: layout, light and dark, the phone layout, the keys. You never write HTML, CSS or script.
 
@@ -79,7 +79,16 @@ It reopens every source at its commit and confirms each quote is there, each cod
 
 ## 5. The content file (`guided-plan/2`)
 
-This is the whole format. A file that follows it builds to the same page anywhere: the build reads nothing but `plan.json`, the files next to it, and git at the named commits. Unknown fields are ignored; every field below is checked, and an error names the field and what to fix.
+This is the whole format. A file that follows it builds to the same page anywhere: the build reads nothing but `plan.json`, the files inside its folder, and git at the named commits. Every field below is checked, and an error names the field and what to fix. **A field not listed here is an error** (with a hint when it is a typo of one that is, such as `tagacc` for `tagAcc`), so nothing is silently ignored.
+
+[`system/guided-plan.schema.json`](system/guided-plan.schema.json) is a JSON Schema (draft 2020-12) of the same fields, generated from the table `build.mjs` checks against (`node system/schema.mjs > system/guided-plan.schema.json`). It states the shape; `build.mjs` checks more than a schema can say (cites that exist, numbers inside quotes, jargon, ids that do not collide, paths inside the folder, text that fits). A file that passes `build.mjs` passes the schema.
+
+Rules that apply everywhere:
+
+- **Keys** of `sources`, `assets` and `repos` are 1 to 64 letters, digits, dot, dash or underscore, starting with a letter or digit, and not a name every object already has (`constructor`, `prototype`, `__proto__`, `toString`, `valueOf`, `hasOwnProperty`).
+- **Ids:** section and card ids are lower case letters, digits and dashes. The page gives each section the ids `<section>`, `<section>-h` and `<section>-f`, and each card `<section>-<card>` and `<section>-<card>-f`; no two may be the same. Section ids `theme` and `read`, and card ids `h`, `f` and `read`, are reserved.
+- **Commits** (`base`, any `at`) are 7 to 40 hex characters.
+- **Paths beside the content file** (`file` and `capture` sources, `assets[].file`, a file's `path` without `repo`) stay inside the folder of `plan.json`: no `..`, no absolute path, no symlink that leads out.
 
 ### Top level
 
@@ -94,7 +103,7 @@ This is the whole format. A file that follows it builds to the same page anywher
 | `base` | yes | The commit the guided plan is written against (7 to 40 hex characters). |
 | `repos` | no | `{ "<name>": { "url"?, "path"? } }`. `url` (`https://` only) turns sources and files into links at their commit. `path` (relative to `plan.json`) says where the clone is, if not the current repository. With more than one repo, every `git` source names its `repo`. |
 | `sources` | yes | `{ "<id>": source }`, below. |
-| `assets` | no | `{ "<id>": { "file", "from"? } }`. `file` is a PNG or JPEG next to `plan.json`; the build embeds it. `from` names the `capture` source that vouches for it. |
+| `assets` | no | `{ "<id>": { "file", "from"? } }`. `file` is a PNG or JPEG inside the folder of `plan.json`; the build embeds it. `from` names the `capture` source that vouches for it. |
 | `overview` | yes | The rows under the intent: `[{ "kind", "text", "section", "cites" }]`. `kind` is `Decided`, `Change`, `Kept` or `Open` (Open is drawn in the accent colour); `section` is the id it jumps to. |
 | `sections` | yes | 1 to 10 sections, in reading order. |
 | `ban` | no | More words the lint refuses. |
@@ -105,7 +114,7 @@ A source: `{ "kind": "git" | "file" | "capture", "path", "lines"?, "quote", "lab
 
 | Field | Required | What it is |
 | --- | --- | --- |
-| `id` | yes | Lower case letters, digits and dashes. The page anchor (`#why`). |
+| `id` | yes | Lower case letters, digits and dashes; not `theme` or `read`. The page anchor (`#why`). |
 | `title` | yes | The small label above the heading ("Why pastes need to expire"). No digits. |
 | `heading` | yes | The story in eight words or fewer. |
 | `question` | no | For an open section: the question, drawn large in the accent colour under the heading. |
@@ -119,7 +128,7 @@ A source: `{ "kind": "git" | "file" | "capture", "path", "lines"?, "quote", "lab
 
 | Field | Required | What it is |
 | --- | --- | --- |
-| `id` | yes | Unique in the section; lower case letters, digits and dashes. Anchor `#<section>-<card>`. |
+| `id` | yes | Unique in the section; lower case letters, digits and dashes; not `h`, `f` or `read`. Anchor `#<section>-<card>`. |
 | `title` | yes | A few words. |
 | `body` | yes | 1 to 3 paragraphs. Backticks allowed. |
 | `cites` | yes | Source ids for the body. |
@@ -137,13 +146,15 @@ Every figure has `type`, `title`, `cites`, and usually a `caption` (the line und
 | `code` | The exact lines that change | `path`, `start`, `text` (the lines, exactly as at the commit; 40 at most), `at`, `repo`, `marked` (line numbers or `"all"`), `mark`: `"hl"` (look here) or `"out"` (these go). Lines wrap; nothing scrolls sideways. |
 | `list` | A few parallel facts | `rows` (1 to 12): `{ text, note?, tag?, tagAcc?, mono?, mark? }`; `mark` is `"new"` (accent bar), `"out"` (struck through) or `"acc"` |
 | `table` | Cases side by side: routes and their answers, inputs and results | `columns` (2 to 5): a label, or `{ label, mono?, acc?, end?, fill? }` (`fill` takes the spare width; by default the column with the longest text). `rows` (1 to 20): one cell per column, text or `{ text, mono?, acc? }`. On a phone each row becomes a small block with its labels. |
-| `chips` | A set of names or values | `chips` (1 to 40): `{ text, mark?, mono? }`; `mark` is `"out"` (goes), `"changed"` (stays, but changes: a dot), `"new"` or `"acc"`. `legend`: `[{ mark, text }]` |
+| `chips` | A set of names or values | `chips` (1 to 40): `{ text, mark?, acc?, mono? }`; `mark` is `"out"` (goes), `"changed"` (stays, but changes: a dot), `"new"` or `"acc"`; `acc: true` is the same as `mark: "acc"`. `legend`: `[{ mark, text }]` |
 | `timeline` | An order in time: stages, a life cycle, a rollout | `stops` (1 to 6): `{ label, sub?, sub2?, mark?: "acc" or "ask", mono? }`; `bands`: `[{ from, to, label, acc? }]` over stop indexes. On a phone it runs down the page. |
 | `flow` | A request or an action moving through parts | `steps` (2 to 6): `{ label, sub?, via?, mark?, mono? }`; `via` labels the arrow into the step (16 characters at most); `mark` is `plain`, `acc` (what changes), `new` (added), `gone` (removed) or `muted`. On a phone it runs down the page. |
 | `layers` | Where something lives: screen, server, data | `rows` (1 to 5): `{ label, sub?, text?, items?, tag?, tagAcc? }`; `items` are chips (text, or `{ text, mark }`); `tag` says what happens to the layer ("changes", "goes in PR 2") |
 | `pair` | Before and after, or a few cases side by side | `sides` (2 to 4): `{ label, note?, acc?, toy?, figure, caption? }`. A side's figure is any type but `pair`, and needs no title or cites of its own: the pair's cover it. |
 
 There is nothing to click in a figure. Behaviour that changes with an input is shown as its cases: a `pair` for before and after, or a `table` with a row per case.
+
+Marks (`acc`, `new`, `out`, `changed`, a marked code line, a band or stop in the accent) are drawn with a colour and a line style, keep a border in forced colours (Windows high contrast), and carry words for a screen reader ("added", "removed", "highlighted", "open question").
 
 Text has to fit where it is drawn, and the build refuses text that will not: a timeline label or a flow step 40 characters, their second lines 60, a layer label or tag 24, a pair label 40.
 
@@ -174,7 +185,7 @@ A `guided-plan/1` file (lettered parts) is refused with a message, never drawn w
   },
   "cards": [
     {
-      "id": "read", "title": "The check on every read",
+      "id": "check", "title": "The check on every read",
       "body": ["Today a read answers 404 when the row is missing. The expiry check goes right beside it."],
       "cites": ["SHOW"],
       "figure": {
@@ -208,7 +219,7 @@ node <skill>/system/build.mjs plan.json guided-plan.html
 
 `<skill>` is this skill's folder. The build validates the file, lints the words, embeds the screenshots and writes one HTML file with no network requests. The same input gives the same bytes. Errors name the field and say what to fix; fix `plan.json` and run it again. Never edit the HTML by hand.
 
-On the page: `j` and `k` (or the arrows) move between sections; the overview rows and file links jump to their section or card without changing the address. `guided-plan.html#why` opens a section, `#why-read` a card, `?theme=dark` or `?theme=light` sets the theme (otherwise it follows the system).
+On the page: `j` and `k` (or the arrows) move between sections; the overview rows and file links jump to their section or card without changing the address. `guided-plan.html#why` opens a section, `#server-check` a card, `?theme=dark` or `?theme=light` sets the theme (otherwise it follows the system).
 
 ## 8. Hand it over
 

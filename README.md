@@ -73,7 +73,7 @@ The code that displays a guide loads from guides.show and never changes out from
 
 Ask your agent for a guided plan of a change: an issue, a PR you are about to open, or a plan document. It reads the change and the code it touches, writes `plan.json`, re-checks every citation, and builds `guided-plan.html`.
 
-The page opens with the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is a card that reads on its own: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls. The pictures are a fixed set any guided plan can use: a screenshot, a code excerpt, a list, a table, chips, a timeline, a flow of steps, layers, and a pair that sets two to four of them side by side (before and after). `j` and `k` move between sections. Light and dark; on a phone every picture reflows and nothing scrolls sideways.
+The page opens with the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is one card: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls. The pictures are a fixed set any guided plan can use: a screenshot, a code excerpt, a list, a table, chips, a timeline, a flow of steps, layers, and a pair that sets two to four of them side by side (before and after). `j` and `k` move between sections. Light and dark; on a phone every picture reflows and nothing scrolls sideways.
 
 What the build guarantees:
 
@@ -87,7 +87,7 @@ node skills/guided-plan/system/build.mjs --lint plan.json
 node skills/guided-plan/system/build.mjs --check plan.json [--repo name=/path/to/clone]
 ```
 
-The method, the content format (`guided-plan/2`) and every picture type are in [`skills/guided-plan/SKILL.md`](skills/guided-plan/SKILL.md). A `guided-plan/1` file (the earlier layout with lettered parts) is refused with a message that says what to change.
+The method, the content format (`guided-plan/2`) and every picture type are in [`skills/guided-plan/SKILL.md`](skills/guided-plan/SKILL.md). A `guided-plan/1` file (the earlier layout with lettered parts) is refused with a message that says what to change. Unknown fields are refused too, and [`guided-plan.schema.json`](skills/guided-plan/system/guided-plan.schema.json) is a JSON Schema of the format.
 
 ### Examples
 
@@ -113,7 +113,7 @@ The method, the content format (`guided-plan/2`) and every picture type are in [
 node --test skills/guided-plan/test/*.test.mjs
 ```
 
-They cover the format's refusals, the word lint on every text field, same input same bytes (and that the committed examples are current), `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
+They cover the format's refusals (unknown fields, reserved and colliding ids, unsafe keys and paths), the renderer on its own with hostile values, the word lint on every text field, colour contrast and forced colours, same input same bytes (and that the committed examples are current), `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
 
 ## Related
 

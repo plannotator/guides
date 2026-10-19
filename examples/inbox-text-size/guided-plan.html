@@ -339,7 +339,6 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   <figcaption data-cap aria-live="polite">14: the default, exactly today's window.</figcaption><script type="application/json" data-rules>{"rules":[{"if":{"state":"12"},"then":{"caption":"12: the smallest size. More fits on screen."}},{"if":{"state":"13"},"then":{"caption":"13: one step smaller than today."}},{"if":{"state":"14"},"then":{"caption":"14: the default, exactly today's window."}},{"if":{"state":"15"},"then":{"caption":"15: the largest size."}}],"controls":[{"key":"state","options":["12","13","14","15"]}],"values":{"state":"14"}}</script>
 </figure></div></div>
     <div class="foot">
-      
       <details class="src"><summary>Sources · 3</summary><ul><li><span class="s-l">Project notes after the change: the Text size setting</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L2161">AGENTS.md:2161 at 4507cdc45</a><span class="s-q"><q>a segmented 12 / 13 / 14 / 15 control in Appearance, the Theme control's style, applied at once with no reload</q> <q>I could also go to 13 or 15 or even 12</q></span></li><li><span class="s-l">Project notes after the change: what stays</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L2161">AGENTS.md:2161 at 4507cdc45</a><span class="s-q"><q>at 14 each size is exactly today's (a screenshot at 14 is byte-identical to the window before the setting)</q> <q>Row and control heights keep today's pitch, so phones keep 44 px targets</q></span></li><li><span class="s-l">Screenshots: one sample thread at each size, after the change</span><span class="s-w">assets/thread-14.jpg</span></li></ul></details>
     </div>
   </div>
@@ -445,7 +444,6 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   <figcaption data-cap aria-live="polite">14 is the default, and today's window.</figcaption>
 </figure></div></div>
     <div class="foot">
-      
       <details class="src"><summary>Sources · 3</summary><ul><li><span class="s-l">Project notes after the change: what stays</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L2161">AGENTS.md:2161 at 4507cdc45</a><span class="s-q"><q>at 14 each size is exactly today's (a screenshot at 14 is byte-identical to the window before the setting)</q> <q>Row and control heights keep today's pitch, so phones keep 44 px targets</q></span></li><li><span class="s-l">Project notes after the change: the config.json key</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L226">AGENTS.md:226 at 4507cdc45</a><span class="s-q"><q>`inboxTextSize` (12, 13, 14 or 15; default 14)</q> <q>anything else is refused with `422`, and an unreadable value reads as 14</q></span></li><li><span class="s-l">The sizes and the default</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/packages/core/inbox-types.ts#L958-L960">packages/core/inbox-types.ts:958-960 at 4507cdc45</a><span class="s-q"><q>export const INBOX_TEXT_SIZES = [12, 13, 14, 15] as const;</q> <q>export const INBOX_TEXT_SIZE_DEFAULT: InboxTextSize = 14;</q></span></li></ul></details>
     </div>
   </div>
@@ -471,7 +469,6 @@ button.file:hover,a.file:hover{border-color:var(--line)}
   <figcaption data-cap aria-live="polite">The default is the one thing left to decide.</figcaption>
 </figure></div></div>
     <div class="foot">
-      
       <details class="src"><summary>Sources · 2</summary><ul><li><span class="s-l">Project notes after the change: the Text size setting</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L2161">AGENTS.md:2161 at 4507cdc45</a><span class="s-q"><q>a segmented 12 / 13 / 14 / 15 control in Appearance, the Theme control's style, applied at once with no reload</q> <q>I could also go to 13 or 15 or even 12</q></span></li><li><span class="s-l">Project notes after the change: what stays</span><a class="s-w" href="https://github.com/backnotprop/plannotator/blob/4507cdc4516f13e5dca7689ca34ee9b74355687a/AGENTS.md#L2161">AGENTS.md:2161 at 4507cdc45</a><span class="s-q"><q>at 14 each size is exactly today's (a screenshot at 14 is byte-identical to the window before the setting)</q> <q>Row and control heights keep today's pitch, so phones keep 44 px targets</q></span></li></ul></details>
     </div>
   </div>

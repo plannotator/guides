@@ -388,8 +388,8 @@ function sectionHtml(sec, i, n, spec, assets, links) {
       <ol class="parts" aria-label="Parts of this section">${parts}</ol>
     </div>
     <div class="right">${figs}</div>
-    <div class="foot">
-      ${files.length ? `<p class="files-h">Files</p><ul class="files">${files.map((a) => fileHtml(a, sec.id, links)).join("")}</ul>` : ""}
+    <div class="foot">${files.length ? `
+      <p class="files-h">Files</p><ul class="files">${files.map((a) => fileHtml(a, sec.id, links)).join("")}</ul>` : ""}
       <details class="src"><summary>Sources \u00b7 ${srcIds.length}</summary><ul>${srcIds.map((id) => sourceRow(id, spec.sources[id], links)).join("")}</ul></details>
     </div>
   </div>

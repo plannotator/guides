@@ -83,7 +83,7 @@ This is the whole format. A file that follows it builds to the same page anywher
 
 [`system/guided-plan.schema.json`](system/guided-plan.schema.json) is a JSON Schema (draft 2020-12) of the same fields, generated from the table `build.mjs` checks against (`node system/schema.mjs > system/guided-plan.schema.json`). It states the shape; `build.mjs` checks more than a schema can say (cites that exist, numbers inside quotes, jargon, ids that do not collide, paths inside the folder, text that fits). A file that passes `build.mjs` passes the schema.
 
-`system/validate.mjs` (the shape checks and the word lint), `system/schema.mjs` and `system/renderer.mjs` are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them and run them in a browser or a Worker. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
+`system/schema.mjs`, `system/validate.mjs` (the shape checks and the word lint), `system/renderer.mjs`, `system/page.mjs` (`buildPage(spec, files)`: the checks, the screenshots and the page) and `system/static.generated.mjs` (`guide.css` and `runtime.js` as strings; `node system/make-static.mjs` writes it) are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them, run them in a browser or a Worker, and draw the same bytes. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
 
 Rules that apply everywhere:
 

@@ -18,8 +18,8 @@ import { dirname, join, relative, isAbsolute, sep, resolve as rpath } from "node
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { render } from "./renderer.mjs";
-import { validatePlan, ownIn } from "./validate.mjs";
+import { ownIn } from "./validate.mjs";
+import { buildPage, repoName as repoOf } from "./page.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -57,11 +57,8 @@ catch (e) { console.error(`cannot read ${pos[0]}: ${e.message}`); process.exit(1
 
 // ---------- repositories ----------
 
-function defaultRepoName() {
-  const names = Object.keys(spec.repos || {});
-  return names.length === 1 ? names[0] : "";
-}
-function repoName(r) { return r === undefined || r === true ? defaultRepoName() : r; }
+const defaultRepoName = () => repoOf(spec, undefined);
+const repoName = (r) => repoOf(spec, r);
 const toplevel = (() => {
   try { return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
   catch { return null; }
@@ -159,67 +156,32 @@ function check() {
 
 // ---------- screenshots ----------
 
-function imageSize(buf) {
-  if (buf[0] === 0x89 && buf[1] === 0x50) return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20), mime: "image/png" };
-  if (buf[0] === 0xff && buf[1] === 0xd8) {
-    let i = 2;
-    while (i < buf.length) {
-      if (buf[i] !== 0xff) { i++; continue; }
-      const m = buf[i + 1];
-      if (m >= 0xc0 && m <= 0xc3) return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7), mime: "image/jpeg" };
-      i += 2 + buf.readUInt16BE(i + 2);
-    }
+// The bytes of every asset file the plan names that is a file inside its folder; page.mjs checks
+// the rest and reads the images.
+function readAssets() {
+  const files = new Map();
+  const assets = spec && typeof spec === "object" && spec.assets && typeof spec.assets === "object" && !Array.isArray(spec.assets) ? spec.assets : {};
+  for (const a of Object.values(assets)) {
+    if (!a || typeof a !== "object" || typeof a.file !== "string" || !a.file || files.has(a.file)) continue;
+    if (!insideSpecDir(a.file) || assetFile(a.file) !== true) continue;
+    try { files.set(a.file, readFileSync(join(specDir, a.file))); } catch { /* reported as not found */ }
   }
-  throw new Error("not a PNG or JPEG");
-}
-
-function loadAssets() {
-  const out = {};
-  for (const [id, a] of Object.entries(spec.assets || {})) {
-    let buf, size;
-    try { buf = readFileSync(join(specDir, a.file)); size = imageSize(buf); }
-    catch (e) { console.error(`Errors:\n  assets.${id}: ${a.file}: ${e.code ? firstLine(e) : e.message}`); process.exit(2); }
-    const { w, h, mime } = size;
-    out[id] = { w, h, uri: `data:${mime};base64,${buf.toString("base64")}` };
-  }
-  return out;
-}
-
-// ---------- links ----------
-
-function linksFor() {
-  const url = (name) => { const u = (ownIn(spec.repos, name) || {}).url; return typeof u === "string" && /^https:\/\//.test(u) ? u.replace(/\/+$/, "") : null; };
-  const range = (lines) => {
-    if (!lines) return "";
-    const [a, b] = String(lines).split("-");
-    return b ? `#L${a}-L${b}` : `#L${a}`;
-  };
-  return {
-    source(s) {
-      if (s.kind === "git") { const u = url(repoName(s.repo)); return u ? `${u}/blob/${s.at || spec.base}/${s.path}${range(s.lines)}` : null; }
-      return null; // files beside the content file are not shipped with the page, so no link
-    },
-    file(a) {
-      if (!a.path) return null;
-      if (a.repo !== undefined) { const u = url(repoName(a.repo)); return u ? `${u}/${a.path.endsWith("/") ? "tree" : "blob"}/${a.at || spec.base}/${a.path.replace(/\/$/, "")}` : null; }
-      return null;
-    },
-  };
+  return files;
 }
 
 // ---------- main ----------
 
-const { errors: errs, warnings: warns } = validatePlan(spec, { insideFolder: insideSpecDir, fileExists: assetFile });
+const page = buildPage(spec, readAssets(), {
+  insideFolder: insideSpecDir,
+  fileExists: assetFile,
+  css: readFileSync(join(here, "guide.css"), "utf8"),
+  runtime: readFileSync(join(here, "runtime.js"), "utf8"),
+});
+const { errors: errs, warnings: warns, html } = page;
 warns.forEach((w) => console.error("warn: " + w));
 if (errs.length) { console.error("Errors:\n  " + errs.join("\n  ")); process.exit(2); }
 if (checkMode) process.exit(check() ? 1 : 0);
 if (lintMode) { console.log(`${pos[0]}: structure and words are clean.`); process.exit(0); }
 const outPath = rpath(pos[1]);
-const html = render(spec, {
-  css: readFileSync(join(here, "guide.css"), "utf8"),
-  runtime: readFileSync(join(here, "runtime.js"), "utf8"),
-  assets: loadAssets(),
-  links: linksFor(),
-});
 writeFileSync(outPath, html);
 console.log(`${pos[1]}  ${Buffer.byteLength(html)} bytes  sha256 ${createHash("sha256").update(html).digest("hex").slice(0, 16)}`);

@@ -109,6 +109,10 @@ test("an asset that names a folder is an error, not a crash", () => {
   }
 });
 
+test("an asset that is not a PNG or JPEG is an error from --lint too", () => {
+  refused((p) => { for (const a of Object.values(p.assets)) a.file = "PLAN.md"; }, "PLAN.md: not a PNG or JPEG");
+});
+
 test("unknown fields are errors, with the field named", () => {
   refused((p) => { section(p, "why").cards[1].figure.rows[3].tagacc = true; }, 'why.ask.figure.rows[3]: unknown field "tagacc"; did you mean "tagAcc"?');
   refused((p) => { p.titel = "x"; }, 'unknown field "titel"');

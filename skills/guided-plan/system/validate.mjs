@@ -238,7 +238,8 @@ function validateUnguarded(spec, host) {
       if (a.card && !cardIds.has(a.card)) errs.push(`${sid}: file ${a.name} points at unknown card ${a.card}`);
       if (a.repo !== undefined && a.repo !== true && !ownIn(spec.repos, a.repo)) errs.push(`${sid}: file ${a.name} names unknown repo ${a.repo}`);
       if (a.at !== undefined && !(typeof a.at === "string" && COMMIT.test(a.at))) errs.push(`${sid}: file ${a.name}: at is a commit hash (7 to 40 hex characters)`);
-      if (a.path !== undefined && a.repo === undefined && !insideFolder(a.path)) errs.push(`${sid}: file ${a.name}: path ${a.path} must be inside the folder of the content file`);
+      if (a.path !== undefined && !isStr(a.path)) errs.push(`${sid}: file ${a.name}: path is text`);
+      else if (a.path !== undefined && a.repo === undefined && !insideFolder(a.path)) errs.push(`${sid}: file ${a.name}: path ${a.path} must be inside the folder of the content file`);
     }
   }
   // Every id the page will carry is unique: sections, their headings and figures, cards and their figures.

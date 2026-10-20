@@ -177,6 +177,7 @@ export function jsonSchema() {
   };
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+// Run as a script (Node), print the schema; imported anywhere else (a browser, a Worker), do nothing.
+if (typeof process !== "undefined" && process.argv && process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   process.stdout.write(JSON.stringify(jsonSchema(), null, 2) + "\n");
 }

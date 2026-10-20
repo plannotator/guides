@@ -12,9 +12,35 @@ import { FORMAT, FIGURE_TYPES } from "./renderer.mjs";
 // Types: "string", "text" (a non-empty string), "integer", "number", "boolean", "ids" (a list of
 // source ids), { enum }, { const }, { list: T, min?, max? }, { ref: "<kind>" }, { map: "<kind>" },
 // { anyOf: [T, ...] }. A field name ending in "?" is optional.
+// How large a content file may be. A real guided plan is far below every one of these; they exist
+// so a hostile file cannot make a host spend unbounded time or memory. Every one can be set per
+// call (validate's host.limits, buildPage's options.limits); these are the defaults.
+export const DEFAULT_LIMITS = Object.freeze({
+  maxStringChars: 10000,      // one string: a lead, a quote, a code line
+  maxTextChars: 1000000,      // all strings together: bounds the work of every word check
+  maxSources: 500,            // keys of "sources"
+  maxAssets: 100,             // keys of "assets"
+  maxRepos: 20,               // keys of "repos"
+  maxOverviewRows: 50,        // "overview"
+  maxCites: 100,              // one "cites" or "intentCites" list
+  maxQuotes: 50,              // one source's "quote" list
+  maxFiles: 50,               // one section's "files"
+  maxBanWords: 200,           // "ban"
+  maxBands: 20,               // one timeline's "bands"
+  maxLegend: 20,              // one chips figure's "legend"
+  maxMarked: 40,              // one code figure's "marked" (an excerpt has at most 40 lines)
+  maxLayerItems: 40,          // one layer's "items"
+  maxImageBytes: 10 * 1024 * 1024,      // one screenshot file
+  maxImageBytesTotal: 25 * 1024 * 1024, // all screenshot files the page draws
+  maxHtmlBytes: 50 * 1000 * 1000,       // the page, in UTF-8 bytes
+  maxErrors: 200,             // errors (and warnings) returned; the rest are counted
+  maxEchoChars: 120,          // plan text quoted back in one error
+  maxErrorChars: 1000,        // one error, whole (the longest fixed message is about 520)
+});
+
 const text = "text";
-const ids = { list: "text", min: 1 };
-const idsOpt = { list: "text" };
+const ids = { list: "text", min: 1, limit: "maxCites" };
+const idsOpt = { list: "text", limit: "maxCites" };
 const SAFE_KEY = "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$";
 export const ID = "^[a-z][a-z0-9-]*$";
 const COMMIT = "^[0-9a-f]{7,40}$";
@@ -25,21 +51,21 @@ export const KINDS = {
   plan: {
     "format": { const: FORMAT }, "title": text, "intent": text, "intentCites?": idsOpt,
     "plan?": { ref: "planName" }, "model?": "string", "base": { pattern: COMMIT },
-    "repos?": { map: "repo" }, "sources": { map: "source" }, "assets?": { map: "asset" },
-    "overview": { list: { ref: "overview" }, min: 1 }, "sections": { list: { ref: "section" }, min: 1, max: 10 },
-    "ban?": { list: text },
+    "repos?": { map: "repo", limit: "maxRepos" }, "sources": { map: "source", limit: "maxSources" }, "assets?": { map: "asset", limit: "maxAssets" },
+    "overview": { list: { ref: "overview" }, min: 1, limit: "maxOverviewRows" }, "sections": { list: { ref: "section" }, min: 1, max: 10 },
+    "ban?": { list: text, limit: "maxBanWords" },
   },
   planName: { "name?": "string" },
   repo: { "url?": { pattern: "^https://[^\\s\"<>]+$" }, "path?": text },
   source: {
     "kind": { enum: ["git", "file", "capture"] }, "path": text, "lines?": { pattern: "^[1-9][0-9]*(-[1-9][0-9]*)?$" },
-    "quote?": { anyOf: [text, { list: text, min: 1 }] }, "label?": "string", "at?": { pattern: COMMIT }, "repo?": text,
+    "quote?": { anyOf: [text, { list: text, min: 1, limit: "maxQuotes" }] }, "label?": "string", "at?": { pattern: COMMIT }, "repo?": text,
   },
   asset: { "file": text, "from?": text },
   overview: { "kind": { enum: ["Decided", "Change", "Kept", "Open"] }, "text": text, "section": text, "cites": ids },
   section: {
     "id": { pattern: ID }, "title": text, "heading": text, "question?": text, "lead": text, "cites": ids,
-    "figure": { ref: "figure" }, "cards?": { list: { ref: "card" }, max: 6 }, "files?": { list: { ref: "file" } },
+    "figure": { ref: "figure" }, "cards?": { list: { ref: "card" }, max: 6 }, "files?": { list: { ref: "file" }, limit: "maxFiles" },
   },
   card: {
     "id": { pattern: ID }, "title": text, "body": { list: text, min: 1, max: 3 }, "cites": ids,
@@ -53,27 +79,27 @@ export const KINDS = {
   screenshot: { ...figureCommon, "type": { const: "screenshot" }, "asset": text, "alt?": "string", "ring?": { list: "number", min: 4, max: 4 }, "scale?": "number" },
   code: {
     ...figureCommon, "type": { const: "code" }, "path": text, "start": "integer", "text": { list: "string", min: 1, max: 40 },
-    "at?": { pattern: COMMIT }, "repo?": text, "marked?": { anyOf: [{ const: "all" }, { list: "integer" }] }, "mark?": { enum: ["hl", "out"] },
+    "at?": { pattern: COMMIT }, "repo?": text, "marked?": { anyOf: [{ const: "all" }, { list: "integer", limit: "maxMarked" }] }, "mark?": { enum: ["hl", "out"] },
   },
   list: { ...figureCommon, "type": { const: "list" }, "rows": { list: { ref: "listRow" }, min: 1, max: 12 } },
   listRow: { "text": text, "note?": "string", "tag?": "string", "tagAcc?": "boolean", "mono?": "boolean", "mark?": { enum: ["out", "new", "acc"] } },
   table: {
     ...figureCommon, "type": { const: "table" },
     "columns": { list: { anyOf: [text, { ref: "column" }] }, min: 2, max: 5 },
-    "rows": { list: { list: { anyOf: ["string", { ref: "cell" }] } }, min: 1, max: 20 },
+    "rows": { list: { list: { anyOf: ["string", { ref: "cell" }] }, max: 5 }, min: 1, max: 20 },
   },
   column: { "label": text, "mono?": "boolean", "acc?": "boolean", "end?": "boolean", "fill?": "boolean" },
   cell: { "text": "string", "mono?": "boolean", "acc?": "boolean" },
-  chips: { ...figureCommon, "type": { const: "chips" }, "chips": { list: { ref: "chip" }, min: 1, max: 40 }, "legend?": { list: { ref: "legend" } } },
+  chips: { ...figureCommon, "type": { const: "chips" }, "chips": { list: { ref: "chip" }, min: 1, max: 40 }, "legend?": { list: { ref: "legend" }, limit: "maxLegend" } },
   chip: { "text": text, "mark?": { enum: ["out", "changed", "new", "acc"] }, "acc?": "boolean", "mono?": "boolean" },
   legend: { "text": text, "mark?": { enum: ["out", "changed", "new", "acc"] } },
-  timeline: { ...figureCommon, "type": { const: "timeline" }, "stops": { list: { ref: "stop" }, min: 1, max: 6 }, "bands?": { list: { ref: "band" } } },
+  timeline: { ...figureCommon, "type": { const: "timeline" }, "stops": { list: { ref: "stop" }, min: 1, max: 6 }, "bands?": { list: { ref: "band" }, limit: "maxBands" } },
   stop: { "label": text, "sub?": "string", "sub2?": "string", "mark?": { enum: ["acc", "ask"] }, "mono?": "boolean" },
   band: { "from": "integer", "to": "integer", "label": text, "acc?": "boolean" },
   flow: { ...figureCommon, "type": { const: "flow" }, "steps": { list: { ref: "step" }, min: 2, max: 6 } },
   step: { "label": text, "sub?": "string", "via?": "string", "mark?": { enum: ["plain", "acc", "new", "gone", "muted"] }, "mono?": "boolean" },
   layers: { ...figureCommon, "type": { const: "layers" }, "rows": { list: { ref: "layer" }, min: 1, max: 5 } },
-  layer: { "label": text, "sub?": "string", "text?": "string", "items?": { list: { anyOf: [text, { ref: "layerItem" }] } }, "tag?": "string", "tagAcc?": "boolean" },
+  layer: { "label": text, "sub?": "string", "text?": "string", "items?": { list: { anyOf: [text, { ref: "layerItem" }] }, limit: "maxLayerItems" }, "tag?": "string", "tagAcc?": "boolean" },
   layerItem: { "text": text, "mark?": { enum: ["out", "changed", "new", "acc"] }, "mono?": "boolean" },
   pair: { ...figureCommon, "type": { const: "pair" }, "sides": { list: { ref: "side" }, min: 2, max: 4 } },
   side: { "label": text, "note?": "string", "acc?": "boolean", "toy?": "boolean", "figure": { ref: "sideFigure" }, "caption?": "string" },
@@ -129,20 +155,74 @@ export function unknownFields(spec) {
   return errs.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, ""));
 }
 
+// What is over a limit: lists and maps longer than their limit, strings longer than
+// maxStringChars, and all strings together longer than maxTextChars. Walks the same tree as
+// unknownFields, so it reads each value once. Returns { errors, over } where over is true when
+// anything is over, so the caller can stop before any other check spends time on the file.
+export function limitErrors(spec, limits = DEFAULT_LIMITS) {
+  const L = { ...DEFAULT_LIMITS, ...(limits && typeof limits === "object" ? limits : {}) };
+  const errs = [];
+  let total = 0;
+  const str = (v, where) => {
+    total += v.length;
+    if (v.length > L.maxStringChars) errs.push(`${where}: text of ${v.length} characters; keep it to ${L.maxStringChars} or fewer`);
+  };
+  const count = (n, t, where, what) => {
+    if (t.limit && n > L[t.limit]) errs.push(`${where}: ${n} ${what}; keep it to ${L[t.limit]} or fewer`);
+  };
+  const walk = (v, t, where) => {
+    if (typeof v === "string") return str(v, where);
+    if (v === null || v === undefined || typeof t === "string") return;
+    if (t.ref) return walkKind(v, t.ref, where);
+    if (t.map) {
+      if (!v || typeof v !== "object" || Array.isArray(v)) return;
+      const keys = Object.keys(v);
+      count(keys.length, t, where, "entries");
+      for (const k of keys) walkKind(v[k], t.map, `${where}.${k}`);
+      return;
+    }
+    if (t.list) {
+      if (!Array.isArray(v)) return;
+      count(v.length, t, where, "items");
+      if (t.limit && v.length > L[t.limit]) return; // too long to be worth walking
+      v.forEach((x, i) => walk(x, t.list, `${where}[${i}]`));
+      return;
+    }
+    if (t.anyOf) {
+      const o = t.anyOf.find((b) => typeof b === "object" && (b.ref || b.list));
+      if (o && typeof v === "object") walk(v, o, where);
+    }
+  };
+  const walkKind = (v, kind, where) => {
+    if (!v || typeof v !== "object" || Array.isArray(v)) return;
+    if (kind === "figure" || kind === "sideFigure") {
+      if (!FIGURE_TYPES.includes(v.type) || (kind === "sideFigure" && v.type === "pair")) return;
+      kind = v.type;
+    }
+    for (const [k, t] of Object.entries(KINDS[kind])) {
+      const name = k.replace(/\?$/, "");
+      if (Object.prototype.hasOwnProperty.call(v, name)) walk(v[name], t, `${where}.${name}`);
+    }
+  };
+  walkKind(spec, "plan", "plan");
+  if (total > L.maxTextChars) errs.push(`plan: ${total} characters of text in all; keep it to ${L.maxTextChars} or fewer`);
+  return { errors: errs.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, "")), over: errs.length > 0 };
+}
+
 // ---------- JSON Schema ----------
 
 function toSchema(t) {
-  if (t === "string") return { type: "string" };
-  if (t === "text") return { type: "string", minLength: 1, pattern: "\\S" };
+  if (t === "string") return { type: "string", maxLength: DEFAULT_LIMITS.maxStringChars };
+  if (t === "text") return { type: "string", minLength: 1, maxLength: DEFAULT_LIMITS.maxStringChars, pattern: "\\S" };
   if (t === "integer") return { type: "integer" };
   if (t === "number") return { type: "number" };
   if (t === "boolean") return { type: "boolean" };
   if (t.const !== undefined) return { const: t.const };
   if (t.enum) return { enum: t.enum };
-  if (t.pattern) return { type: "string", pattern: t.pattern };
+  if (t.pattern) return { type: "string", maxLength: DEFAULT_LIMITS.maxStringChars, pattern: t.pattern };
   if (t.ref) return { $ref: `#/$defs/${t.ref}` };
-  if (t.map) return { type: "object", propertyNames: { pattern: SAFE_KEY, not: { enum: ["__proto__", "constructor", "prototype"] } }, additionalProperties: { $ref: `#/$defs/${t.map}` } };
-  if (t.list) return { type: "array", items: toSchema(t.list), ...(t.min !== undefined ? { minItems: t.min } : {}), ...(t.max !== undefined ? { maxItems: t.max } : {}) };
+  if (t.map) return { type: "object", ...(t.limit ? { maxProperties: DEFAULT_LIMITS[t.limit] } : {}), propertyNames: { pattern: SAFE_KEY, not: { enum: ["__proto__", "constructor", "prototype"] } }, additionalProperties: { $ref: `#/$defs/${t.map}` } };
+  if (t.list) return { type: "array", items: toSchema(t.list), ...(t.min !== undefined ? { minItems: t.min } : {}), ...(t.max !== undefined ? { maxItems: t.max } : t.limit ? { maxItems: DEFAULT_LIMITS[t.limit] } : {}) };
   if (t.anyOf) return { anyOf: t.anyOf.map(toSchema) };
   throw new Error(`unknown type ${JSON.stringify(t)}`);
 }

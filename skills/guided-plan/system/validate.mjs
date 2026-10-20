@@ -3,7 +3,9 @@
 // Node, a browser or a Worker. build.mjs reads the files and runs it; anything that has to look at
 // the disk is a function the caller passes in (see validate's `host`).
 import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
-import { unknownFields, MAP_KEY } from "./schema.mjs";
+import { unknownFields, limitErrors, MAP_KEY, DEFAULT_LIMITS } from "./schema.mjs";
+
+export { DEFAULT_LIMITS };
 
 // Lookups by a key the content file chose are own-property lookups, so "constructor" or
 // "__proto__" never finds something the file did not write.
@@ -27,7 +29,39 @@ const RESERVED_SECTION_IDS = ["theme", "read"];
 // Card ids the renderer uses inside a section ("<section>-h" is the heading, "<section>-f" the figure).
 const RESERVED_CARD_IDS = ["h", "f", "read"];
 const COMMIT = /^[0-9a-f]{7,40}$/;
-const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; keep it to ${max} or fewer`); };
+const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${errs.clip(text)}" is ${text.length} characters; keep it to ${max} or fewer`); };
+
+// The limits for one call: the defaults, with any the host set.
+export function limitsOf(limits) {
+  const L = { ...DEFAULT_LIMITS };
+  if (isObj(limits)) for (const k of Object.keys(DEFAULT_LIMITS)) if (typeof limits[k] === "number" && limits[k] >= 0) L[k] = limits[k];
+  return L;
+}
+
+// Text cut to at most n characters, never through a surrogate pair.
+function clip(t, n) {
+  t = String(t);
+  if (t.length <= n) return t;
+  let end = n;
+  if (end > 0 && t.charCodeAt(end - 1) >= 0xd800 && t.charCodeAt(end - 1) <= 0xdbff) end--;
+  return t.slice(0, end) + "…";
+}
+
+// Where errors (or warnings) go: the first maxErrors are kept, each at most maxErrorChars (its start
+// and end, with "…" between), and the rest only counted. Error text quotes the plan, so a host that
+// shows it must escape it like any other untrusted text.
+function sink(L) {
+  const kept = [];
+  let more = 0;
+  const head = Math.ceil((L.maxErrorChars * 2) / 3);
+  const cut = (m) => (m.length <= L.maxErrorChars ? m : clip(m, head) + m.slice(m.length - Math.max(0, L.maxErrorChars - head - 1)));
+  return {
+    push(...ms) { for (const m of ms) { if (kept.length < L.maxErrors) kept.push(cut(String(m))); else more++; } },
+    get length() { return kept.length + more; },
+    clip: (t) => clip(t, L.maxEchoChars),
+    list: () => (more ? [...kept, `…and ${more} more`] : kept),
+  };
+}
 
 // A path the content file names beside itself stays inside its folder. This is the check by name
 // alone, so it refuses anything a host might resolve somewhere else: a leading "/", any backslash,
@@ -140,12 +174,16 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
 }
 
 function validateUnguarded(spec, host) {
-  const { insideFolder = insideFolderByName, fileExists = () => true } = isObj(host) ? host : {};
-  const errs = [];
+  const { insideFolder = insideFolderByName, fileExists = () => true, limits } = isObj(host) ? host : {};
+  const L = limitsOf(limits);
+  const errs = sink(L);
   if (!spec || typeof spec !== "object" || Array.isArray(spec)) return ["the content file is a JSON object"];
   if (spec.format === "guided-plan/1") return [`format: this file is guided-plan/1 (lettered parts). ${MIGRATE}`];
   if (spec.format !== FORMAT) errs.push(`format: expected "${FORMAT}"`);
   errs.push(...unknownFields(spec));
+  // Over a limit: say so and stop, before any other check spends time on the file.
+  const over = limitErrors(spec, L);
+  if (over.over) { errs.push(...over.errors); return errs.list(); }
   // Keys of sources, assets and repos become ids and lookups: a safe set, and never a name every object already has.
   const keyRe = new RegExp(MAP_KEY);
   for (const m of ["sources", "assets", "repos"]) {
@@ -197,7 +235,7 @@ function validateUnguarded(spec, host) {
   }
   cite("intent", spec.intentCites, false);
   if (notList(spec.ban) || (Array.isArray(spec.ban) && !spec.ban.every(isStr))) errs.push("ban: a list of words");
-  if (!Array.isArray(spec.sections) || !spec.sections.length || spec.sections.length > 10) { errs.push("sections: 1 to 10"); return errs; }
+  if (!Array.isArray(spec.sections) || !spec.sections.length || spec.sections.length > 10) { errs.push("sections: 1 to 10"); return errs.list(); }
   if (!Array.isArray(spec.overview) || !spec.overview.length) errs.push("overview: at least one row");
   const secIds = new Set();
   for (const [i, s] of spec.sections.entries()) {
@@ -209,7 +247,7 @@ function validateUnguarded(spec, host) {
     if (s.parts) { errs.push(`${sid}: "parts" are gone in ${FORMAT}. ${MIGRATE}`); continue; }
     if (!isStr(s.title)) errs.push(`${sid}: title required (the small label above the heading)`);
     if (!isStr(s.heading)) errs.push(`${sid}: heading required (the story in a few words)`);
-    else if (words(s.heading) > MAX_HEADING_WORDS) errs.push(`${sid}: heading "${s.heading}" is ${words(s.heading)} words; say it in ${MAX_HEADING_WORDS} or fewer`);
+    else if (words(s.heading) > MAX_HEADING_WORDS) errs.push(`${sid}: heading "${errs.clip(s.heading)}" is ${words(s.heading)} words; say it in ${MAX_HEADING_WORDS} or fewer`);
     if (Array.isArray(s.lead)) errs.push(`${sid}: lead is one paragraph, a string; put more in a card`);
     else if (!isStr(s.lead)) errs.push(`${sid}: lead required (one paragraph)`);
     if (s.question !== undefined && !isStr(s.question)) errs.push(`${sid}: question is text`);
@@ -265,7 +303,7 @@ function validateUnguarded(spec, host) {
     if (!secIds.has(o.section)) errs.push(`overview[${i}]: unknown section ${o.section}`);
     cite(`overview[${i}]`, o.cites, true);
   });
-  return errs;
+  return errs.list();
 }
 
 // ---------- words: what a reader sees ----------
@@ -328,38 +366,71 @@ function readerStrings(spec) {
   return out;
 }
 
-function lintUnguarded(spec) {
-  const errs = [];
-  const warns = [];
-  const banned = [...BANNED, ...(spec.ban || []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))].map((w) => new RegExp(`\\b${w}\\b`, "i"));
+// A banned word as a regular expression, and the lower-case text it cannot match without (null when
+// it has letters outside ASCII, whose case rules differ; then the expression always runs).
+function banWord(w, isPattern) {
+  const stem = isPattern ? w.replace(/\([^)]*\)\?$/, "").replace(/.\?$/, "") : w.toLowerCase();
+  return { re: new RegExp(`\\b${isPattern ? w : w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"), stem: /^[\x20-\x7e]*$/.test(stem) ? stem : null };
+}
+
+// The numbers a quote holds, read once: a number in the text counts when it is one of them. The
+// same rule as the expression (?<![\d.])(n)(?![\d]) against the quote, for every n at once. Quotes
+// are joined with a space, which no number crosses, so each source can be read on its own.
+function numbersIn(quotes, into = new Set()) {
+  for (const m of quotes.matchAll(/(?<![\d.])(\d+)(?:\.(\d+))?/g)) {
+    into.add(m[1]);
+    if (m[2] !== undefined) into.add(`${m[1]}.${m[2]}`);
+  }
+  for (const w of Object.keys(NUMWORDS)) if (new RegExp(`(?<![\\d.])${w}(?![\\d])`).test(quotes)) into.add(w);
+  return into;
+}
+
+function lintUnguarded(spec, limits) {
+  const L = limitsOf(limits);
+  const errs = sink(L);
+  const warns = sink(L);
+  const banned = [...BANNED.map((w) => banWord(w, true)), ...(spec.ban || []).map((w) => banWord(w, false))];
+  const sourceNumbers = new Map(); // source id -> the numbers its quotes hold
+  const citedNumbers = new Map(); // cites list -> the numbers all its sources hold
+  const numbersOf = (id) => {
+    if (!sourceNumbers.has(id)) sourceNumbers.set(id, numbersIn([].concat((ownIn(spec.sources, id) || {}).quote || []).join(" ").toLowerCase()));
+    return sourceNumbers.get(id);
+  };
   for (const [where, text, ids, isCode, toy, inFigure, isTitle] of readerStrings(spec)) {
     if (!isStr(text)) continue;
+    const shown = errs.clip(text);
     // code in backticks and code-like names (mono) are not prose, so the word list does not apply to them
     const prose = isCode ? "" : text.replace(/`[^`]*`/g, " ");
-    for (const re of banned) if (re.test(prose)) errs.push(`${where}: jargon "${prose.match(re)[0]}" in "${text}"; say it in plain words`);
-    if (/—/.test(text) || /\s--\s/.test(text)) errs.push(`${where}: a dash standing in for a comma; use a comma, a colon or two sentences: "${text}"`);
+    const low = prose.toLowerCase();
+    for (const b of banned) if ((b.stem === null || low.includes(b.stem)) && b.re.test(prose)) errs.push(`${where}: jargon "${errs.clip(prose.match(b.re)[0])}" in "${shown}"; say it in plain words`);
+    if (/—/.test(text) || /\s--\s/.test(text)) errs.push(`${where}: a dash standing in for a comma; use a comma, a colon or two sentences: "${shown}"`);
     if (/(body|lead)/.test(where) && words(text) > 70) warns.push(`${where}: paragraph of ${words(text)} words`);
     for (const sent of text.split(/(?<=[.?!])\s+/)) if (words(sent) > 28) warns.push(`${where}: sentence over 28 words: "${sent.slice(0, 60)}..."`);
-    if (inFigure && !isCode && /`/.test(text)) errs.push(`${where}: figure text is plain; drop the backticks: "${text}"`);
+    if (inFigure && !isCode && /`/.test(text)) errs.push(`${where}: figure text is plain; drop the backticks: "${shown}"`);
     if (isCode) continue;
     // A number a reader sees comes from a cited quote. Code in backticks, "PR 123", "#123", dates and years are exempt.
     const stripped = text.replace(/`[^`]*`/g, " ").replace(/\bPR \d+\b/g, " ").replace(/#\d+\b/g, " ").replace(/\b\d{4}-\d{2}-\d{2}\b/g, " ").replace(/\b(19|20)\d{2}\b/g, " ");
     if (toy) {
-      if (/\d/.test(stripped)) errs.push(`${where}: an illustration shows invented data, so it may not show a digit: "${text}"`);
+      if (/\d/.test(stripped)) errs.push(`${where}: an illustration shows invented data, so it may not show a digit: "${shown}"`);
       continue;
     }
     if (ids === null) continue;
     // Digits always count. Number words count too, except in titles and headings ("Two ways in").
     const nums = [...stripped.matchAll(/(?<![A-Za-z_.\d])(\d+(?:\.\d+)?)(?![\d])|\b(two|three|four|five|six|seven|eight|nine|ten)\b/gi)].filter((m) => m[1] || !isTitle).map((m) => (m[1] || m[2]).toLowerCase());
     if (!nums.length) continue;
-    const quotes = ids.flatMap((id) => [].concat((ownIn(spec.sources, id) || {}).quote || [])).join(" ").toLowerCase();
+    const key = [...new Set(ids)].sort().join("\u0000");
+    let held = citedNumbers.get(key);
+    if (!held) {
+      const ownIds = [...new Set(ids)];
+      held = ownIds.length === 1 ? numbersOf(ownIds[0]) : new Set(ownIds.flatMap((id) => [...numbersOf(id)]));
+      citedNumbers.set(key, held);
+    }
     for (const n of nums) {
       const alt = NUMWORDS[n] || Object.keys(NUMWORDS).find((k) => NUMWORDS[k] === n);
-      const forms = [n, alt].filter(Boolean).map((x) => x.replace(/\./g, "\\."));
-      if (!new RegExp(`(?<![\\d.])(${forms.join("|")})(?![\\d])`).test(quotes)) errs.push(`${where}: the number "${n}" is not in any quote ${ids.length ? "this text cites" : "(a section label cites nothing, so it may not hold a digit)"}: "${text}"`);
+      if (!(held.has(n) || (alt && held.has(alt)))) errs.push(`${where}: the number "${errs.clip(n)}" is not in any quote ${ids.length ? "this text cites" : "(a section label cites nothing, so it may not hold a digit)"}: "${shown}"`);
     }
   }
-  return { errors: errs, warnings: warns };
+  return { errors: errs.list(), warnings: warns.list() };
 }
 
 // ---------- the exports ----------
@@ -378,6 +449,8 @@ const unforeseen = (e) => `the content file could not be checked: ${e && e.messa
  *   inside the content file's folder. Default: insideFolderByName.
  * @param {(path: string) => boolean | string} [host.fileExists]  true when the asset file is there;
  *   false when it is not; a string to say what is wrong with it instead. Default: not checked.
+ * @param {Partial<typeof DEFAULT_LIMITS>} [host.limits]  any of DEFAULT_LIMITS to change for this call.
+ *   Error text quotes the plan: a host that shows it must escape it.
  * @returns {string[]}
  */
 export function validate(spec, host) {
@@ -386,10 +459,11 @@ export function validate(spec, host) {
 
 /**
  * The words and numbers a reader sees. Run it on a file whose shape is sound (see validate).
+ * `limits` as for validate's host.limits.
  * @returns {{ errors: string[], warnings: string[] }}
  */
-export function lint(spec) {
-  try { return lintUnguarded(spec); } catch (e) { return { errors: [unforeseen(e)], warnings: [] }; }
+export function lint(spec, limits) {
+  try { return lintUnguarded(spec, limits); } catch (e) { return { errors: [unforeseen(e)], warnings: [] }; }
 }
 
 /**
@@ -400,5 +474,5 @@ export function lint(spec) {
 export function validatePlan(spec, host) {
   const errors = validate(spec, host);
   if (errors.length) return { errors, warnings: [] };
-  return lint(spec);
+  return lint(spec, isObj(host) ? host.limits : undefined);
 }

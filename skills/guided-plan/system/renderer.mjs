@@ -266,7 +266,8 @@ export function citesOfFigure(f, out = []) {
 
 export function sectionCites(sec) {
   const ids = [];
-  const add = (l) => arr(l).forEach((c) => { if (!ids.includes(c)) ids.push(c); });
+  const seen = new Set();
+  const add = (l) => arr(l).forEach((c) => { if (!seen.has(c)) { seen.add(c); ids.push(c); } });
   add(sec.cites);
   add(citesOfFigure(sec.figure));
   for (const c of arr(sec.cards)) { if (c) { add(c.cites); add(citesOfFigure(c.figure)); } }

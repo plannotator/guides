@@ -113,7 +113,7 @@ The method, the content format (`guided-plan/2`) and every picture type are in [
 node --test skills/guided-plan/test/*.test.mjs
 ```
 
-They cover the format's refusals (unknown fields, reserved and colliding ids, unsafe keys and paths), the renderer on its own with hostile values, the word lint on every text field, colour contrast and forced colours, same input same bytes (and that the committed examples are current), `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
+They cover the format's refusals (unknown fields, reserved and colliding ids, unsafe keys and paths), the renderer on its own with hostile values, the word lint on every text field, colour contrast and forced colours, same input same bytes (and that the committed examples are current), the pure core building both examples byte for byte with no `process` or `Buffer`, every limit on untrusted input and a plan at the limits built in about a second, `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
 
 ## Related
 

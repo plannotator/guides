@@ -18,7 +18,7 @@ import { dirname, join, relative, isAbsolute, sep, resolve as rpath } from "node
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { ownIn } from "./validate.mjs";
+import { ownIn, insideFolderByName, DEFAULT_LIMITS } from "./validate.mjs";
 import { buildPage, repoName as repoOf } from "./page.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -87,12 +87,20 @@ function insideSpecDir(p) {
   try { return !leaves(relative(realpathSync(specDir), realpathSync(rpath(specDir, p)))); }
   catch { return true; } // missing: existence is reported elsewhere
 }
+// The same check a host without a folder runs (by name alone), and then the disk's: so a plan that
+// builds here does not fail when it is uploaded.
+const insideFolder = (p) => insideFolderByName(p) && insideSpecDir(p);
+// Assets that are files but could not be read, with the reason.
+const unreadable = new Map();
 // An asset is a file: true, false when it is missing, or what is wrong with it.
 function assetFile(p) {
+  if (unreadable.has(p)) return `${p} could not be read (${unreadable.get(p)})`;
   const f = join(specDir, p);
   if (!existsSync(f)) return false;
-  if (statSync(f).isDirectory()) return `${p} is a folder; name an image file inside it`;
-  return statSync(f).isFile() ? true : `${p} is not a file`;
+  const st = statSync(f);
+  if (st.isDirectory()) return `${p} is a folder; name an image file inside it`;
+  if (!st.isFile()) return `${p} is not a file`;
+  return st.size > DEFAULT_LIMITS.maxImageBytes ? `${p} is ${st.size} bytes; keep a screenshot to ${DEFAULT_LIMITS.maxImageBytes} or fewer` : true;
 }
 
 // ---------- the re-check ----------
@@ -163,8 +171,8 @@ function readAssets() {
   const assets = spec && typeof spec === "object" && spec.assets && typeof spec.assets === "object" && !Array.isArray(spec.assets) ? spec.assets : {};
   for (const a of Object.values(assets)) {
     if (!a || typeof a !== "object" || typeof a.file !== "string" || !a.file || files.has(a.file)) continue;
-    if (!insideSpecDir(a.file) || assetFile(a.file) !== true) continue;
-    try { files.set(a.file, readFileSync(join(specDir, a.file))); } catch { /* reported as not found */ }
+    if (!insideFolder(a.file) || assetFile(a.file) !== true) continue;
+    try { files.set(a.file, readFileSync(join(specDir, a.file))); } catch (e) { unreadable.set(a.file, e.code || e.message); }
   }
   return files;
 }
@@ -172,7 +180,7 @@ function readAssets() {
 // ---------- main ----------
 
 const page = buildPage(spec, readAssets(), {
-  insideFolder: insideSpecDir,
+  insideFolder,
   fileExists: assetFile,
   css: readFileSync(join(here, "guide.css"), "utf8"),
   runtime: readFileSync(join(here, "runtime.js"), "utf8"),

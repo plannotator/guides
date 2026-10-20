@@ -3,9 +3,9 @@
 // Node, a browser or a Worker. build.mjs reads the files and runs it; anything that has to look at
 // the disk is a function the caller passes in (see validate's `host`).
 import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
-import { unknownFields, limitErrors, MAP_KEY, DEFAULT_LIMITS } from "./schema.mjs";
+import { unknownFields, limitErrors, limitsOf, MAP_KEY, DEFAULT_LIMITS } from "./schema.mjs";
 
-export { DEFAULT_LIMITS };
+export { DEFAULT_LIMITS, limitsOf };
 
 // Lookups by a key the content file chose are own-property lookups, so "constructor" or
 // "__proto__" never finds something the file did not write.
@@ -31,12 +31,6 @@ const RESERVED_CARD_IDS = ["h", "f", "read"];
 const COMMIT = /^[0-9a-f]{7,40}$/;
 const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${errs.clip(text)}" is ${text.length} characters; keep it to ${max} or fewer`); };
 
-// The limits for one call: the defaults, with any the host set.
-export function limitsOf(limits) {
-  const L = { ...DEFAULT_LIMITS };
-  if (isObj(limits)) for (const k of Object.keys(DEFAULT_LIMITS)) if (typeof limits[k] === "number" && limits[k] >= 0) L[k] = limits[k];
-  return L;
-}
 
 // Text cut to at most n characters, never through a surrogate pair.
 function clip(t, n) {
@@ -56,7 +50,10 @@ function sink(L) {
   const head = Math.ceil((L.maxErrorChars * 2) / 3);
   const cut = (m) => (m.length <= L.maxErrorChars ? m : clip(m, head) + m.slice(m.length - Math.max(0, L.maxErrorChars - head - 1)));
   return {
-    push(...ms) { for (const m of ms) { if (kept.length < L.maxErrors) kept.push(cut(String(m))); else more++; } },
+    push(m) { if (kept.length < L.maxErrors) kept.push(cut(String(m))); else more++; },
+    // A list, one at a time (never spread: a list can be longer than the stack), and how many
+    // its producer left out.
+    pushAll(list, left = 0) { for (const m of list) this.push(m); more += left; },
     get length() { return kept.length + more; },
     clip: (t) => clip(t, L.maxEchoChars),
     list: () => (more ? [...kept, `…and ${more} more`] : kept),
@@ -180,10 +177,11 @@ function validateUnguarded(spec, host) {
   if (!spec || typeof spec !== "object" || Array.isArray(spec)) return ["the content file is a JSON object"];
   if (spec.format === "guided-plan/1") return [`format: this file is guided-plan/1 (lettered parts). ${MIGRATE}`];
   if (spec.format !== FORMAT) errs.push(`format: expected "${FORMAT}"`);
-  errs.push(...unknownFields(spec));
+  const unknown = unknownFields(spec, { max: L.maxErrors + 1 });
+  errs.pushAll(unknown, unknown.more);
   // Over a limit: say so and stop, before any other check spends time on the file.
-  const over = limitErrors(spec, L);
-  if (over.over) { errs.push(...over.errors); return errs.list(); }
+  const over = limitErrors(spec, L, { max: L.maxErrors + 1 });
+  if (over.over) { errs.pushAll(over.errors, over.more); return errs.list(); }
   // Keys of sources, assets and repos become ids and lookups: a safe set, and never a name every object already has.
   const keyRe = new RegExp(MAP_KEY);
   for (const m of ["sources", "assets", "repos"]) {

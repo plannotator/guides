@@ -1,7 +1,7 @@
 // A guided plan's page from its content file and the bytes of the screenshots it names, with no
 // file system, no process and no Buffer: it runs in Node, a browser or a Worker. build.mjs reads
 // the files from the disk and calls buildPage; another tool can hand it the bytes from its own store.
-import { render } from "./renderer.mjs";
+import { render, renderSizeBound } from "./renderer.mjs";
 import { validatePlan, insideFolderByName, ownIn, limitsOf, DEFAULT_LIMITS } from "./validate.mjs";
 
 export { DEFAULT_LIMITS };
@@ -169,15 +169,22 @@ const capErrors = (list, L) => (list.length > L.maxErrors ? [...list.slice(0, L.
  *   there are errors. Error text quotes the plan: a host that shows it must escape it.
  */
 export function buildPage(spec, files, options = {}) {
-  const opts = isObj(options) ? options : {};
-  const L = limitsOf(opts.limits);
-  const bytes = (p) => {
-    try { return asBytes(files && typeof files.get === "function" ? files.get(p) : ownIn(files, p)); } catch { return undefined; }
-  };
-  const { insideFolder = insideFolderByName, fileExists = (p) => bytes(p) !== undefined } = opts;
-  const { errors, warnings } = validatePlan(spec, { insideFolder, fileExists, limits: L });
-  if (errors.length) return { html: null, errors, warnings };
+  let L = DEFAULT_LIMITS;
+  let warnings = [];
   try {
+    // Everything that reads the caller's values is in here, so a throwing getter is an error too.
+    const opts = isObj(options) ? options : {};
+    L = limitsOf(opts.limits);
+    const bytes = (p) => {
+      try { return asBytes(files && typeof files.get === "function" ? files.get(p) : ownIn(files, p)); } catch { return undefined; }
+    };
+    const { insideFolder = insideFolderByName, fileExists = (p) => bytes(p) !== undefined } = opts;
+    const css = typeof opts.css === "string" ? opts.css : GUIDE_CSS;
+    const runtime = typeof opts.runtime === "string" ? opts.runtime : RUNTIME_JS;
+    const checked = validatePlan(spec, { insideFolder, fileExists, limits: L });
+    const errors = checked.errors;
+    warnings = checked.warnings;
+    if (errors.length) return { html: null, errors, warnings };
     // Every named asset is checked: there, not too large, a PNG or JPEG. Only the ones a figure
     // draws are encoded, and each file once, however many ids or figures name it.
     const uses = screenshotUses(spec);
@@ -192,20 +199,28 @@ export function buildPage(spec, files, options = {}) {
       files_.set(a.file, { b, size });
     }
     if (errors.length) return { html: null, errors: capErrors(errors, L), warnings };
-    // The page's size is known before anything is encoded: each drawing of a screenshot carries
-    // its whole data: URI.
+    // The page's size is known before anything is encoded or drawn: each drawing of a screenshot
+    // carries its whole data: URI, and each source is drawn in every section that cites it.
+    const uriLength = (id) => {
+      const a = ownIn(spec.assets, id);
+      const f = a && files_.get(a.file);
+      return f ? `data:${f.size.mime};base64,`.length + 4 * Math.ceil(f.b.length / 3) : 0;
+    };
     let imageBytes = 0, uriChars = 0;
     const counted = new Set();
     for (const [id, n] of uses) {
       const a = ownIn(spec.assets, id);
       const f = a && files_.get(a.file);
       if (!f) continue;
-      uriChars += n * (`data:${f.size.mime};base64,`.length + 4 * Math.ceil(f.b.length / 3));
+      uriChars += n * uriLength(id);
       if (!counted.has(a.file)) { counted.add(a.file); imageBytes += f.b.length; }
     }
     if (imageBytes > L.maxImageBytesTotal) errors.push(`assets: the screenshots the page draws are ${imageBytes} bytes in all; keep them to ${L.maxImageBytesTotal} or fewer`);
     if (uriChars > L.maxHtmlBytes) errors.push(`assets: the screenshots alone would make the page ${uriChars} bytes (each drawing carries the whole image); keep the page to ${L.maxHtmlBytes} or fewer`);
     if (errors.length) return { html: null, errors, warnings };
+    const links = linksFor(spec);
+    const bound = renderSizeBound(spec, { css, runtime, uriLength, links });
+    if (bound > L.maxHtmlBytes) return { html: null, errors: [`the page could be up to ${bound} bytes (its text, with each source drawn in every section that cites it, and its screenshots); keep it to ${L.maxHtmlBytes} or fewer`], warnings };
     const uris = new Map(); // path -> data: URI, encoded once
     const assets = {};
     for (const id of uses.keys()) {
@@ -215,12 +230,8 @@ export function buildPage(spec, files, options = {}) {
       if (!uris.has(a.file)) uris.set(a.file, `data:${f.size.mime};base64,${base64(f.b)}`);
       assets[id] = { w: f.size.w, h: f.size.h, uri: uris.get(a.file) };
     }
-    const html = render(spec, {
-      css: typeof opts.css === "string" ? opts.css : GUIDE_CSS,
-      runtime: typeof opts.runtime === "string" ? opts.runtime : RUNTIME_JS,
-      assets,
-      links: linksFor(spec),
-    });
+    const html = render(spec, { css, runtime, assets, links });
+    // The bound above is an upper bound; this is the backstop.
     const size = utf8Length(html);
     if (size > L.maxHtmlBytes) return { html: null, errors: [`the page is ${size} bytes; keep it to ${L.maxHtmlBytes} or fewer`], warnings };
     return { html, errors, warnings };

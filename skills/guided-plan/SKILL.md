@@ -85,7 +85,7 @@ This is the whole format. A file that follows it builds to the same page anywher
 
 `system/schema.mjs`, `system/validate.mjs` (the shape checks and the word lint), `system/renderer.mjs`, `system/page.mjs` (`buildPage(spec, files)`: the checks, the screenshots and the page) and `system/static.generated.mjs` (`guide.css` and `runtime.js` as strings; `node system/make-static.mjs` writes it) are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them, run them in a browser or a Worker, and draw the same bytes. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
 
-A host that runs `buildPage` on files it did not write keeps it bounded with `DEFAULT_LIMITS` (exported, frozen, from `page.mjs` and `validate.mjs`). Each one is far above what a real guided plan needs, is reported as an error before the work it guards, and can be changed per call with `buildPage(spec, files, { limits: { ... } })`. `build.mjs` uses the defaults.
+A host that runs `buildPage` on files it did not write keeps it bounded with `DEFAULT_LIMITS` (exported, frozen, from `page.mjs` and `validate.mjs`). Each one is far above what a real guided plan needs, is reported as an error before the work it guards, and can be changed per call with `buildPage(spec, files, { limits: { ... } })`. A value counts only when it is a whole number from 0 to 2^53 - 1; anything else (`Infinity`, `NaN`, `-1`, `"5"`) keeps the default, so no value turns a limit off. `build.mjs` uses the defaults.
 
 | Limit | Default | Why |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ A host that runs `buildPage` on files it did not write keeps it bounded with `DE
 | `maxLayerItems` | 40 | One layer's `items`. |
 | `maxImageBytes` | 10 MiB | One screenshot file, checked before it is encoded. |
 | `maxImageBytesTotal` | 25 MiB | All screenshot files the page draws, each counted once. |
-| `maxHtmlBytes` | 50 MB | The page in UTF-8 bytes. Each drawing of a screenshot carries the whole image, so this is checked before anything is encoded, and again after. |
+| `maxHtmlBytes` | 50 MB | The page in UTF-8 bytes. Checked before anything is encoded or drawn, against an upper bound on the page (every string as often as it is drawn, a source once in each section that cites it, each drawing of a screenshot with its whole image), and again after. |
 | `maxErrors` | 200 | Errors, and warnings, returned; the rest become "…and N more". |
 | `maxEchoChars` | 120 | Plan text quoted back in one error. |
 | `maxErrorChars` | 1,000 | One error, whole; the longest fixed message is about 520. |

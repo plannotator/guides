@@ -5,7 +5,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXAMPLE } from "./helpers.mjs";
-import { buildPage, imageSize, base64, utf8Length, DEFAULT_LIMITS } from "../system/page.mjs";
+import { buildPage, imageSize, base64, utf8Length, linksFor, DEFAULT_LIMITS } from "../system/page.mjs";
+import { render, renderSizeBound } from "../system/renderer.mjs";
+import { GUIDE_CSS, RUNTIME_JS } from "../system/static.generated.mjs";
+import { limitErrors, unknownFields, limitsOf } from "../system/schema.mjs";
 import { validate, validatePlan, lint } from "../system/validate.mjs";
 
 const plan = () => JSON.parse(readFileSync(join(EXAMPLE, "plan.json"), "utf8"));
@@ -33,7 +36,7 @@ test("DEFAULT_LIMITS is frozen, and every limit can be changed per call", () => 
   assert.match(buildPage(spec, files, { limits: { maxImageBytes: 100 } }).errors[0], /keep a screenshot to 100 or fewer/);
   assert.match(buildPage(spec, files, { limits: { maxImageBytesTotal: 100 } }).errors[0], /keep them to 100 or fewer/);
   assert.match(buildPage(spec, files, { limits: { maxHtmlBytes: 10000 } }).errors[0], /keep the page to 10000 or fewer/);
-  assert.match(buildPage(spec, files, { limits: { maxHtmlBytes: 70000 } }).errors[0], /^the page is \d+ bytes; keep it to 70000 or fewer/);
+  assert.match(buildPage(spec, files, { limits: { maxHtmlBytes: 70000 } }).errors[0], /^the page could be up to \d+ bytes .*; keep it to 70000 or fewer/);
   assert.match(buildPage(spec, files, { limits: { maxSources: 3 } }).errors.at(-1), /sources: \d+ entries; keep it to 3 or fewer/);
   assert.match(buildPage(spec, files, { limits: { maxStringChars: 50 } }).errors[0], /text of \d+ characters; keep it to 50 or fewer/);
   assert.match(buildPage(spec, files, { limits: { maxTextChars: 1000 } }).errors.at(-1), /characters of text in all; keep it to 1000 or fewer/);
@@ -195,4 +198,102 @@ test("a clean plan at the default limits draws its page in about a second", () =
   assert.deepEqual(r.errors, []);
   assert.ok(r.html.length > 1e6);
   assert.ok(ms < 2000, `${ms} ms`);
+});
+
+test("a limit can only be set to a whole number from 0 to 2^53 - 1; anything else keeps the default", () => {
+  for (const v of [Infinity, -Infinity, NaN, -1, 1e308, 2 ** 53, 1.5, "5", null, undefined, true, {}, [5]]) {
+    assert.equal(limitsOf({ maxSources: v }).maxSources, DEFAULT_LIMITS.maxSources, String(v));
+  }
+  assert.equal(limitsOf({ maxSources: 0 }).maxSources, 0);
+  assert.equal(limitsOf({ maxSources: 2 ** 53 - 1 }).maxSources, 2 ** 53 - 1);
+  for (const v of [null, 5, "x", [], { maxSources: Infinity }]) assert.deepEqual(limitsOf(v), { ...DEFAULT_LIMITS });
+  // The same for every caller: buildPage, and limitErrors called directly.
+  const spec = plan();
+  for (let i = 0; i < DEFAULT_LIMITS.maxSources + 1; i++) spec.sources[`x${i}`] = { kind: "capture", path: "assets/new-paste.png" };
+  for (const v of [Infinity, NaN, -1, 1e308, "5", null]) {
+    assert.match(buildPage(spec, exampleFiles(spec), { limits: { maxSources: v } }).errors[0], /keep it to 500 or fewer/, String(v));
+    assert.ok(limitErrors(spec, { maxSources: v }).over, String(v));
+  }
+});
+
+test("a page whose text would be too large is refused before it is drawn", () => {
+  // 95 quotes of 10,000 quote marks (each drawn as &quot;), in every one of ten sections and
+  // listed again in intentCites: inside every list and text limit, but the page would be over
+  // 60 MB, refused by the bound before anything is encoded or drawn.
+  const spec = plan();
+  while (spec.sections.length < 10) spec.sections.push({ ...structuredClone(spec.sections[0]), id: `more-${"abcdefghij"[spec.sections.length]}` });
+  const ids = [];
+  for (let i = 0; i < 95; i++) { spec.sources[`q${i}`] = { kind: "file", path: "PLAN.md", quote: '"'.repeat(10000) }; ids.push(`q${i}`); }
+  for (const s of spec.sections) s.cites = [...s.cites, ...ids];
+  spec.intentCites = [...(spec.intentCites || []), ...ids];
+  const t = Date.now();
+  const r = buildPage(spec, exampleFiles(spec));
+  assert.ok(Date.now() - t < 2000);
+  assert.equal(r.html, null);
+  assert.match(r.errors[0], /^the page could be up to \d+ bytes .*; keep it to 50000000 or fewer$/);
+});
+
+test("the size bound is never below the page drawn, for hostile text in every field", () => {
+  const pieces = ["&", "<", ">", '"', "'", "`", ".", "-", "_", "/", "\t", " ", "a", "é", "€", "😀", "x.y", "`code`"];
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const hostile = () => Array.from({ length: Math.floor(rand() * 40) }, () => pieces[Math.floor(rand() * pieces.length)]).join("");
+  for (const name of ["paste-expiry", "inbox-text-size"]) {
+    const dir = join(EXAMPLE, "..", name);
+    const base = JSON.parse(readFileSync(join(dir, "plan.json"), "utf8"));
+    const assets = {};
+    for (const [id, a] of Object.entries(base.assets)) { const b = readFileSync(join(dir, a.file)); const s = imageSize(b); assets[id] = { w: s.w, h: s.h, uri: `data:${s.mime};base64,${base64(b)}` }; }
+    for (let t = 0; t < 60; t++) {
+      const spec = structuredClone(base);
+      const p = rand();
+      const walk = (v) => {
+        if (Array.isArray(v)) v.forEach((x, i) => { if (typeof x === "string" && rand() < p) v[i] = hostile() + x + hostile(); else walk(x); });
+        else if (v && typeof v === "object") for (const k of Object.keys(v)) { if (["type", "asset", "kind", "mark"].includes(k)) continue; if (typeof v[k] === "string" && rand() < p) v[k] = hostile() + v[k] + hostile(); else walk(v[k]); }
+      };
+      walk(spec.sections); walk(spec.overview); walk(spec.sources);
+      spec.title = hostile() + spec.title;
+      spec.intentCites = [...spec.intentCites, ...spec.intentCites];
+      const links = linksFor(spec);
+      const html = render(spec, { css: GUIDE_CSS, runtime: RUNTIME_JS, assets, links });
+      const bound = renderSizeBound(spec, { css: GUIDE_CSS, runtime: RUNTIME_JS, links, uriLength: (id) => (assets[id] ? assets[id].uri.length : 0) });
+      assert.ok(bound >= utf8Length(html), `${name} #${t}: bound ${bound} < page ${utf8Length(html)}`);
+    }
+  }
+  // And for the largest plan the limits allow, with room to spare under maxHtmlBytes.
+  const spec = maxPlan({ clean: true });
+  const links = linksFor(spec);
+  const b = readFileSync(join(EXAMPLE, "assets/new-paste.png"));
+  const assets = { "new-paste": { w: 1, h: 1, uri: `data:image/png;base64,${base64(b)}` } };
+  const html = render(spec, { css: GUIDE_CSS, runtime: RUNTIME_JS, assets, links });
+  const bound = renderSizeBound(spec, { css: GUIDE_CSS, runtime: RUNTIME_JS, links, uriLength: () => assets["new-paste"].uri.length });
+  assert.ok(bound >= utf8Length(html) && bound < DEFAULT_LIMITS.maxHtmlBytes / 4, `${bound} vs ${utf8Length(html)}`);
+});
+
+test("300,000 unknown fields are capped errors, not a stack overflow", () => {
+  const spec = plan();
+  for (let i = 0; i < 300000; i++) spec[`zz${i}`] = 1;
+  const r = validatePlan(spec);
+  assert.equal(r.errors.length, DEFAULT_LIMITS.maxErrors + 1);
+  assert.match(r.errors.at(-1), /^…and \d+ more$/);
+  const some = unknownFields(spec, { max: 3 });
+  assert.equal(some.length, 3);
+  assert.equal(some.more, 300000 - 3);
+});
+
+test("options whose getters throw give an error, never an exception", () => {
+  const spec = plan();
+  const files = exampleFiles(spec);
+  const bad = [
+    { get limits() { throw new Error("limits getter"); } },
+    { get insideFolder() { throw new Error("insideFolder getter"); } },
+    { get css() { throw new Error("css getter"); } },
+    { limits: { get maxSources() { throw new Error("maxSources getter"); } } },
+    new Proxy({}, { get() { throw new Error("proxy"); }, ownKeys() { throw new Error("proxy keys"); } }),
+  ];
+  for (const options of bad) {
+    let r;
+    assert.doesNotThrow(() => { r = buildPage(spec, files, options); });
+    assert.equal(r.html, null);
+    assert.match(r.errors[0], /could not be drawn/);
+  }
 });

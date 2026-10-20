@@ -38,6 +38,20 @@ export const DEFAULT_LIMITS = Object.freeze({
   maxErrorChars: 1000,        // one error, whole (the longest fixed message is about 520)
 });
 
+// The limits for one call: the defaults, with any the host set. A value counts only when it is a
+// whole number from 0 to 2^53 - 1; anything else (Infinity, NaN, -1, "5", null) keeps the default,
+// so no value can turn a limit off.
+export function limitsOf(limits) {
+  const L = { ...DEFAULT_LIMITS };
+  if (limits && typeof limits === "object" && !Array.isArray(limits)) {
+    for (const k of Object.keys(DEFAULT_LIMITS)) {
+      const v = limits[k];
+      if (Number.isSafeInteger(v) && v >= 0) L[k] = v;
+    }
+  }
+  return L;
+}
+
 const text = "text";
 const ids = { list: "text", min: 1, limit: "maxCites" };
 const idsOpt = { list: "text", limit: "maxCites" };
@@ -110,8 +124,10 @@ const fields = (kind) => Object.keys(KINDS[kind]).map((k) => k.replace(/\?$/, ""
 
 // Every field the table does not name, as "where: unknown field \"x\"" errors. Walks the same
 // tree the table describes; shapes it does not understand are left to build.mjs's own checks.
-export function unknownFields(spec) {
+// With `max`, at most that many are kept, and the list's `more` says how many were left out.
+export function unknownFields(spec, { max = Infinity } = {}) {
   const errs = [];
+  let more = 0;
   const walk = (v, t, where) => {
     if (v === null || v === undefined || typeof t === "string") return;
     if (t.ref) return walkKind(v, t.ref, where);
@@ -146,23 +162,26 @@ export function unknownFields(spec) {
     for (const k of Object.keys(v)) {
       if (!allowed.includes(k)) {
         const near = allowed.find((a) => a.toLowerCase() === k.toLowerCase());
-        errs.push(`${where}: unknown field "${k}"${near ? `; did you mean "${near}"?` : ""}`);
+        if (errs.length < max) errs.push(`${where}: unknown field "${k}"${near ? `; did you mean "${near}"?` : ""}`);
+        else more++;
       }
     }
     for (const [k, t] of Object.entries(KINDS[kind])) walk(v[k.replace(/\?$/, "")], t, `${where}.${k.replace(/\?$/, "")}`);
   };
   walkKind(spec, "plan", "plan");
-  return errs.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, ""));
+  return Object.assign(errs.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, "")), { more });
 }
 
 // What is over a limit: lists and maps longer than their limit, strings longer than
 // maxStringChars, and all strings together longer than maxTextChars. Walks the same tree as
-// unknownFields, so it reads each value once. Returns { errors, over } where over is true when
-// anything is over, so the caller can stop before any other check spends time on the file.
-export function limitErrors(spec, limits = DEFAULT_LIMITS) {
-  const L = { ...DEFAULT_LIMITS, ...(limits && typeof limits === "object" ? limits : {}) };
-  const errs = [];
-  let total = 0;
+// unknownFields, so it reads each value once. Returns { errors, over, more } where over is true
+// when anything is over, so the caller can stop before any other check spends time on the file,
+// and more counts the errors left out past `max`. `limits` is read as limitsOf reads it.
+export function limitErrors(spec, limits, { max = Infinity } = {}) {
+  const L = limitsOf(limits);
+  const all = [];
+  let total = 0, more = 0;
+  const errs = { push: (e) => { if (all.length < max) all.push(e); else more++; }, get length() { return all.length + more; } };
   const str = (v, where) => {
     total += v.length;
     if (v.length > L.maxStringChars) errs.push(`${where}: text of ${v.length} characters; keep it to ${L.maxStringChars} or fewer`);
@@ -206,7 +225,7 @@ export function limitErrors(spec, limits = DEFAULT_LIMITS) {
   };
   walkKind(spec, "plan", "plan");
   if (total > L.maxTextChars) errs.push(`plan: ${total} characters of text in all; keep it to ${L.maxTextChars} or fewer`);
-  return { errors: errs.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, "")), over: errs.length > 0 };
+  return { errors: all.map((e) => e.replace(/^plan\./, "").replace(/^plan: /, "")), over: errs.length > 0, more };
 }
 
 // ---------- JSON Schema ----------

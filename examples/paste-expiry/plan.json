@@ -1,0 +1,302 @@
+{
+  "format": "guided-plan/2",
+  "title": "pastebox: let pastes expire",
+  "intent": "pastebox keeps every paste until someone deletes it, and the issue reports a disk 90% full. The change lets the writer pick when a paste expires, deletes expired pastes in a cleanup job, and keeps never as the default.",
+  "intentCites": ["ISSUE", "PLAN-FORM", "PLAN-JOB"],
+  "plan": { "name": "PLAN.md" },
+  "model": "Claude Opus 5.5",
+  "base": "328f27e9f6f4ce98f491ce38cce038fae1f82ef1",
+  "repos": { "pastebox": { "path": ".repo" } },
+  "sources": {
+    "ISSUE": {
+      "kind": "file", "path": "issue-41.md", "lines": "3-7", "label": "The issue: pastes never go away",
+      "quote": ["its disk is now 90% full", "pastes are kept until someone deletes them, and almost nobody does", "1 hour, 1 day, 1 week, or never", "keep \"never\" as the default"]
+    },
+    "PLAN-FORM": {
+      "kind": "file", "path": "PLAN.md", "lines": "3", "label": "The plan: the new choice on the form",
+      "quote": "The new paste form gets an \"Expires after\" choice: 1 hour, 1 day, 1 week, or never. Never is selected first."
+    },
+    "PLAN-COLUMN": {
+      "kind": "file", "path": "PLAN.md", "lines": "4", "label": "The plan: the new column",
+      "quote": ["The `pastes` table gets an `expires_at` column.", "It stays empty for a paste that never expires, and for every paste saved before this change."]
+    },
+    "PLAN-410": {
+      "kind": "file", "path": "PLAN.md", "lines": "5", "label": "The plan: what an expired paste answers",
+      "quote": "answers 410 Gone, on both `/p/:id` and `/p/:id/raw`"
+    },
+    "PLAN-JOB": {
+      "kind": "file", "path": "PLAN.md", "lines": "6", "label": "The plan: the cleanup job",
+      "quote": ["A cleanup job runs every 10 minutes and deletes the pastes whose `expires_at` has passed.", "After that, the link answers 404, like any missing paste."]
+    },
+    "PLAN-KEPT": {
+      "kind": "file", "path": "PLAN.md", "lines": "7", "label": "The plan: what does not change",
+      "quote": ["Deleting a paste by hand works as before.", "No other route changes."]
+    },
+    "PLAN-OPEN": {
+      "kind": "file", "path": "PLAN.md", "lines": "9", "label": "The plan: the open question",
+      "quote": ["an expired paste answers 410 until the cleanup job runs, then 404", "Should it answer 404 from the start, so the answer never changes?", "The maintainers decide before the release."]
+    },
+    "README": {
+      "kind": "git", "repo": "pastebox", "path": "README.md", "lines": "5", "label": "pastebox's README",
+      "quote": "Pastes are kept until someone deletes them."
+    },
+    "SCHEMA": {
+      "kind": "git", "repo": "pastebox", "path": "src/store.js", "lines": "1-8", "label": "The pastes table at the base commit",
+      "quote": ["CREATE TABLE pastes (", "created_at INTEGER NOT NULL"]
+    },
+    "SHOW": {
+      "kind": "git", "repo": "pastebox", "path": "src/store.js", "lines": "15-24", "label": "Reading a paste at the base commit",
+      "quote": ["if (!row) return { status: 404 };", "const shown = showPaste(db, id);"]
+    },
+    "ROUTES": {
+      "kind": "git", "repo": "pastebox", "path": "src/routes.js", "lines": "2-8", "label": "Every route pastebox answers",
+      "quote": ["[\"POST\", \"/pastes\", \"createPaste\"],", "[\"GET\", \"/p/:id/raw\", \"rawPaste\"],", "[\"DELETE\", \"/p/:id\", \"deletePaste\"],"]
+    },
+    "VIEW": {
+      "kind": "git", "repo": "pastebox", "path": "views/new.html", "lines": "11-15", "label": "The new paste form at the base commit",
+      "quote": ["<textarea id=\"body\" name=\"body\" rows=\"12\" required></textarea>", "<button type=\"submit\">Save</button>"]
+    },
+    "SHOT": { "kind": "capture", "path": "assets/new-paste.png", "label": "The new paste page, opened in headless Chromium at the base commit" }
+  },
+  "assets": {
+    "new-paste": { "file": "assets/new-paste.png", "from": "SHOT" }
+  },
+  "overview": [
+    { "kind": "Decided", "text": "A paste can expire after 1 hour, 1 day or 1 week. Never stays the default.", "section": "form", "cites": ["PLAN-FORM", "ISSUE"] },
+    { "kind": "Change", "text": "The new paste form gets an Expires after choice.", "section": "form", "cites": ["PLAN-FORM"] },
+    { "kind": "Change", "text": "The table gets an `expires_at` column, and an expired paste answers 410.", "section": "server", "cites": ["PLAN-COLUMN", "PLAN-410"] },
+    { "kind": "Change", "text": "A cleanup job deletes expired pastes every 10 minutes.", "section": "server", "cites": ["PLAN-JOB"] },
+    { "kind": "Kept", "text": "Pastes saved before the change never expire, and deleting by hand works as before.", "section": "kept", "cites": ["PLAN-COLUMN", "PLAN-KEPT"] },
+    { "kind": "Open", "text": "Should an expired paste answer 404 from the start?", "section": "open", "cites": ["PLAN-OPEN"] }
+  ],
+  "sections": [
+    {
+      "id": "why",
+      "title": "Why pastes need to expire",
+      "heading": "Every paste, kept forever",
+      "lead": "pastebox keeps a paste until someone deletes it, and almost nobody does. The issue reports a disk 90% full and asks for pastes that expire.",
+      "cites": ["README", "ISSUE"],
+      "figure": {
+        "type": "screenshot", "title": "The new paste page today", "asset": "new-paste", "scale": 2,
+        "ring": [58, 734, 138, 72],
+        "caption": "A text box and Save. Nothing asks how long to keep the paste.",
+        "cites": ["SHOT", "VIEW"]
+      },
+      "cards": [
+        {
+          "id": "table", "title": "Where pastes are kept",
+          "body": ["Every paste is one row in the `pastes` table: an id, the text, and when it was saved. Nothing records how long to keep it."],
+          "cites": ["SCHEMA"],
+          "figure": {
+            "type": "code", "title": "The pastes table", "path": "src/store.js", "repo": "pastebox", "start": 1,
+            "text": ["// pastebox keeps every paste in one SQLite table.", "export const SCHEMA = `", "CREATE TABLE pastes (", "  id TEXT PRIMARY KEY,", "  body TEXT NOT NULL,", "  created_at INTEGER NOT NULL", ");", "`;"],
+            "marked": [3, 4, 5, 6], "mark": "hl",
+            "caption": "An id, the text and a time. None of them says when a paste should go.",
+            "cites": ["SCHEMA"]
+          }
+        },
+        {
+          "id": "ask", "title": "What the issue asks",
+          "body": ["A choice on the form, with never as the default, so nothing changes for anyone who does not pick."],
+          "cites": ["ISSUE"],
+          "figure": {
+            "type": "list", "title": "The choices the issue names",
+            "rows": [{ "text": "1 hour" }, { "text": "1 day" }, { "text": "1 week" }, { "text": "never", "tag": "default", "tagAcc": true }],
+            "cites": ["ISSUE"]
+          }
+        }
+      ],
+      "files": [
+        { "name": "store.js", "note": "The pastes table", "path": "src/store.js", "repo": "pastebox" },
+        { "name": "issue-41.md", "note": "The issue the change answers", "path": "issue-41.md" }
+      ]
+    },
+    {
+      "id": "where",
+      "title": "Where expiry reaches",
+      "heading": "Three places change",
+      "lead": "The form gets a choice, the table gets a column, and the server reads it before it answers. A new cleanup job removes what has expired.",
+      "cites": ["PLAN-FORM", "PLAN-COLUMN", "PLAN-410", "PLAN-JOB"],
+      "figure": {
+        "type": "layers", "title": "What changes, from the screen down",
+        "rows": [
+          { "label": "Form", "sub": "what people see", "text": "A new choice between the text box and Save.", "items": ["Text", { "text": "Expires after", "mark": "new" }, "Save"], "tag": "changes", "tagAcc": true },
+          { "label": "Server", "sub": "what answers", "text": "Reading a paste checks expires_at first.", "items": ["GET /p/:id", "GET /p/:id/raw"], "tag": "changes", "tagAcc": true },
+          { "label": "Table", "sub": "what is stored", "items": ["id", "body", "created_at", { "text": "expires_at", "mark": "new" }], "tag": "new column", "tagAcc": true },
+          { "label": "Cleanup job", "sub": "runs on its own", "text": "Deletes the pastes whose expires_at has passed.", "tag": "new", "tagAcc": true }
+        ],
+        "caption": "Blue marks what the change adds or changes.",
+        "cites": ["PLAN-FORM", "PLAN-COLUMN", "PLAN-410", "PLAN-JOB"]
+      },
+      "cards": [
+        {
+          "id": "path", "title": "The path of one paste",
+          "body": ["The writer picks a time on the form. The server stores it beside the text, and checks it again on every read."],
+          "cites": ["PLAN-FORM", "PLAN-COLUMN", "PLAN-410"],
+          "figure": {
+            "type": "flow", "title": "From the form to a reader",
+            "steps": [
+              { "label": "New paste form", "sub": "Expires after picked", "mark": "acc" },
+              { "label": "POST /pastes", "mono": true, "sub": "stores expires_at", "via": "save" },
+              { "label": "pastes table", "sub": "one row per paste" },
+              { "label": "GET /p/:id", "mono": true, "sub": "410 once expired", "via": "read", "mark": "acc" }
+            ],
+            "cites": ["PLAN-FORM", "PLAN-COLUMN", "PLAN-410", "ROUTES"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "form",
+      "title": "The form",
+      "heading": "One new choice, never by default",
+      "lead": "The new paste form gets an Expires after choice: 1 hour, 1 day, 1 week, or never. Never is selected first, so someone who does not look keeps today's behaviour.",
+      "cites": ["PLAN-FORM", "ISSUE"],
+      "figure": {
+        "type": "pair", "title": "The new paste form, before and after",
+        "sides": [
+          {
+            "label": "Today",
+            "figure": { "type": "list", "rows": [{ "text": "Text", "note": "the paste" }, { "text": "Save" }] },
+            "caption": "A text box and Save."
+          },
+          {
+            "label": "After the change", "acc": true,
+            "figure": { "type": "list", "rows": [{ "text": "Text", "note": "the paste" }, { "text": "Expires after", "note": "1 hour, 1 day, 1 week, never", "mark": "new", "tag": "new", "tagAcc": true }, { "text": "Save" }] },
+            "caption": "The choice sits above Save, with never selected."
+          }
+        ],
+        "cites": ["VIEW", "PLAN-FORM"]
+      },
+      "cards": [
+        {
+          "id": "markup", "title": "Where it goes in the page",
+          "body": ["The choice goes between the text box and the Save button, inside the same form, so it is sent with the paste."],
+          "cites": ["VIEW"],
+          "figure": {
+            "type": "code", "title": "The form in views/new.html", "path": "views/new.html", "repo": "pastebox", "start": 11,
+            "text": ["  <form method=\"post\" action=\"/pastes\">", "    <label for=\"body\">Text</label>", "    <textarea id=\"body\" name=\"body\" rows=\"12\" required></textarea>", "    <button type=\"submit\">Save</button>", "  </form>"],
+            "marked": [13, 14], "mark": "hl",
+            "caption": "The new choice goes between the marked lines.",
+            "cites": ["VIEW"]
+          }
+        }
+      ],
+      "files": [
+        { "name": "new.html", "note": "The new paste form", "path": "views/new.html", "repo": "pastebox" },
+        { "name": "new.html", "note": "Where the choice goes", "card": "markup" }
+      ]
+    },
+    {
+      "id": "server",
+      "title": "The server and the table",
+      "heading": "Expired pastes answer 410",
+      "lead": "The `pastes` table gets an `expires_at` column. Reading a paste whose time has passed answers 410 Gone, and a cleanup job runs every 10 minutes to delete it.",
+      "cites": ["PLAN-COLUMN", "PLAN-410", "PLAN-JOB"],
+      "figure": {
+        "type": "table", "title": "Every route, today and after",
+        "columns": [{ "label": "Method", "mono": true }, { "label": "Route", "mono": true, "fill": true }, { "label": "Today" }, { "label": "After", "acc": true }],
+        "rows": [
+          ["GET", "/", "the form", "the form, with the choice"],
+          ["POST", "/pastes", "saves", "saves, with expires_at"],
+          ["GET", "/p/:id", "the paste", "410 once expired"],
+          ["GET", "/p/:id/raw", "the text", "410 once expired"],
+          ["DELETE", "/p/:id", "deletes", { "text": "as before", "acc": false }]
+        ],
+        "caption": "Only the reads answer differently. Deleting by hand works as before.",
+        "cites": ["ROUTES", "PLAN-410", "PLAN-KEPT", "PLAN-FORM", "PLAN-COLUMN"]
+      },
+      "cards": [
+        {
+          "id": "check", "title": "The check on every read",
+          "body": ["Today a read answers 404 when the row is missing. The expiry check goes right beside it. The raw route calls the same function, so it gets the check too."],
+          "cites": ["SHOW"],
+          "figure": {
+            "type": "code", "title": "Reading a paste in src/store.js", "path": "src/store.js", "repo": "pastebox", "start": 15,
+            "text": ["export function showPaste(db, id) {", "  const row = db.get(\"SELECT body FROM pastes WHERE id = ?\", id);", "  if (!row) return { status: 404 };", "  return { status: 200, body: row.body };", "}", "", "export function rawPaste(db, id) {", "  const shown = showPaste(db, id);", "  return { ...shown, type: \"text/plain\" };", "}"],
+            "marked": [17, 22], "mark": "hl",
+            "caption": "The expiry check goes beside the missing check, and the raw route inherits it.",
+            "cites": ["SHOW"]
+          }
+        },
+        {
+          "id": "life", "title": "A paste's life",
+          "body": ["Once its time passes, a paste answers 410. The cleanup job then deletes the row, and the same link answers 404."],
+          "cites": ["PLAN-410", "PLAN-JOB"],
+          "figure": {
+            "type": "timeline", "title": "One paste, from saved to gone",
+            "stops": [
+              { "label": "Saved", "sub": "expires_at set" },
+              { "label": "Expires", "sub": "answers 410", "mark": "acc" },
+              { "label": "Cleanup job", "sub": "deletes the row" },
+              { "label": "Read again", "sub": "answers 404", "mark": "ask" }
+            ],
+            "bands": [{ "from": 0, "to": 0, "label": "Readable" }, { "from": 1, "to": 1, "label": "Answers 410", "acc": true }, { "from": 2, "to": 3, "label": "Answers 404" }],
+            "caption": "The answer changes from 410 to 404 when the job runs. The last section asks about that.",
+            "cites": ["PLAN-410", "PLAN-JOB"]
+          }
+        }
+      ],
+      "files": [
+        { "name": "store.js", "note": "The new column and the expiry check", "path": "src/store.js", "repo": "pastebox" },
+        { "name": "routes.js", "note": "Every route; none is added", "path": "src/routes.js", "repo": "pastebox" },
+        { "name": "cleanup.js", "note": "New: the cleanup job", "tag": "new", "tagAcc": true }
+      ]
+    },
+    {
+      "id": "kept",
+      "title": "What stays the same",
+      "heading": "Old pastes never expire",
+      "lead": "The new column stays empty for every paste saved before this change, so those pastes are kept as they are today. Deleting a paste by hand works as before.",
+      "cites": ["PLAN-COLUMN", "PLAN-KEPT"],
+      "figure": {
+        "type": "list", "title": "Kept as it is",
+        "rows": [
+          { "text": "Pastes saved before the change", "note": "no expires_at, so they never expire" },
+          { "text": "DELETE /p/:id", "mono": true, "note": "deletes by hand, as before" },
+          { "text": "The list of routes", "note": "no route is added or removed" }
+        ],
+        "caption": "Nobody has to do anything for an old paste to stay.",
+        "cites": ["PLAN-COLUMN", "PLAN-KEPT", "ROUTES"]
+      },
+      "cards": [
+        {
+          "id": "routes", "title": "Every route, after the change",
+          "body": ["The same routes, with the same names. The reads and the save change what they do; nothing is added or removed."],
+          "cites": ["ROUTES", "PLAN-KEPT"],
+          "figure": {
+            "type": "chips", "title": "The routes",
+            "chips": [{ "text": "GET /", "mark": "changed" }, { "text": "POST /pastes", "mark": "changed" }, { "text": "GET /p/:id", "mark": "changed" }, { "text": "GET /p/:id/raw", "mark": "changed" }, { "text": "DELETE /p/:id" }],
+            "legend": [{ "mark": "changed", "text": "stays, but answers differently" }],
+            "cites": ["ROUTES"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "open",
+      "title": "Open question",
+      "heading": "One answer that changes mid-way",
+      "question": "Should an expired paste answer 404 from the start?",
+      "lead": "As written, an expired paste answers 410 until the cleanup job runs, then 404. Answering 404 from the start means the answer never changes. The maintainers decide before the release.",
+      "cites": ["PLAN-OPEN"],
+      "figure": {
+        "type": "pair", "title": "How an expired link can answer",
+        "sides": [
+          {
+            "label": "As written", "acc": true,
+            "figure": { "type": "timeline", "stops": [{ "label": "Expires", "sub": "410" }, { "label": "Cleanup job", "sub": "deletes the row" }, { "label": "Read again", "sub": "404", "mark": "ask" }] },
+            "caption": "Says the paste existed, until the job runs."
+          },
+          {
+            "label": "404 from the start",
+            "figure": { "type": "timeline", "stops": [{ "label": "Expires", "sub": "404" }, { "label": "Cleanup job", "sub": "deletes the row" }, { "label": "Read again", "sub": "404" }] },
+            "caption": "Says nothing, and never changes."
+          }
+        ],
+        "caption": "One line from the maintainers settles it.",
+        "cites": ["PLAN-OPEN"]
+      }
+    }
+  ]
+}

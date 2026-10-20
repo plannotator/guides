@@ -1,449 +1,361 @@
 // Guided plan renderer. Pure: render(spec, { css, runtime, assets, links }) -> one HTML string.
 // The same spec and assets give the same bytes. No clock, no randomness, no network.
 //
-// Layout: a header (title, intent, the overview rows, a meta line), then one card per section.
-// A card has two columns. LEFT: the title, "01 / 07", a Read checkbox, the lettered parts (the
-// selected one opens its text), the files and a sources disclosure. RIGHT: the figure for the
-// selected part. At 760 px and under, the figure drops under the text.
+// Layout: a header (title, intent, the overview rows, a meta line), then one
+// card per section in reading order. A card has two columns. LEFT, which stays in view while the
+// right column scrolls: a label (position and section title), one story heading, one paragraph,
+// then the files and the sources, folded. RIGHT: one large figure, then the section's other
+// cards (a title, a few sentences, and an optional small figure) under it. At 760 px and under
+// the right column drops under the left one.
 //
-// Figures: screenshot, code, list, timeline, chips, drawing (boxes and arrows), toggle (before
-// and after), steps (step through). A list, timeline, chips or drawing may also carry controls and
-// rules: a rule is { if: { key: value }, then: { gone, show, set, caption } } and the first rule
-// whose `if` matches wins. Rules are data, never code.
+// Figures are HTML and CSS with container queries, so each reflows to its own width and nothing
+// scrolls sideways on a phone: screenshot, code, list, table, chips, timeline, flow, layers, and
+// pair (two to four of the others side by side: before and after). There is nothing to click in
+// a figure; folds are plain <details>.
+//
+// render() is safe on its own, for a host that skips build.mjs's checks: every string it draws is
+// escaped, every number is coerced with Number() and checked, every lookup by a content key is an
+// own-property lookup, and a link is drawn only when it is https or a same-page anchor. Only `css`
+// and `runtime` are trusted: they are the skill's own files.
 
-export const FORMAT = "guided-plan/1";
+export const FORMAT = "guided-plan/2";
+export const FIGURE_TYPES = ["screenshot", "code", "list", "table", "chips", "timeline", "flow", "layers", "pair"];
+// A pair's sides hold any figure but another pair.
+export const SIDE_TYPES = FIGURE_TYPES.filter((t) => t !== "pair");
 
-export function resolve(fig, values) {
-  const rules = fig.rules || [];
-  for (const r of rules) {
-    const cond = r.if || {};
-    if (Object.keys(cond).every((k) => values[k] === cond[k])) return r.then || {};
-  }
-  return {};
-}
-
-export function initialValues(fig) {
-  const v = {};
-  for (const c of fig.controls || []) v[c.key] = (fig.initial && fig.initial[c.key]) || c.options[0].value;
-  return v;
-}
-
-const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-const pad2 = (n) => String(n).padStart(2, "0");
-// Titles are plain text: backticks are removed, not drawn as code.
-export const plain = (s) => String(s).replace(/`/g, "");
-
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+// A finite number, or the fallback.
+const num = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+const int = (v, d = 0) => Math.trunc(num(v, d));
+const arr = (v) => (Array.isArray(v) ? v : []);
+const has = (o, k) => o != null && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k);
+const own = (o, k) => (has(o, k) ? o[k] : undefined);
+const pad2 = (n) => String(int(n)).padStart(2, "0");
+// Titles and headings are plain text: backticks are removed, not drawn as code.
+export const plain = (s) => String(s ?? "").replace(/`/g, "");
 // `code` only; everything else is plain text.
-function inline(s) {
-  return esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+// Long names break only after a dot, an underscore, a dash or a slash, never mid-word.
+const breaks = (s) => esc(s).replace(/([._/-])(?=[^\s])/g, "$1<wbr>");
+// Only https links and same-page anchors are drawn as links.
+const safeHref = (h) => (typeof h === "string" && /^(https:\/\/[^\s"'<>]+|#[A-Za-z0-9_-]+)$/.test(h) ? h : null);
+// A class from a fixed list, or nothing.
+const oneOf = (v, list) => (list.includes(v) ? v : "");
+// Visually hidden words for a mark that is otherwise only colour or line style.
+const sr = (t) => (t ? `<span class="sr"> (${t})</span>` : "");
+
+// ---------- figures ----------
+
+const KIND = { screenshot: "Screenshot", code: "Code", list: "List", table: "Table", chips: "List", timeline: "Timeline", flow: "Flow", layers: "Drawing" };
+
+export function kindLabel(fig) {
+  let k = fig.type === "pair" ? (arr(fig.sides).length === 2 ? "Before and after" : "Compare") : own(KIND, fig.type) || "Figure";
+  if (fig.toy) k += " · illustration, not part of the change";
+  return k;
 }
 
-// ---------- element state, decided at build time for the first view ----------
-
-function mk(st) {
-  const gone = new Set(st.gone || []);
-  const show = new Set(st.show || []);
-  const set = st.set || {};
-  return {
-    // An element a rule can ghost (data-el) or reveal (data-opt, for optional elements).
-    attr(id, optional) {
-      if (!id) return "";
-      if (optional) return ` data-opt="${esc(id)}"${show.has(id) ? ' data-on="1"' : ""}`;
-      return ` data-el="${esc(id)}"${gone.has(id) ? ' data-gone="1"' : ""}`;
-    },
-    // A text a rule can replace.
-    text(id, fallback) {
-      const t = id && id in set ? set[id] : fallback ?? "";
-      return id ? { t, slot: ` data-slot="${esc(id)}"` } : { t, slot: "" };
-    },
-  };
-}
-
-// ---------- the ids a rule may name, per figure ----------
-
-export function figureIds(fig) {
-  const el = [], opt = [], slot = [];
-  const add = (x, hasSlot) => {
-    if (!x || !x.id) return;
-    (x.optional ? opt : el).push(x.id);
-    if (hasSlot) slot.push(x.id);
-  };
-  switch (fig.type) {
-    case "list": (fig.rows || []).forEach((r) => add(r, true)); break;
-    case "chips": (fig.chips || []).forEach((c) => add(c, false)); break;
-    case "timeline": (fig.stops || []).forEach((s) => add(s, true)); break;
-    case "drawing":
-      (fig.rows || []).forEach((r) => (r.nodes || []).forEach((n) => add(n, true)));
-      (fig.edges || []).forEach((e) => add(e, true));
-      break;
-    default: return null;
-  }
-  return { el, opt, slot };
-}
-
-// ---------- drawing layout (shared with the lint, so a box that would overflow is refused) ----------
-
-const CHAR = 7.3; // average width of a 13 px label, in px; deliberately wide so text never touches the edge
-const SUBCHAR = 6.5; // 11.5 px
-
-function wrap(text, maxChars) {
-  const words = String(text).split(/\s+/).filter(Boolean);
-  const lines = [];
-  let cur = "";
-  for (const w of words) {
-    const next = cur ? `${cur} ${w}` : w;
-    if (next.length <= maxChars || !cur) cur = next;
-    else { lines.push(cur); cur = w; }
-  }
-  if (cur) lines.push(cur);
-  return lines;
-}
-
-export function layoutDrawing(fig) {
-  const W = 620;
-  const errs = [];
-  const rows = fig.rows || [];
-  const hasLabels = rows.some((r) => r.label);
-  const gx = hasLabels ? 108 : 0;
-  const avail = W - gx;
-  const GAP = 20;
-  const ROWGAP = 62;
-  const setIds = new Set();
-  for (const r of fig.rules || []) Object.keys((r.then && r.then.set) || {}).forEach((k) => setIds.add(k));
-  const nodes = {};
-  let y = 8;
-  const rowBoxes = [];
-  const rowOf = {};
-  rows.forEach((row, ri) => (row.nodes || []).forEach((nd) => { if (nd.id) rowOf[nd.id] = ri; }));
-  rows.forEach((row, ri) => {
-    const ns = row.nodes || [];
-    const n = ns.length;
-    // An arrow between two boxes of this row needs room for its head and its label.
-    const side = (fig.edges || []).filter((e) => rowOf[e.from] === ri && rowOf[e.to] === ri);
-    const gap = side.length ? Math.max(36, ...side.map((e) => Math.ceil((e.text || "").length * 6.4) + 28)) : GAP;
-    const w = Math.min(190, Math.floor((avail - gap * (n - 1)) / Math.max(n, 1)));
-    if (w < 90) errs.push(`row ${ri + 1}: its boxes and the arrow labels between them do not fit; use fewer boxes or shorter labels`);
-    const total = w * n + gap * (n - 1);
-    let x = gx + Math.round((avail - total) / 2);
-    const laid = ns.map((node) => {
-      const maxChars = Math.floor((w - 20) / CHAR);
-      const lines = wrap(node.text, maxChars);
-      if (lines.length > 2 || lines.some((l) => l.length > maxChars)) errs.push(`node ${node.id || node.text}: "${node.text}" does not fit its box; shorten it or put fewer boxes in the row`);
-      const subs = [node.sub, ...(fig.rules || []).map((r) => (node.id && r.then && r.then.set ? r.then.set[node.id] : undefined))].filter(Boolean);
-      const subMax = Math.floor((w - 20) / SUBCHAR);
-      subs.forEach((s) => { if (s.length > subMax) errs.push(`node ${node.id || node.text}: second line "${s}" is over ${subMax} characters for its box`); });
-      const hasSub = Boolean(node.sub) || setIds.has(node.id);
-      const h = 22 + lines.length * 17 + (hasSub ? 17 : 0);
-      const box = { ...node, x, w, lines, hasSub, row: ri, col: ns.indexOf(node), h };
-      x += w + gap;
-      return box;
-    });
-    const rh = Math.max(46, ...laid.map((b) => b.h));
-    laid.forEach((b) => {
-      b.y = y + Math.round((rh - b.h) / 2);
-      b.cx = b.x + b.w / 2;
-      b.cy = b.y + b.h / 2;
-      if (b.id) {
-        if (nodes[b.id]) errs.push(`node id ${b.id} is used twice`);
-        nodes[b.id] = b;
-      }
-    });
-    rowBoxes.push({ y, h: rh, label: row.label, nodes: laid });
-    y += rh + ROWGAP;
-  });
-  const height = y - ROWGAP + 8;
-  const edges = (fig.edges || []).map((e) => {
-    const a = nodes[e.from], b = nodes[e.to];
-    if (!a || !b) { errs.push(`edge ${e.id || ""} ${e.from} -> ${e.to}: unknown box`); return null; }
-    if (a === b) { errs.push(`edge ${e.from} -> ${e.to}: a box cannot point at itself`); return null; }
-    if (Math.abs(a.row - b.row) > 1) { errs.push(`edge ${e.from} -> ${e.to}: an arrow joins boxes in the same row or the next one; it would cross the row between`); return null; }
-    let d, head, lx, ly, anchor;
-    if (a.row === b.row) {
-      const right = b.x > a.x;
-      const sx = right ? a.x + a.w : a.x, ex = right ? b.x : b.x + b.w;
-      const sy = a.cy, ey = b.cy;
-      d = `M${sx},${sy} L${ex},${ey}`;
-      head = right ? `M${ex - 6},${ey - 4} L${ex},${ey} L${ex - 6},${ey + 4}` : `M${ex + 6},${ey - 4} L${ex},${ey} L${ex + 6},${ey + 4}`;
-      lx = (sx + ex) / 2; ly = sy - 8; anchor = "middle";
-      if (Math.abs(a.col - b.col) > 1) errs.push(`edge ${e.from} -> ${e.to}: an arrow in a row joins neighbouring boxes; it would cross the box between`);
-    } else {
-      const down = b.row > a.row;
-      const sx = a.cx, sy = down ? a.y + a.h : a.y;
-      const ex = b.cx, ey = down ? b.y : b.y + b.h;
-      const k = (ey - sy) / 2;
-      d = `M${sx},${sy} C${sx},${sy + k} ${ex},${ey - k} ${ex},${ey}`;
-      head = down ? `M${ex - 4},${ey - 6} L${ex},${ey} L${ex + 4},${ey - 6}` : `M${ex - 4},${ey + 6} L${ex},${ey} L${ex + 4},${ey + 6}`;
-      // the label sits beside the arrow's end, over the box it points at, so fanned-out arrows never share a spot
-      lx = ex + 7; ly = down ? ey - 11 : ey + 19; anchor = "start";
-      if (e.text && e.text.length * 6.2 > b.w / 2 - 10) errs.push(`edge ${e.from} -> ${e.to}: label "${e.text}" is too long for the box it points at; keep it to a word or two`);
-    }
-    return { ...e, d, head, lx, ly, anchor };
-  }).filter(Boolean);
-  return { W, gx, height, rows: rowBoxes, nodes, edges, errs, spine: Boolean(fig.spine) && hasLabels };
-}
-
-function drawDrawing(fig, st) {
-  const h = mk(st);
-  const L = layoutDrawing(fig);
-  const labels = L.rows.map((r) => {
-    if (!r.label) return "";
-    const lines = wrap(r.label, 12);
-    const cy = r.y + r.h / 2 - ((lines.length - 1) * 16) / 2 + 4;
-    return `<text x="0" y="${cy}" class="lab ink">${lines.map((l, i) => `<tspan x="0" dy="${i ? 16 : 0}">${esc(l)}</tspan>`).join("")}</text>`;
-  }).join("");
-  const spine = L.spine ? L.rows.slice(0, -1).map((r, i) => {
-    const nx = L.rows[i + 1];
-    const lines = wrap(r.label || "", 12).length;
-    const nlines = wrap(nx.label || "", 12).length;
-    const sy = r.y + r.h / 2 + ((lines - 1) * 16) / 2 + 14;
-    const ey = nx.y + nx.h / 2 - ((nlines - 1) * 16) / 2 - 12;
-    return `<path d="M8,${sy} V${ey}" class="sp"/><path d="M4,${ey - 6} L8,${ey} L12,${ey - 6}" class="sp"/>`;
-  }).join("") : "";
-  const boxes = L.rows.flatMap((r) => r.nodes).map((b) => {
-    const style = ["plain", "acc", "new", "muted", "gone"].includes(b.style) ? b.style : "plain";
-    const sub = h.text(b.id, b.sub);
-    const ty = b.y + 25;
-    const text = b.lines.map((l, i) => `<tspan x="${b.cx}" dy="${i ? 17 : 0}">${esc(l)}</tspan>`).join("");
-    const subY = ty + b.lines.length * 17;
-    return `<g class="node n-${style}"${h.attr(b.id, b.optional)}><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="10"/><text x="${b.cx}" y="${ty}" class="nt" text-anchor="middle">${text}</text>${b.hasSub ? `<text x="${b.cx}" y="${subY}" class="ns" text-anchor="middle"${sub.slot}>${esc(sub.t)}</text>` : ""}</g>`;
-  }).join("");
-  const edges = L.edges.map((e) => {
-    const label = h.text(e.id, e.text);
-    const style = e.style === "acc" ? "acc" : e.style === "gone" ? "gone" : "plain";
-    const hasLabel = e.text || (e.id && (fig.rules || []).some((r) => r.then && r.then.set && e.id in r.then.set));
-    return `<g class="edge e-${style}"${h.attr(e.id, e.optional)}><path d="${e.d}" class="ep"/><path d="${e.head}" class="ep"/>${hasLabel ? `<text x="${e.lx}" y="${e.ly}" class="elab" text-anchor="${e.anchor}"${label.slot}>${esc(label.t)}</text>` : ""}</g>`;
-  }).join("");
-  // A plain-text account of the drawing for screen readers.
-  const name = (id) => (L.nodes[id] ? L.nodes[id].text : id);
-  const said = [
-    ...L.rows.map((r) => `${r.label ? r.label + ": " : ""}${r.nodes.map((b) => b.text + (b.sub ? ` (${b.sub})` : "")).join(", ")}.`),
-    ...L.edges.map((e) => `${name(e.from)} to ${name(e.to)}${e.text ? `: ${e.text}` : ""}.`),
-  ].join(" ");
-  return `<svg class="pic" viewBox="0 0 ${L.W} ${L.height}" role="img" aria-label="${esc(fig.title)}"><desc>${esc(said)}</desc>${labels}${spine}${edges}${boxes}</svg>`;
-}
-
-// Where the stops sit, and how many characters a label, a second line or a band can hold there.
-export function layoutTimeline(fig) {
-  const stops = fig.stops || [];
-  const n = stops.length;
-  const x0 = 110, x1 = 510;
-  const xs = stops.map((_, i) => (n === 1 ? (x0 + x1) / 2 : x0 + ((x1 - x0) * i) / (n - 1)));
-  const spacing = n === 1 ? 400 : (x1 - x0) / (n - 1);
-  const stopChars = Math.floor(Math.min(spacing - 10, 190) / CHAR);
-  const bands = (fig.bands || []).map((b) => {
-    const a = b.from === 0 ? xs[0] - 50 : (xs[b.from - 1] + xs[b.from]) / 2;
-    const z = b.to === n - 1 ? xs[n - 1] + 50 : (xs[b.to] + xs[b.to + 1]) / 2;
-    return { ...b, a, z, chars: Math.floor((z - a - 14) / CHAR) };
-  });
-  return { xs, stopChars, bands };
-}
-
-function drawTimeline(fig, st) {
-  const h = mk(st);
-  const stops = fig.stops;
-  const T = layoutTimeline(fig);
-  const xs = T.xs;
-  const hasBands = T.bands.length > 0;
-  const ly = hasBands ? 92 : 50;
-  const bands = T.bands.map((b) => {
-    const { a, z } = b;
-    return `<rect x="${a}" y="${ly - 58}" width="${z - a}" height="28" rx="6" class="${b.acc ? "band-acc" : "band"}"/><text x="${(a + z) / 2}" y="${ly - 39.5}" text-anchor="middle" class="lab${b.acc ? " acc" : " ink"}">${esc(b.label)}</text>`;
-  }).join("");
-  const dots = stops.map((s, i) => {
-    const x = xs[i];
-    const dot = s.mark === "ask"
-      ? `<circle cx="${x}" cy="${ly}" r="11" class="mark"/><text x="${x}" y="${ly + 4.5}" class="markt">?</text>`
-      : `<circle cx="${x}" cy="${ly}" r="7" class="${s.mark === "acc" ? "dot-acc" : "dot"}"/>`;
-    const sub = h.text(s.id, s.sub);
-    return `<g${h.attr(s.id, s.optional)}>${dot}<text x="${x}" y="${ly + 34}" text-anchor="middle" class="${s.mono ? "mono ink" : "lab ink"}">${esc(s.label)}</text><text x="${x}" y="${ly + 54}" text-anchor="middle" class="lab"${sub.slot}>${esc(sub.t)}</text>${s.sub2 ? `<text x="${x}" y="${ly + 72}" text-anchor="middle" class="lab">${esc(s.sub2)}</text>` : ""}</g>`;
-  }).join("");
-  return `<svg class="pic" viewBox="0 0 620 ${ly + 90}" role="img" aria-label="${esc(fig.title)}"><desc>${esc(stops.map((s) => [s.label, s.sub, s.sub2].filter(Boolean).join(", ")).join("; "))}</desc>${bands}<line x1="60" y1="${ly}" x2="560" y2="${ly}" class="track"/>${dots}</svg>`;
-}
-
-function drawChips(fig, st) {
-  const h = mk(st);
-  return `<ul class="chips">${fig.chips.map((c) => `<li class="chip${c.acc ? " solidc" : ""}"${h.attr(c.id, c.optional)}>${esc(c.text)}</li>`).join("")}</ul>`;
-}
-
-function drawList(fig, st) {
-  const h = mk(st);
-  return `<ul class="rows">${fig.rows.map((r) => {
-    const note = h.text(r.id, r.note);
-    return `<li${h.attr(r.id, r.optional)}><span class="${r.mono ? "mono-t" : "t"}">${esc(r.text)}</span><span class="n"${note.slot}>${esc(note.t)}</span>${r.tag ? `<span class="tag${r.tagAcc ? " tag-acc" : ""}">${esc(r.tag)}</span>` : ""}</li>`;
-  }).join("")}</ul>`;
+const IMAGE_URI = /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/;
+function drawScreenshot(fig, assets) {
+  const a = own(assets, fig.asset);
+  if (!a || typeof a.uri !== "string" || !IMAGE_URI.test(a.uri)) throw new Error(`unknown asset ${String(fig.asset)}`);
+  const w = Math.max(1, num(a.w, 1)), h = Math.max(1, num(a.h, 1));
+  const ring = arr(fig.ring).length === 4 ? (() => {
+    const [rx, ry, rw, rh] = fig.ring.map((v) => num(v));
+    return `<svg class="ring" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><rect x="${rx - 3}" y="${ry - 3}" width="${Math.max(0, rw + 6)}" height="${Math.max(0, rh + 6)}" rx="7" vector-effect="non-scaling-stroke"/></svg>`;
+  })() : "";
+  const scale = num(fig.scale, 1) > 0 ? num(fig.scale, 1) : 1;
+  return `<div class="cap-wrap"><div class="shot" style="max-width:${Math.round(w / scale)}px"><img src="${esc(a.uri)}" width="${w}" height="${h}" alt="${esc(fig.alt || fig.caption || fig.title || "")}">${ring}</div></div>`;
 }
 
 function drawCode(fig, spec) {
-  const marked = new Set(fig.marked === "all" ? fig.text.map((_, i) => fig.start + i) : fig.marked || []);
+  const text = arr(fig.text).map((t) => String(t ?? ""));
+  const start = Math.max(1, int(fig.start, 1));
+  const marked = new Set(fig.marked === "all" ? text.map((_, i) => start + i) : arr(fig.marked).map((n) => int(n, -1)));
   const mode = fig.mark === "out" ? "out" : "hl";
-  const lines = fig.text.map((t, i) => {
-    const n = fig.start + i;
+  const lines = text.map((t, i) => {
+    const n = start + i;
     const m = marked.has(n);
-    return `<span class="ln${m ? " " + mode : ""}"><span class="no">${n}</span><span class="sg">${m && mode === "out" ? "\u2212" : " "}</span><span class="tx">${esc(t.replace(/\t/g, "  ")) || " "}</span></span>`;
+    const said = m ? `<span class="sr">${mode === "out" ? "removed" : "marked"}: </span>` : "";
+    return `<span class="ln${m ? " " + mode : ""}"><span class="no">${n}</span><span class="sg">${m && mode === "out" ? "−" : ""}</span><span class="tx">${said}${esc(t.replace(/\t/g, "  ")) || " "}</span></span>`;
   }).join("");
   const at = fig.at || spec.base;
-  return `<div class="code"><div class="code-h"><span class="code-p">${esc(fig.path)}</span><span class="code-at">at ${esc(String(at).slice(0, 9))}</span></div><pre tabindex="0" aria-label="${esc(fig.path)}, lines ${fig.start} to ${fig.start + fig.text.length - 1}">${lines}</pre></div>`;
+  return `<div class="code"><div class="code-h"><span class="code-p">${breaks(fig.path)}</span><span class="code-at">at ${esc(String(at ?? "").slice(0, 9))}</span></div><pre tabindex="0" aria-label="${esc(fig.path)}, lines ${start} to ${start + Math.max(0, text.length - 1)}">${lines}</pre></div>`;
 }
 
-function drawScreenshot(fig, assets) {
-  const a = assets[fig.asset];
-  if (!a) throw new Error(`unknown asset ${fig.asset}`);
-  const [rx, ry, rw, rh] = fig.ring || [];
-  const ring = fig.ring ? `<svg class="ring" viewBox="0 0 ${a.w} ${a.h}" preserveAspectRatio="none" aria-hidden="true"><rect x="${rx - 3}" y="${ry - 3}" width="${rw + 6}" height="${rh + 6}" rx="7" vector-effect="non-scaling-stroke"/></svg>` : "";
-  const scale = fig.scale || 1;
-  return `<div class="shot" style="max-width:${Math.round(a.w / scale)}px"><img src="${a.uri}" width="${a.w}" height="${a.h}" alt="${esc(fig.alt || fig.caption || fig.title)}">${ring}</div>`;
+const ROW_SAID = { out: "removed", new: "new", acc: "highlighted" };
+function drawList(fig) {
+  return `<ul class="rows">${arr(fig.rows).map((r) => {
+    r = r || {};
+    const mark = oneOf(r.mark, ["out", "new", "acc"]);
+    const tag = r.tag ? `<span class="tag${r.tagAcc ? " tag-acc" : ""}">${esc(r.tag)}</span>` : "";
+    return `<li class="${mark}"><span class="${r.mono ? "mono-t" : "t"}">${r.mono ? breaks(r.text) : esc(r.text)}</span>${sr(own(ROW_SAID, mark))}${r.note ? `<span class="n">${esc(r.note)}</span>` : ""}${tag}</li>`;
+  }).join("")}</ul>`;
 }
 
-function drawStatic(fig, spec, assets, st) {
-  switch (fig.type) {
+const col = (c) => (typeof c === "string" ? { label: c } : c && typeof c === "object" ? c : { label: "" });
+const cellText = (c) => (c && typeof c === "object" ? c.text : c ?? "");
+// The column that takes the spare width: the one marked "fill", else the one with the longest text.
+export function fillColumn(fig) {
+  const cols = arr(fig.columns);
+  const marked = cols.findIndex((c) => c && typeof c === "object" && c.fill);
+  if (marked >= 0) return marked;
+  let best = 0, len = -1;
+  cols.forEach((_, i) => {
+    const l = Math.max(...arr(fig.rows).map((r) => String(cellText(arr(r)[i])).length), 0);
+    if (l > len) { len = l; best = i; }
+  });
+  return best;
+}
+
+function drawTable(fig) {
+  const cols = arr(fig.columns).map(col);
+  const fill = fillColumn(fig);
+  const tpl = cols.map((_, i) => (i === fill ? "minmax(0,1fr)" : "auto")).join(" ");
+  const cell = (c, i, head) => {
+    const cc = typeof c === "object" && c ? c : { text: c ?? "" };
+    const cd = cols[i] || {};
+    const mono = cc.mono ?? cd.mono;
+    const acc = cc.acc ?? cd.acc;
+    const cls = ["td", mono && !head ? "mono" : "", acc && !head ? "acc" : "", cd.end ? "end" : "", i === fill ? "fill" : ""].filter(Boolean).join(" ");
+    const text = mono && !head ? breaks(cc.text) : esc(cc.text);
+    return head
+      ? `<span class="${cls}" role="columnheader">${text}</span>`
+      : `<span class="${cls}" role="cell" data-l="${esc(cd.label)}">${text}${acc ? sr("highlighted") : ""}</span>`;
+  };
+  const head = `<div class="tr th" role="row">${cols.map((c, i) => cell(c.label, i, true)).join("")}</div>`;
+  const rows = arr(fig.rows).map((r) => `<div class="tr" role="row">${cols.map((_, i) => cell(arr(r)[i], i, false)).join("")}</div>`).join("");
+  return `<div class="tbw"><div class="tb" role="table" aria-label="${esc(fig.title || "")}" style="grid-template-columns:${tpl}">${head}${rows}</div></div>`;
+}
+
+const CHIP_MARKS = ["out", "changed", "new", "acc"];
+const CHIP_SAID = { out: "goes", changed: "changes", new: "new", acc: "highlighted" };
+const chipOf = (text, mark) => {
+  const m = oneOf(mark, CHIP_MARKS);
+  return `<li class="chip${m ? " " + m : ""}">${breaks(text)}${m === "changed" ? `<i aria-hidden="true"></i>` : ""}${sr(own(CHIP_SAID, m))}</li>`;
+};
+function drawChips(fig) {
+  const legend = arr(fig.legend).length
+    ? `<p class="key">${fig.legend.map((l) => { const m = oneOf((l || {}).mark, CHIP_MARKS); return `<span class="key-i"><span class="chip sm${m ? " " + m : ""}" aria-hidden="true">name${m === "changed" ? `<i></i>` : ""}</span>${esc((l || {}).text)}</span>`; }).join("")}</p>`
+    : "";
+  return `<ul class="chips">${arr(fig.chips).map((c) => chipOf((c || {}).text, (c || {}).mark || ((c || {}).acc ? "acc" : ""))).join("")}</ul>${legend}`;
+}
+
+function drawTimeline(fig) {
+  const stops = arr(fig.stops);
+  const n = stops.length;
+  const bands = arr(fig.bands);
+  const b = bands.map((x) => {
+    x = x || {};
+    const from = Math.min(Math.max(int(x.from), 0), Math.max(n - 1, 0));
+    const to = Math.min(Math.max(int(x.to, from), from), Math.max(n - 1, 0));
+    return `<span class="band${x.acc ? " acc" : ""}" style="--b1:${from + 1};--b2:${to + 2}">${esc(x.label)}${x.acc ? sr("highlighted") : ""}</span>`;
+  }).join("");
+  const s = stops.map((x, i) => {
+    x = x || {};
+    const dot = x.mark === "ask" ? `<span class="dot ask" aria-hidden="true">?</span>` : `<span class="dot${x.mark === "acc" ? " acc" : ""}" aria-hidden="true"></span>`;
+    const said = x.mark === "ask" ? sr("open question") : x.mark === "acc" ? sr("highlighted") : "";
+    return `<li class="stop${i === 0 ? " first" : ""}${i === n - 1 ? " last" : ""}" style="--c:${i + 1}">${dot}<b class="${x.mono ? "mono" : ""}">${x.mono ? breaks(x.label) : esc(x.label)}</b>${said}${[x.sub, x.sub2].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("")}</li>`;
+  }).join("");
+  return `<ol class="trk${bands.length ? " has-bands" : ""}" style="--n:${Math.max(n, 1)}">${b}${s}</ol>`;
+}
+
+const STEP_MARKS = ["plain", "acc", "new", "gone", "muted"];
+const STEP_SAID = { acc: "changes", new: "added", gone: "removed" };
+function drawFlow(fig) {
+  const steps = arr(fig.steps);
+  const n = steps.length;
+  const cells = [];
+  steps.forEach((s, i) => {
+    s = s || {};
+    if (i > 0) cells.push(`<li class="fl-a" aria-hidden="true"><span class="fl-ar"></span>${s.via ? `<span class="fl-v">${esc(s.via)}</span>` : ""}</li>`);
+    const m = oneOf(s.mark, STEP_MARKS) || "plain";
+    const via = i > 0 ? `<span class="sr">then${s.via ? ` (${esc(s.via)})` : ""}: </span>` : "";
+    cells.push(`<li class="fl-s fl-${m}">${via}<b class="${s.mono ? "mono" : ""}">${s.mono ? breaks(s.label) : esc(s.label)}</b>${s.sub ? `<span>${esc(s.sub)}</span>` : ""}${sr(own(STEP_SAID, m))}</li>`);
+  });
+  const tpl = Array.from({ length: Math.max(n, 1) }, () => "minmax(0,1fr)").join(" auto ");
+  return `<ol class="flow${n > 4 ? " long" : ""}" style="--tpl:${tpl}">${cells.join("")}</ol>`;
+}
+
+function drawLayers(fig) {
+  return `<ol class="lay">${arr(fig.rows).map((r) => {
+    r = r || {};
+    const items = arr(r.items);
+    const chips = items.length ? `<ul class="chips">${items.map((t) => (typeof t === "string" ? chipOf(t, "") : chipOf((t || {}).text, (t || {}).mark))).join("")}</ul>` : "";
+    const tag = r.tag ? `<div class="lay-tag"><span class="pr-tag${r.tagAcc ? " acc" : ""}">${esc(r.tag)}</span></div>` : `<div class="lay-tag"></div>`;
+    return `<li class="lay-r"><div class="lay-n"><b>${esc(r.label)}</b>${r.sub ? `<span>${esc(r.sub)}</span>` : ""}</div><div class="lay-c">${r.text ? `<p class="mini ink">${esc(r.text)}</p>` : ""}${chips}</div>${tag}</li>`;
+  }).join("")}</ol>`;
+}
+
+function drawPair(fig, spec, assets) {
+  const sides = arr(fig.sides);
+  return `<div class="pair pair-${Math.min(Math.max(sides.length, 2), 4)}">${sides.map((s) => {
+    s = s || {};
+    const inner = s.figure && s.figure.type !== "pair" ? drawBody(s.figure, spec, assets) : "";
+    return `<div class="pair-s">
+    <p class="pair-h"><b class="${s.acc ? "acc" : ""}">${esc(s.label)}</b>${s.note ? `<span>${esc(s.note)}</span>` : ""}${s.toy && !s.note ? `<span>an illustration, not part of the change</span>` : ""}</p>
+    ${inner}
+    ${s.caption ? `<p class="mini">${esc(s.caption)}</p>` : ""}
+  </div>`;
+  }).join("")}</div>`;
+}
+
+export function drawBody(fig, spec, assets) {
+  switch (fig && fig.type) {
     case "screenshot": return drawScreenshot(fig, assets);
     case "code": return drawCode(fig, spec);
-    case "list": return drawList(fig, st);
-    case "chips": return drawChips(fig, st);
-    case "timeline": return drawTimeline(fig, st);
-    case "drawing": return drawDrawing(fig, st);
-    default: throw new Error(`unknown figure type ${fig.type}`);
+    case "list": return drawList(fig);
+    case "table": return drawTable(fig);
+    case "chips": return drawChips(fig);
+    case "timeline": return drawTimeline(fig);
+    case "flow": return drawFlow(fig);
+    case "layers": return drawLayers(fig);
+    case "pair": return drawPair(fig, spec, assets);
+    default: throw new Error(`unknown figure type ${String(fig && fig.type)}`);
   }
 }
 
-// A toggle or steps figure is a control over whole states, each holding a static figure.
-export function statesAsControls(fig) {
-  return {
-    controls: [{ key: "state", label: fig.label || (fig.type === "steps" ? "Step" : "Show"), stepper: fig.type === "steps", options: fig.states.map((s) => ({ value: s.value, text: s.label })) }],
-    rules: fig.states.map((s) => ({ if: { state: s.value }, then: { caption: s.caption } })),
-    initial: fig.initial ? { state: fig.initial } : undefined,
-  };
-}
-
-function controlsHtml(controls, values, fid) {
-  return controls.map((c) => {
-    const btns = c.options.map((o) => `<button type="button" class="seg-b" data-key="${esc(c.key)}" data-val="${esc(o.value)}" aria-pressed="${values[c.key] === o.value}">${esc(o.text)}</button>`).join("");
-    const step = c.stepper ? `<span class="step"><button type="button" class="nav-b" data-step="${esc(c.key)}" data-d="-1" aria-label="Back one">\u2190</button><button type="button" class="nav-b" data-step="${esc(c.key)}" data-d="1" aria-label="Forward one">\u2192</button></span>` : "";
-    return `<div class="ctl"><span class="ctl-l" id="${fid}-${esc(c.key)}">${esc(c.label)}</span><span class="seg" role="group" aria-labelledby="${fid}-${esc(c.key)}">${btns}</span>${step}</div>`;
-  }).join("");
-}
-
-const KIND = { screenshot: "Screenshot", code: "Code", list: "List", chips: "List", timeline: "Timeline", drawing: "Drawing", steps: "Step through" };
-
-function figureHtml(fig, fid, spec, assets) {
-  const composite = fig.type === "toggle" || fig.type === "steps";
-  const live = composite ? { ...statesAsControls(fig) } : { controls: fig.controls, rules: fig.rules, initial: fig.initial };
-  const values = initialValues(live);
-  const st = resolve(live, values);
-  let body;
-  if (composite) {
-    body = fig.states.map((s) => `<div class="state" data-when="state=${esc(s.value)}"${values.state === s.value ? "" : " hidden"}>${drawStatic({ ...s.figure, title: s.figure.title || `${plain(fig.title)}: ${s.label}` }, spec, assets, {})}</div>`).join("");
-  } else {
-    body = drawStatic(fig, spec, assets, st);
-  }
-  const caption = st.caption || fig.caption || "";
-  const script = live.rules ? `<script type="application/json" data-rules>${JSON.stringify({ rules: live.rules, controls: (live.controls || []).map((c) => ({ key: c.key, options: c.options.map((o) => o.value) })), values }).replace(/</g, "\\u003c")}</script>` : "";
-  let kind = fig.type === "toggle" ? (fig.states.length === 2 ? "Before and after" : "Compare") : fig.controls ? "Try it" : KIND[fig.type];
-  if (fig.toy) kind += " \u00b7 illustration";
-  return `<figure class="fig fig-${fig.type}" data-fig="${fid}">
-  <div class="fig-h"><span class="fig-t"><span class="fig-k">${kind}</span>${esc(fig.title)}</span>${controlsHtml(live.controls || [], values, fid)}</div>
-  <div class="fig-b"${/<svg class="pic"/.test(body) ? ` tabindex="0" role="group" aria-label="${esc(plain(fig.title))}; scrolls sideways on a narrow screen"` : ""}>${body}</div>
-  <figcaption data-cap aria-live="polite">${esc(caption)}</figcaption>${script}
+function figureHtml(fig, id, spec, assets) {
+  return `<figure class="fig fx fig-${esc(oneOf(fig && fig.type, FIGURE_TYPES))}" id="${esc(id)}">
+  <div class="fig-h"><span class="fig-k">${esc(kindLabel(fig))}</span><span class="fig-t">${esc(plain(fig.title))}</span></div>
+  ${drawBody(fig, spec, assets)}
+  ${fig.caption ? `<figcaption class="cap">${esc(fig.caption)}</figcaption>` : ""}
 </figure>`;
 }
 
-// ---------- page ----------
+// ---------- side cards ----------
 
-function citesOf(p) {
-  const ids = [...(p.cites || []), ...((p.figure && p.figure.cites) || [])];
-  for (const s of (p.figure && p.figure.states) || []) ids.push(...((s.figure && s.figure.cites) || []));
-  return ids;
+// A card spans both columns when its figure needs the width, when it says so, or when it would
+// otherwise sit alone in its row (an empty cell beside a card reads as a mistake).
+const WIDE = ["code", "table", "pair", "flow", "timeline", "layers"];
+export function cardWidths(cards) {
+  const wide = cards.map((c) => (c.wide !== undefined ? Boolean(c.wide) : Boolean(c.figure && WIDE.includes(c.figure.type))));
+  let i = 0;
+  while (i < cards.length) {
+    if (wide[i]) { i++; continue; }
+    // a narrow card: does a second narrow card follow it in the same row?
+    if (i + 1 < cards.length && !wide[i + 1]) { i += 2; continue; }
+    if (cards[i].wide === undefined) wide[i] = true;
+    i++;
+  }
+  return wide;
 }
 
-function sourcesFor(sec) {
+function cardsHtml(sec, spec, assets) {
+  const cards = arr(sec.cards).map((c) => c || {});
+  if (!cards.length) return "";
+  const wide = cardWidths(cards);
+  return `<div class="sides-w"><div class="sides">${cards.map((c, j) => {
+    const id = `${sec.id}-${c.id}`;
+    let visual = "";
+    if (c.figure) {
+      const f = figureHtml(c.figure, `${id}-f`, spec, assets);
+      visual = c.fold ? `<details class="fold"><summary>Show ${esc(plain(c.figure.title))}</summary>${f}</details>` : f;
+    }
+    return `<div class="side${wide[j] ? " wide" : ""}" id="${esc(id)}"><h3>${esc(plain(c.title))}</h3><div class="side-t">${arr(c.body).map((b) => `<p>${inline(b)}</p>`).join("")}</div>${visual}</div>`;
+  }).join("")}</div></div>`;
+}
+
+// ---------- files and sources ----------
+
+export function citesOfFigure(f, out = []) {
+  if (!f) return out;
+  for (const c of arr(f.cites)) out.push(c);
+  for (const s of arr(f.sides)) citesOfFigure(s && s.figure, out);
+  return out;
+}
+
+export function sectionCites(sec) {
   const ids = [];
-  for (const p of sec.parts) for (const c of citesOf(p)) if (!ids.includes(c)) ids.push(c);
+  const add = (l) => arr(l).forEach((c) => { if (!ids.includes(c)) ids.push(c); });
+  add(sec.cites);
+  add(citesOfFigure(sec.figure));
+  for (const c of arr(sec.cards)) { if (c) { add(c.cites); add(citesOfFigure(c.figure)); } }
   return ids;
 }
 
 function sourceRow(id, s, links, base) {
-  const where = s.kind === "git" ? `${s.path}${s.lines ? ":" + s.lines : ""} at ${String(s.at || base).slice(0, 9)}` : `${s.path}${s.lines ? ":" + s.lines : ""}`;
-  const href = links.source(s);
-  const w = href ? `<a class="s-w" href="${esc(href)}">${esc(where)}</a>` : `<span class="s-w">${esc(where)}</span>`;
+  if (!s || typeof s !== "object") return `<li><span class="s-l">${esc(id)}</span></li>`;
+  const where = s.kind === "git" ? `${s.path}${s.lines ? ":" + s.lines : ""} at ${String(s.at || base || "").slice(0, 9)}` : `${s.path}${s.lines ? ":" + s.lines : ""}`;
+  const href = safeHref(links.source(s));
+  const w = href ? `<a class="s-w" href="${esc(href)}">${breaks(where)}</a>` : `<span class="s-w">${breaks(where)}</span>`;
   const quotes = [].concat(s.quote || []).map((q) => `<q>${esc(String(q).replace(/\s+/g, " "))}</q>`).join(" ");
   return `<li><span class="s-l">${esc(s.label || id)}</span>${w}${quotes ? `<span class="s-q">${quotes}</span>` : ""}</li>`;
 }
 
 function fileHtml(a, secId, links) {
+  a = a || {};
   const tag = a.tag ? `<span class="tag${a.tagAcc ? " tag-acc" : ""}">${esc(a.tag)}</span>` : "";
-  const inner = `<span class="f-n">${esc(a.name)}</span><span class="f-d">${inline(a.note || "")}</span>${tag}`;
+  const inner = `<span class="f-n">${breaks(a.name)}</span><span class="f-d">${inline(a.note || "")}</span>${tag}`;
   const title = a.path || a.note || a.name;
-  if (a.part) return `<li><button type="button" class="file" data-goto="${esc(secId)}.${esc(a.part)}" title="${esc(title)}">${inner}</button></li>`;
-  const href = links.file(a);
+  if (a.card) return `<li><a class="file" href="#${esc(secId)}-${esc(a.card)}" data-jump="${esc(secId)}-${esc(a.card)}" title="${esc(title)}">${inner}</a></li>`;
+  const href = safeHref(links.file(a));
   if (href) return `<li><a class="file" href="${esc(href)}" title="${esc(title)}">${inner}</a></li>`;
   return `<li><span class="file" title="${esc(title)}">${inner}</span></li>`;
 }
 
+function folds(sec, spec, links) {
+  const ids = sectionCites(sec);
+  const files = arr(sec.files);
+  return `<div class="folds">${files.length ? `<details class="src"><summary>Files · ${files.length}</summary><ul class="files">${files.map((a) => fileHtml(a, sec.id, links)).join("")}</ul></details>` : ""}
+  <details class="src"><summary>Sources · ${ids.length}</summary><ul class="srcs">${ids.map((id) => sourceRow(id, own(spec.sources, id), links, spec.base)).join("")}</ul></details></div>`;
+}
+
+// ---------- page ----------
+
 function sectionHtml(sec, i, n, spec, assets, links) {
-  const pos = `${pad2(i + 1)} / ${pad2(n)}`;
-  const parts = sec.parts.map((p, j) => {
-    const sel = j === 0;
-    return `<li class="part${sel ? " is-sel" : ""}" data-part="${esc(p.id)}">
-      <button type="button" class="part-b" aria-expanded="${sel}" aria-controls="${esc(sec.id)}-${esc(p.id)}-t ${esc(sec.id)}-${esc(p.id)}-f"><span class="part-i">${String.fromCharCode(97 + j)}</span><span class="part-t">${esc(plain(p.title))}</span></button>
-      <div class="part-body" id="${esc(sec.id)}-${esc(p.id)}-t"${sel ? "" : " hidden"}>${p.body.map((b) => `<p>${inline(b)}</p>`).join("")}</div>
-    </li>`;
-  }).join("");
-  const figs = sec.parts.map((p, j) => `<div class="panel" id="${esc(sec.id)}-${esc(p.id)}-f" data-panel="${esc(p.id)}"${j === 0 ? "" : " hidden"}>${figureHtml(p.figure, `${sec.id}-${p.id}`, spec, assets)}</div>`).join("");
-  const srcIds = sourcesFor(sec);
-  const files = sec.files || [];
-  return `<section class="card" id="${esc(sec.id)}" data-sec="${i}" aria-labelledby="${esc(sec.id)}-h">
-  <div class="card-row">
-    <button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘${esc(plain(sec.title))}’ read"><span class="box-c"></span></button>
-    <button type="button" class="row-t" data-open>${esc(plain(sec.title))}</button>
-    <span class="row-m">read \u00b7 ${pos}</span>
-  </div>
+  return `<section class="card" id="${esc(sec.id)}" data-sec="${int(i)}" aria-labelledby="${esc(sec.id)}-h">
   <div class="card-grid">
-    <div class="left">
-      <h2 id="${esc(sec.id)}-h" tabindex="-1">${esc(plain(sec.title))}</h2>
-      <div class="meta"><span class="pos">${pos}</span><button type="button" class="check" role="checkbox" aria-checked="false" aria-label="Mark ‘${esc(plain(sec.title))}’ read"><span class="box-c"></span>Read</button></div>
-      <ol class="parts" aria-label="Parts of this section">${parts}</ol>
-    </div>
-    <div class="right">${figs}</div>
-    <div class="foot">${files.length ? `
-      <p class="files-h">Files</p><ul class="files">${files.map((a) => fileHtml(a, sec.id, links)).join("")}</ul>` : ""}
-      <details class="src"><summary>Sources \u00b7 ${srcIds.length}</summary><ul>${srcIds.map((id) => sourceRow(id, spec.sources[id], links, spec.base)).join("")}</ul></details>
-    </div>
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">${pad2(i + 1)} / ${pad2(n)}</span><span>${esc(plain(sec.title))}</span></p>
+      <h2 id="${esc(sec.id)}-h" tabindex="-1">${esc(plain(sec.heading))}</h2>
+      ${sec.question ? `<p class="question">${esc(plain(sec.question))}</p>` : ""}
+      <p class="sub">${inline(sec.lead)}</p>
+      ${folds(sec, spec, links)}
+    </div></div>
+    <div class="right">${figureHtml(sec.figure, `${sec.id}-f`, spec, assets)}${cardsHtml(sec, spec, assets)}</div>
   </div>
 </section>`;
 }
 
+const OV_KINDS = ["Decided", "Change", "Kept", "Open"];
 export function render(spec, opts) {
-  const { css, runtime, assets } = opts;
+  const { css, runtime } = opts;
+  const assets = opts.assets || {};
   const links = opts.links || { source: () => null, file: () => null };
-  const n = spec.sections.length;
-  const secIndex = Object.fromEntries(spec.sections.map((s, i) => [s.id, i]));
-  const overview = spec.overview.map((o) => `<li class="ov ov-${esc(o.kind.toLowerCase())}"><a href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="ov-k">${esc(o.kind)}</span><span class="ov-t">${inline(o.text)}</span><span class="ov-n">${pad2(secIndex[o.section] + 1)}</span></a></li>`).join("");
-  const intentSrc = (spec.intentCites || []).map((id) => sourceRow(id, spec.sources[id], links, spec.base)).join("");
-  const meta = [`${n} section${n === 1 ? "" : "s"}`, spec.plan && spec.plan.name ? `from ${esc(spec.plan.name)}` : "", spec.model ? `generated by ${esc(spec.model)}` : ""].filter(Boolean).join(" \u00b7 ");
+  const sections = arr(spec.sections).map((s) => s || {});
+  const n = sections.length;
+  const secIndex = new Map(sections.map((s, i) => [s.id, i]));
+  const overview = arr(spec.overview).map((o) => {
+    o = o || {};
+    const kind = oneOf(o.kind, OV_KINDS) || "Change";
+    const at = secIndex.has(o.section) ? pad2(secIndex.get(o.section) + 1) : "";
+    return `<li class="ov ov-${kind.toLowerCase()}"><a href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="ov-k">${kind}</span><span class="ov-t">${inline(o.text)}</span><span class="ov-n">${at}</span></a></li>`;
+  }).join("");
+  const intentSrc = arr(spec.intentCites).map((id) => sourceRow(id, own(spec.sources, id), links, spec.base)).join("");
+  const meta = [`${n} section${n === 1 ? "" : "s"}`, spec.plan && spec.plan.name ? `from ${esc(spec.plan.name)}` : "", spec.model ? `generated by ${esc(spec.model)}` : ""].filter(Boolean).join(" · ");
   return `<!doctype html>
 <!-- Guided plan (${FORMAT}). Built by the guided-plan skill's system/build.mjs from a content file. Do not edit by hand. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="${FORMAT}">
-<title>${esc(spec.title)} \u00b7 guided plan</title>
-<script>(function(){var q=new URLSearchParams(location.search).get('theme');document.documentElement.dataset.theme=q||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');})();</script>
+<title>${esc(spec.title)} · guided plan</title>
+<script>(function(){var q=new URLSearchParams(location.search).get('theme');if(q==='dark'||q==='light')document.documentElement.dataset.theme=q;})();</script>
 <style>${css}</style></head>
 <body>
 <main class="page">
+<button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
 <header class="top">
-  <button type="button" class="theme" id="theme" aria-label="Switch to dark">Dark</button>
   <h1>${esc(spec.title)}</h1>
   <p class="intent">${inline(spec.intent)}</p>
   <ol class="overview" aria-label="Decisions and changes">${overview}</ol>
-  <p class="line"><span>${meta}</span><span id="readcount"></span></p>
-  ${intentSrc ? `<details class="src top-src"><summary>Sources for this summary</summary><ul>${intentSrc}</ul></details>` : ""}
+  <p class="line">${meta}</p>
+  ${intentSrc ? `<details class="src top-src"><summary>Sources for this summary</summary><ul class="srcs">${intentSrc}</ul></details>` : ""}
 </header>
 <div class="cards">
-${spec.sections.map((s, i) => sectionHtml(s, i, n, spec, assets, links)).join("\n")}
+${sections.map((s, i) => sectionHtml(s, i, n, spec, assets, links)).join("\n")}
 </div>
-<p class="keys">j and k, or the up and down arrows, move between sections. In a section's list of parts, the arrows move between parts. In a figure's buttons, left and right move between choices.</p>
+<p class="keys">j and k, or the up and down arrows, move between sections.</p>
 </main>
 <script>
-var resolve=${resolve.toString()};
 ${runtime}
 </script>
 </body></html>

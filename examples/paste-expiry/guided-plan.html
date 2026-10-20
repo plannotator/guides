@@ -1,0 +1,506 @@
+<!doctype html>
+<!-- Guided plan (guided-plan/2). Built by the guided-plan skill's system/build.mjs from a content file. Do not edit by hand. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="guided-plan/2">
+<title>pastebox: let pastes expire · guided plan</title>
+<script>(function(){var q=new URLSearchParams(location.search).get('theme');if(q==='dark'||q==='light')document.documentElement.dataset.theme=q;})();</script>
+<style>:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.66);--ink3:rgba(29,29,31,.64);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.1);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.55;--shot-dim:1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:16px;line-height:1.5}
+code,.mono,.mono-t,.pos,.ov-n,.code pre,.chip,.tag,.s-w,.f-n,.pr-tag{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+code{font-size:.86em;background:var(--grey);padding:.08em .32em;border-radius:4px;overflow-wrap:anywhere}
+button{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+h2:focus,h3:focus{outline:none}
+h2:focus-visible,h3:focus-visible{outline:2px solid var(--accent)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.acc{color:var(--accent)}
+.ink{color:var(--ink)}
+
+/* page and top */
+.page{position:relative;max-width:1340px;margin:0 auto;padding:48px 40px 96px}
+.theme{position:absolute;top:48px;right:40px;border:1px solid var(--hair);background:transparent;border-radius:14px;padding:3px 12px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.theme:hover{color:var(--ink);border-color:var(--line)}
+.top{max-width:820px;margin-bottom:32px}
+h1{font-size:28px;line-height:1.2;letter-spacing:-.015em;font-weight:600;margin:0 0 10px;padding-right:80px;text-wrap:balance}
+.intent{margin:0 0 22px;color:var(--ink2);font-size:16px;line-height:1.55;max-width:72ch}
+.overview{list-style:none;margin:0 0 4px;padding:0;border-top:1px solid var(--hair)}
+.ov a{display:grid;grid-template-columns:76px minmax(0,1fr) 28px;gap:14px;align-items:baseline;padding:9px 4px;border-bottom:1px solid var(--hair);text-decoration:none;color:inherit;border-radius:0}
+.ov a:hover .ov-n{color:var(--accent)}
+.ov-k{font-size:12.5px;color:var(--ink3)}
+.ov-t{font-size:15px;color:var(--ink)}
+.ov-n{font-size:11.5px;color:var(--ink3);text-align:right}
+.ov-open .ov-k{color:var(--accent);font-weight:600}
+.ov-open .ov-t{color:var(--accent)}
+.line{margin:16px 0 0;font-size:12.5px;color:var(--ink3)}
+.top-src{margin-top:8px}
+
+/* cards: the story on the left stays in view; the figures on the right scroll */
+.cards{display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:clip;scroll-margin-top:16px}
+.card-grid{display:grid;grid-template-columns:380px minmax(0,1fr)}
+.left{padding:26px 28px 24px;border-right:1px solid var(--hair);min-width:0}
+.left-in{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain;margin:-4px;padding:4px}
+.label{display:flex;gap:12px;align-items:baseline;margin:0 0 10px;font-size:13.5px;color:var(--ink3)}
+.pos{font-size:12px;flex:none}
+.left h2{font-size:24px;line-height:1.2;letter-spacing:-.012em;font-weight:650;margin:0 0 12px;text-wrap:balance}
+.question{margin:0 0 14px;font-size:19px;line-height:1.3;font-weight:600;color:var(--accent);max-width:34ch;text-wrap:balance}
+.sub{margin:0 0 8px;color:var(--ink2);font-size:15.5px;line-height:1.55;max-width:60ch}
+.right{background:var(--tint);padding:24px;min-width:0}
+
+/* figures */
+.fx{container-type:inline-size}
+.fig{margin:0;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:24px;min-width:0}
+.fig-h{display:flex;flex-direction:column;gap:1px;margin-bottom:18px}
+.fig-k{font-size:12px;color:var(--ink3)}
+.fig-t{font-size:15px;font-weight:600;color:var(--ink)}
+.cap{margin:18px 0 0;font-size:14.5px;line-height:1.5;color:var(--ink2);max-width:66ch}
+.mini{margin:8px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink2)}
+.mini.ink{color:var(--ink)}
+
+/* side cards */
+.sides-w{container-type:inline-size;margin-top:16px}
+.sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@container (max-width:620px){.sides{grid-template-columns:minmax(0,1fr)}}
+.side{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:22px;min-width:0;scroll-margin-top:16px}
+.side.wide{grid-column:1 / -1}
+.side h3{margin:0 0 8px;font-size:16px;font-weight:600}
+.side-t p{margin:0 0 8px;font-size:14.5px;line-height:1.55;color:var(--ink2);max-width:66ch}
+.side .fig{border:0;padding:0;margin-top:14px;background:transparent;border-radius:0}
+.side .fig-h{margin-bottom:10px}
+.side .fig-t{font-size:13.5px;font-weight:500;color:var(--ink2)}
+.fold{margin-top:10px}
+.fold summary,.src summary{cursor:pointer;width:max-content;max-width:100%;list-style:none;font-size:13px;color:var(--ink2)}
+.fold summary::-webkit-details-marker,.src summary::-webkit-details-marker{display:none}
+.fold summary::before,.src summary::before{content:"\203A";display:inline-block;width:12px;transition:transform 160ms ease-out}
+.fold[open] summary::before,.src[open] summary::before{transform:rotate(90deg)}
+.fold summary:hover,.src summary:hover{color:var(--ink)}
+
+/* files and sources */
+.folds{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.src{font-size:12.5px;color:var(--ink3)}
+.files{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-width:720px}
+.file{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;column-gap:10px;width:100%;text-align:left;border:1px solid var(--hair);border-radius:8px;padding:7px 10px;background:var(--surface);text-decoration:none;color:inherit}
+a.file{cursor:pointer}
+a.file:hover{border-color:var(--line)}
+.f-n{font-size:12px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.f-d{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-d code{background:none;padding:0;color:var(--ink2)}
+.srcs{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;max-width:780px}
+.srcs li{display:flex;flex-direction:column;gap:1px}
+.s-l{color:var(--ink2);font-size:13px}
+.s-w{font-size:11px;overflow-wrap:anywhere;color:inherit}
+.s-q q{font-style:italic;color:var(--ink3)}
+.s-q q::before{content:"\201C"}.s-q q::after{content:"\201D"}
+.tag{font-size:11px;color:var(--ink3);border:1px solid var(--hair);border-radius:10px;padding:0 7px;white-space:nowrap}
+.tag-acc{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+
+/* screenshot */
+.cap-wrap{display:flex;justify-content:center}
+.shot{position:relative;width:100%;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:var(--surface)}
+.shot img{display:block;width:100%;height:auto;filter:brightness(var(--shot-dim))}
+.shot .ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.shot .ring rect{fill:none;stroke:var(--accent);stroke-width:2.5}
+
+/* code: lines wrap, nothing scrolls sideways */
+.code{width:100%;border:1px solid var(--hair);border-radius:10px;background:var(--surface);overflow:hidden}
+.code-h{display:flex;flex-wrap:wrap;gap:2px 12px;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--hair);font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px}
+.code-p{color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.code-at{color:var(--ink3)}
+.code pre{margin:0;padding:8px 0;font-size:12.5px;line-height:1.6;white-space:normal}
+.code pre:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ln{display:grid;grid-template-columns:44px 16px minmax(0,1fr)}
+.ln .no{text-align:right;padding-right:8px;color:var(--ink3);user-select:none}
+.ln .sg{color:var(--accent);user-select:none}
+.ln .tx{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink2);padding-right:12px}
+.ln.out,.ln.hl{background:var(--accent-soft)}
+.ln.out .tx,.ln.hl .tx{color:var(--ink)}
+.ln.hl{box-shadow:inset 3px 0 0 var(--accent)}
+@container (max-width:420px){.ln{grid-template-columns:34px 12px minmax(0,1fr)}.code pre{font-size:12px}}
+
+/* list */
+.rows{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--hair);border-radius:10px}
+.rows li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:11px 14px;border-top:1px solid var(--hair)}
+.rows li:first-child{border-top:0}
+.rows .mono-t{font-size:13px;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.rows .t{font-size:14.5px;color:var(--ink)}
+.rows .n{font-size:13.5px;color:var(--ink3);flex:1 1 12ch}
+.rows .tag{margin-left:auto}
+.rows li.out .t,.rows li.out .mono-t{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--line)}
+.rows li.new{box-shadow:inset 3px 0 0 var(--accent)}
+.rows li.new .t,.rows li.new .mono-t,.rows li.acc .t,.rows li.acc .mono-t{color:var(--accent)}
+
+/* table: one grid; under 520 px of room each row becomes a small block with its labels */
+.tbw{border:1px solid var(--hair);border-radius:10px;background:var(--surface)}
+.tb{display:grid}
+.tr{display:contents}
+.td{padding:9px 14px;border-top:1px solid var(--hair);font-size:13.5px;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.tr:first-child .td{border-top:0}
+.th .td{font-size:12px;color:var(--ink3)}
+.td.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px}
+.td.acc{color:var(--accent);font-weight:600}
+.td.end{text-align:right}
+@container (max-width:520px){
+  .tb{display:block}
+  .tr{display:block;padding:10px 12px;border-top:1px solid var(--hair)}
+  .tr:first-child{border-top:0}
+  .th{display:none}
+  .th+.tr{border-top:0}
+  .td{display:flex;gap:10px;align-items:baseline;padding:2px 0;border-top:0;text-align:left}
+  .td.end{text-align:left}
+  .td::before{content:attr(data-l);flex:none;width:34%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;font-size:12px;font-weight:400;color:var(--ink3)}
+}
+
+/* chips */
+.chips{list-style:none;margin:0;padding:2px 0;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--hair);border-radius:8px;color:var(--ink2);background:var(--surface);position:relative;overflow-wrap:anywhere;min-width:0}
+.chip.acc{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip.new{border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip.out{border:1.5px dashed var(--accent);color:var(--accent);text-decoration:line-through;background:transparent}
+.chip.changed i{position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.chip.sm{font-size:11px;padding:0 6px;margin:0 6px 0 0}
+.key{margin:14px 0 0;font-size:12.5px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:6px 18px}
+.key-i{display:inline-flex;align-items:center}
+.lay .chips{margin-top:8px}
+
+/* timeline: a row of stops; under 460 px of room it runs down the page */
+.trk{list-style:none;margin:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));row-gap:16px;padding:4px 0 2px}
+.band{grid-row:1;grid-column:var(--b1) / var(--b2);margin:0 4px;border-radius:6px;background:var(--grey);color:var(--ink);font-size:13px;text-align:center;padding:5px 8px}
+.band.acc{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.25px var(--accent);font-weight:500}
+.stop{grid-row:2;grid-column:var(--c);position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:30px 6px 0;min-width:0}
+.trk:not(.has-bands) .stop{grid-row:1}
+.stop::before{content:"";position:absolute;top:10px;left:0;right:0;height:1.5px;background:var(--line)}
+.stop.first::before{left:50%}.stop.last::before{right:50%}
+.stop.first.last::before{display:none}
+.stop .dot{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink3);background:var(--surface);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--accent)}
+.stop .dot.acc{border-color:var(--accent);background:var(--accent-soft)}
+.stop .dot.ask{width:24px;height:24px;top:-1px;border-color:var(--accent)}
+.stop b{font-size:14px;font-weight:600;overflow-wrap:anywhere;max-width:100%}
+.stop b.mono{font-size:12.5px;font-weight:500}
+.stop span{font-size:13px;color:var(--ink2);line-height:1.4;overflow-wrap:anywhere;max-width:100%}
+@container (max-width:460px){
+  .trk{grid-template-columns:minmax(0,1fr);row-gap:0}
+  .trk.has-bands{grid-template-columns:96px minmax(0,1fr);column-gap:12px}
+  .band{grid-column:1;grid-row:var(--b1) / var(--b2);margin:4px 0;display:flex;align-items:center;justify-content:center}
+  .stop{grid-row:var(--c);grid-column:1;align-items:flex-start;text-align:left;padding:0 0 14px 30px}
+  .trk.has-bands .stop{grid-column:2;grid-row:var(--c)}
+  .stop::before{top:0;bottom:0;left:7px;right:auto;width:1.5px;height:auto}
+  .stop.first::before{top:10px;left:7px}.stop.last::before{bottom:auto;height:10px;right:auto}
+  .stop.first.last::before{display:none}
+  .stop .dot{top:2px;left:0;transform:none}
+  .stop .dot.ask{left:-4px;top:-2px}
+}
+
+/* flow: steps in order with arrows; under 560 px of room it runs down the page */
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:var(--tpl);gap:8px;align-items:stretch}
+@container (max-width:760px){.flow.long{grid-template-columns:minmax(0,1fr);gap:4px}.flow.long .fl-a{flex-direction:row;justify-content:flex-start;padding-left:18px;gap:10px;min-height:26px}.flow.long .fl-ar{width:10px;height:20px;background:linear-gradient(currentColor,currentColor) center top/1.5px 14px no-repeat}.flow.long .fl-ar::after{margin:12px 0 0 1.5px;transform:rotate(135deg)}}
+.fl-s{display:flex;flex-direction:column;gap:2px;justify-content:center;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);min-width:0}
+.fl-s b{font-size:14px;font-weight:600;overflow-wrap:break-word}
+.fl-s b.mono{font-size:12.5px;font-weight:500}
+.fl-s span{font-size:12.5px;color:var(--ink2);line-height:1.4;overflow-wrap:break-word}
+.fl-acc{border-color:var(--accent);background:var(--accent-soft)}
+.fl-acc b{color:var(--accent)}
+.fl-new{border-color:var(--accent);border-style:dashed;background:var(--accent-soft)}
+.fl-new b{color:var(--accent)}
+.fl-gone{border-style:dashed;background:transparent;opacity:var(--ghost)}
+.fl-gone b{text-decoration:line-through;text-decoration-color:var(--line);color:var(--ink3)}
+.fl-muted{border-color:transparent;background:var(--grey)}
+.fl-muted b{color:var(--ink2)}
+.fl-a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:22px;color:var(--ink3)}
+.fl-ar{display:block;width:22px;height:10px;background:linear-gradient(currentColor,currentColor) left center/16px 1.5px no-repeat}
+.fl-ar::after{content:"";display:block;margin-left:13px;margin-top:1px;width:7px;height:7px;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;transform:rotate(45deg)}
+.fl-v{font-size:11px;color:var(--ink3);text-align:center;line-height:1.2;white-space:nowrap}
+@container (max-width:560px){
+  .flow,.flow.long{grid-template-columns:minmax(0,1fr);gap:4px}
+  .fl-a{flex-direction:row;justify-content:flex-start;padding-left:18px;gap:10px;min-height:26px}
+  .fl-ar{width:10px;height:20px;background:linear-gradient(currentColor,currentColor) center top/1.5px 14px no-repeat}
+  .fl-ar::after{margin:12px 0 0 1.5px;transform:rotate(135deg)}
+  .fl-v{max-width:none;text-align:left}
+}
+
+/* layers: a label, what is there, and what happens to it */
+.lay{list-style:none;margin:0;padding:0}
+.lay-r{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:20px;padding:20px 0;border-top:1px solid var(--hair)}
+.lay-r:first-child{border-top:0;padding-top:0}
+.lay-r:last-child{padding-bottom:0}
+.lay-n b{display:block;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.lay-n span{font-size:13px;color:var(--ink3)}
+.lay-c{min-width:0}
+.lay-c .mini:first-child{margin-top:0}
+.lay-tag{text-align:right}
+.pr-tag{display:inline-block;font-size:12px;font-weight:600;color:var(--ink2);background:var(--grey);border-radius:10px;padding:2px 9px;white-space:nowrap}
+.pr-tag.acc{color:var(--accent);background:var(--accent-soft)}
+@container (max-width:640px){
+  .lay-r{grid-template-columns:minmax(0,1fr) auto;gap:10px 12px}
+  .lay-c{grid-column:1 / -1}
+  .lay-tag{grid-row:1;grid-column:2}
+}
+
+/* pair: before and after, side by side */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.pair-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pair-s{min-width:0}
+.pair-h{margin:0 0 8px;display:flex;flex-direction:column;font-size:13.5px}
+.pair-h b{font-weight:600}
+.pair-h span{font-size:12.5px;color:var(--ink3)}
+@container (max-width:860px){.pair-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:600px){.pair,.pair-3{grid-template-columns:minmax(0,1fr)}}
+
+.keys{margin:28px 0 0;font-size:12.5px;color:var(--ink3)}
+
+@media (max-width:1100px){.card-grid{grid-template-columns:320px minmax(0,1fr)}}
+@media (max-width:760px){
+  .page{padding:24px 16px 64px}
+  .theme{top:24px;right:16px}
+  h1{font-size:24px;padding-right:64px}
+  .ov a{grid-template-columns:62px minmax(0,1fr) 22px;gap:10px}
+  .card-grid{grid-template-columns:minmax(0,1fr)}
+  .left{padding:18px 18px 14px;border-right:0;border-bottom:1px solid var(--hair)}
+  .left-in{position:static;max-height:none;overflow:visible}
+  .right{padding:14px}
+  .fig{padding:16px}
+  .side{padding:16px}
+  .keys{display:none}
+}
+/* Windows high contrast and other forced colours: colour and shadows are dropped, so every mark
+   that relies on them gets a border or outline in system colours (and words for a screen reader). */
+@media (forced-colors:active){
+  .ln.hl,.ln.out{box-shadow:none;border-left:3px solid Highlight}
+  .ln.out .tx{text-decoration:line-through}
+  .rows li.new,.rows li.acc{box-shadow:none;border-left:4px solid Highlight}
+  .rows li.out .t,.rows li.out .mono-t{text-decoration:line-through}
+  .fl-acc{border:3px solid Highlight}
+  .fl-new{border:3px dashed Highlight}
+  .fl-gone{border:1.5px dashed GrayText}
+  .band{border:1px solid CanvasText}
+  .band.acc{box-shadow:none;border:3px solid Highlight}
+  .stop .dot.acc{border:3px solid Highlight}
+  .stop .dot.ask{border:2px solid Highlight}
+  .stop::before{background:CanvasText}
+  .chip.acc,.chip.new{border:2px solid Highlight}
+  .chip.out{border:2px dashed Highlight}
+  .chip.changed i{forced-color-adjust:none;background:Highlight;border-color:Canvas}
+  .td.acc{text-decoration:underline}
+  .tag-acc,.pr-tag.acc{border:1px solid Highlight}
+  .shot .ring rect{stroke:Highlight}
+  .fl-a,.fl-a .fl-v{forced-color-adjust:none;color:CanvasText}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style></head>
+<body>
+<main class="page">
+<button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
+<header class="top">
+  <h1>pastebox: let pastes expire</h1>
+  <p class="intent">pastebox keeps every paste until someone deletes it, and the issue reports a disk 90% full. The change lets the writer pick when a paste expires, deletes expired pastes in a cleanup job, and keeps never as the default.</p>
+  <ol class="overview" aria-label="Decisions and changes"><li class="ov ov-decided"><a href="#form" data-jump="form"><span class="ov-k">Decided</span><span class="ov-t">A paste can expire after 1 hour, 1 day or 1 week. Never stays the default.</span><span class="ov-n">03</span></a></li><li class="ov ov-change"><a href="#form" data-jump="form"><span class="ov-k">Change</span><span class="ov-t">The new paste form gets an Expires after choice.</span><span class="ov-n">03</span></a></li><li class="ov ov-change"><a href="#server" data-jump="server"><span class="ov-k">Change</span><span class="ov-t">The table gets an <code>expires_at</code> column, and an expired paste answers 410.</span><span class="ov-n">04</span></a></li><li class="ov ov-change"><a href="#server" data-jump="server"><span class="ov-k">Change</span><span class="ov-t">A cleanup job deletes expired pastes every 10 minutes.</span><span class="ov-n">04</span></a></li><li class="ov ov-kept"><a href="#kept" data-jump="kept"><span class="ov-k">Kept</span><span class="ov-t">Pastes saved before the change never expire, and deleting by hand works as before.</span><span class="ov-n">05</span></a></li><li class="ov ov-open"><a href="#open" data-jump="open"><span class="ov-k">Open</span><span class="ov-t">Should an expired paste answer 404 from the start?</span><span class="ov-n">06</span></a></li></ol>
+  <p class="line">6 sections · from PLAN.md · generated by Claude Opus 5.5</p>
+  <details class="src top-src"><summary>Sources for this summary</summary><ul class="srcs"><li><span class="s-l">The issue: pastes never go away</span><span class="s-w">issue-<wbr>41.<wbr>md:3-<wbr>7</span><span class="s-q"><q>its disk is now 90% full</q> <q>pastes are kept until someone deletes them, and almost nobody does</q> <q>1 hour, 1 day, 1 week, or never</q> <q>keep &quot;never&quot; as the default</q></span></li><li><span class="s-l">The plan: the new choice on the form</span><span class="s-w">PLAN.<wbr>md:3</span><span class="s-q"><q>The new paste form gets an &quot;Expires after&quot; choice: 1 hour, 1 day, 1 week, or never. Never is selected first.</q></span></li><li><span class="s-l">The plan: the cleanup job</span><span class="s-w">PLAN.<wbr>md:6</span><span class="s-q"><q>A cleanup job runs every 10 minutes and deletes the pastes whose `expires_at` has passed.</q> <q>After that, the link answers 404, like any missing paste.</q></span></li></ul></details>
+</header>
+<div class="cards">
+<section class="card" id="why" data-sec="0" aria-labelledby="why-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">01 / 06</span><span>Why pastes need to expire</span></p>
+      <h2 id="why-h" tabindex="-1">Every paste, kept forever</h2>
+      
+      <p class="sub">pastebox keeps a paste until someone deletes it, and almost nobody does. The issue reports a disk 90% full and asks for pastes that expire.</p>
+      <div class="folds"><details class="src"><summary>Files · 2</summary><ul class="files"><li><span class="file" title="src/store.js"><span class="f-n">store.<wbr>js</span><span class="f-d">The pastes table</span></span></li><li><span class="file" title="issue-41.md"><span class="f-n">issue-<wbr>41.<wbr>md</span><span class="f-d">The issue the change answers</span></span></li></ul></details>
+  <details class="src"><summary>Sources · 5</summary><ul class="srcs"><li><span class="s-l">pastebox&#39;s README</span><span class="s-w">README.<wbr>md:5 at 328f27e9f</span><span class="s-q"><q>Pastes are kept until someone deletes them.</q></span></li><li><span class="s-l">The issue: pastes never go away</span><span class="s-w">issue-<wbr>41.<wbr>md:3-<wbr>7</span><span class="s-q"><q>its disk is now 90% full</q> <q>pastes are kept until someone deletes them, and almost nobody does</q> <q>1 hour, 1 day, 1 week, or never</q> <q>keep &quot;never&quot; as the default</q></span></li><li><span class="s-l">The new paste page, opened in headless Chromium at the base commit</span><span class="s-w">assets/<wbr>new-<wbr>paste.<wbr>png</span></li><li><span class="s-l">The new paste form at the base commit</span><span class="s-w">views/<wbr>new.<wbr>html:11-<wbr>15 at 328f27e9f</span><span class="s-q"><q>&lt;textarea id=&quot;body&quot; name=&quot;body&quot; rows=&quot;12&quot; required&gt;&lt;/textarea&gt;</q> <q>&lt;button type=&quot;submit&quot;&gt;Save&lt;/button&gt;</q></span></li><li><span class="s-l">The pastes table at the base commit</span><span class="s-w">src/<wbr>store.<wbr>js:1-<wbr>8 at 328f27e9f</span><span class="s-q"><q>CREATE TABLE pastes (</q> <q>created_at INTEGER NOT NULL</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-screenshot" id="why-f">
+  <div class="fig-h"><span class="fig-k">Screenshot</span><span class="fig-t">The new paste page today</span></div>
+  <div class="cap-wrap"><div class="shot" style="max-width:618px"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABNQAAANYCAIAAACD/yfzAAAQAElEQVR4nOzdd3ydZd348Ttpdrp3Swul7JYCAsoQynwEZBR8BJUhAvKwEWQpiOAEf8iSjYCogCIIRRRBC5UhZSgge7RllUL3TLOT39XccJ7znJOmofSCnPB+v/IKV+5zn5PkxD/89HuPkqVLFyWd09DQWFdX39TU1Nra2tISPloSAAAAPk2KlysKSktLy8vLyspKO/nEopXGZ4jMmprakJ1qEwAAgGyhRCsqyqurK8Oi4z07is8w3qypWbZsWW36ZUjaqqqqysrKHm3S2k0AAAD4dGg7DLaluU1tbW1NTU1jY2P6UIjF6uqqkIkreu4K47O2tm7Jkprw0mHdu3fvvn37lpSUJAAAAPCBpqamhQsXLl68OKzDeLJXr+rKyop292w/PhctWlJXVx8WYc45cODA0tLOHsULAADAp01DQ8PcuXPr6uqS5RVZ0bt3z/x9cuMzjFBDtTY2NoX1gAED+vTpkwAAAMDKLFq0aN68ecnyczZL+/TplXMWaG58zp+/MJRn2Gno0KEVFRUJAAAAdE5tbe2sWbPCUDP0Z79+/2eW+X9KdPHipWl5rrHGGsoTAACAD6WysjLkZIjKhobGEJjZD/1vfC5bFhp1+RG6w4YNc5InAAAAqyDk5NChQ5O2q9hmbp6SZOKzubl5yZKasBg8eHB5eXkCAAAAq6SiomLQoEFhETIzxGa68f34XLp0WbL8xixVPXv2TAAAAOAj6NWrV2VlZfJBbCZpfDY1Nac3VhkwYEACAAAAH1kamCE2Q3ImaXzW1i4/DDeEqVM9AQAAWC3KysrSQ2vTMz+Xx2ddXUP47JaeAAAArEZpZtbXL0/OksbGppaWlh49eoQqTQAAAGA1KS8vLy4uDsnZ2NhYXF+//GzP6urqBAAAAFarNDYbGhqLw+QzaevRBAAAAFarioqK8DmEZ0lLS2tYlZSUJAAAALBa9ejRI3xuaWkJ8dmSiE8AAAAiSGMzTD3FJwAAALF8EJ8t7zdnUVFRAgAAAKtVcfHyG3y2trYWJwAAABCZ+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOhKkgLU0NDwgx/8oLm5ObNl66233nfffVf6xEsuueS9997L3nL00UePGjUqAQAAIKaCjM/6+vrf//732Vtuu+229dZbb+zYsR0/ceLEiW+//Xb2lgkTJohPAACA2AoyPtt14okn3n333VVVVQndQm1t7VZbbVVTU5O98eGHHx4+fHgCAAAUmu5zzucbb7xx3nnnJXQXTU1NOeWZtB1xnQAAAAWoW11w6JZbbvnb3/6WAAAA0MV0t6vdnnrqqTmXFAIAAOAT133O+UzV1NSE/vz1r3/do0ePZHVoamqaO3duCNqwGDRo0JAhQyoqKpLC1Nzc/O6774ZfZNiwYeXl5cmHVFdX98YbbyxatKhPnz79+vUbOHBg59/k1tbWOXPmLFiwIDy9tLQ0PL1///69e/dOolmyZEn4q82fPz98l8GDB4dvV1RUlAAAAJ+Q7hafwZQpU66//vr/+Z//ST6CUGiTJ0/+7W9/+89//jPnoXXXXffrX//6XnvtFRose/v9999/4YUXZm/ZYIMNLr744pynX3vttRMnTszecuihh37lK1/J2e2oo47KuTDvRRddtOGGGyYrdt11191xxx3ZW8LP+dWvfjU055133vmb3/zmhRdeyDw0dOjQ8NDBBx8cOrCD1wwJd/PNN4cnvvjii6E8sx+qrq7efffd99tvv2222aaDV3j11Vdvuumme++9d968eTkPjR079r/+678OPPDAAQMGZDa+9NJLp5xyStJ2TeP8VzvooIMyb/uJJ54YfoCcHWbMmHHbbbf97ne/y/92+++/f3ifP/OZzyQAAMDHrmjatGnhP6NHj04KRyiizTbbrON9QuCNGzcuZ+OOO+6YU3Shi/LbaerUqd/85jdz9sx3zTXX7Lrrrpkv//3vfx9wwAE5+7z88sth0Je9Zd99933uueeyt+y0006hG7O3LF26dNNNN815qSeeeCI70vKde+65oZaztxx3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uPPCwPaGG25o9zYn+SZPnvyVr3yl3WvkrlR9fX2yqvIPtAYAACLpbofdZpx55plhdpd9ddOOtXvk54QJE9rdefr06eXl5WussUZmS/YgMcwqQ3dl7//yyy/nnMm5+eabJ20Jes0112Q2hklgGJzmfK+PcsJn/lmOGa+99lrOlv79+6eLO++884orrmj3WSEpBw0aNGDAgD59+nRwzmdm5/DbvfPOO3fffffvf//7Dso/aRtNf+1rX8u5G0pnhEF3/mmfK/rDTZo0KbuHM3cKBQAAYuu28RnK55JLLsm/puuKhKDK3/iTn/xkFe7/kX9PzhdffDH7Jitjx45N76iZJmjGE088kXPIbvip1llnnWRV/fvf/87cwSVHfpcOHjw4XVx11VU5D40cOTLE/DbbbNOrV6/MxqOOOiq0XLIyIdGPbjNz5sznn3/+2WefffLJJ9s9jjeMfMM/FuTfxrNj+bn+rW9968QTT0wAAICupHsedpsaN27cd77znU7unEmvbPnjwc4IhZbTn08//fQjjzyS+XL77bfP7Jl9Dd4w98u52lDOEbyrIPtE04wwZsyfMaaD3CVLluSPi2+88cYvfOEL2eUZmjY9l7Xzhg8fHl7k1FNPvfXWW0N8HnLIIfn7rPTk0uzDm1P5t3UJfZsAAABdTLedfKYOP/zwUF85d15pV0VFRUijv/3tb9kbf/nLX1566aX5k8Pb3TRUhgAAEABJREFUb789+6adJSUlxx9/fN++fTNbdthhh+xryf7pT3/Kfnr2kbTjx49/5pln0vV7bbL3/PznP598NGEMeM8992QXWn19/XHHHZe/Zxhshs+zZ8/Of2ittdbK2RIiuYMzQsPv+84772RvCe9t9gi3X79+Z511VvjBcl5kpZd9Cu/P6NGjs7eEPg8j7uwtkydPDv2Z3t4m25w5c6688sr0qk6pLbfccq+99koAAID4unl89ujR4+c//3kon85cWmbvvffOic9QRyNHjjz99NOzN955551nnHFGznNz7u3R8Yma2dPOz33ucx3s2fGjnRF+8SOOOCK08XbbbRcCO4wWb7rppvxbiSYfXNmo3dMg77vvvt133z3z5XPPPXfUUUd18E0nTpyYM3ENuX7XXXdlv3hzc3NdXV3OE9dcc83Mut27gF533XXrrrtu9ph67Nixo0aNypnWHnzwwX/+85+zX23W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t94awvLKK68cPHjwmDFjwqN77bXXo48+OnXq1JCpYbf0Grm33HLLsmXLwuLEE08Mw9KwuOiiixoaGn72s5+9++67FRUV6VC0rKwsAQAAoEPdefIZevLFF18Mi6233vq0007bYost1lxzzT333POcc85Jd7jhhhsyO5966qnFxcvfjUsvvbS+vv7111+/9957k7YDbrfaaqt0n4EDBw4fPryysjKsS0pKhrcJGxMAAAA61J3j8+WXX04XYXSZvX2dddbZddddw2LGjBlhOppu7N+//7HHHpu0ncx50003XXzxxWFdVVV19NFHJwAAAHw03fmw21deeSVdPPvsszkPzZ8/P2k7LnfmzJkjRoxIN44fPz4MS5966qn77rsv3RLGoemcEwAAgI+i28Zna2vr22+/na7TkzPbNW3atEx8Bscff3yYf9bV1YX1TjvttPHGGycAAAB8ZN05PjOH1A4dOjTn0aVtwvaqqqrs7UVFRZn1ggULEgAAAFaHbhufxcXFYaQ5Y8aM8Pmiiy7q5LOuuuqqdOwZPPPMMw8//PD222+fAAAA8NF05wsOrb/++uHzzJkzm5ubO7P/lClTnnjiibA48MAD+/fvHxZXXHHFiuafmbEqAAAAK9X94zNU4qWXXprz0M033/zNNumVh4JFixZdfvnlYTFs2LB99tnnpJNOSp+bXvY2W0nJ8nHxsmXLMs8FAACgY905PsePH7/WWmuFxWOPPXb++ec//vjjc+bMefnlly+88MK77rpr8eLFffv2TSecSdvtPRsbG8Pi5JNPLi4u3nDDDcPTk7b7tUyaNCn7ZTNnkF522WVPPfVUmKwmAAAAdKg732oljCjPOeecb3/72wsXLnyqTfajVVVV3/nOd9L1Aw888Pzzz4fF7rvvPmrUqHTjYYcdNmXKlFCk11133WabbTZw4MB0e4jShx56KCxeaNOzZ88bbrghAQAAYMUKfvKZuT5tGFfmPxrK8Kc//emWW26ZvTHsudtuu4VRZ9qTNTU11157bdKWowcddFBmt+rq6mOOOSZpO/j2yiuvzGzfZJNNTjjhhDXXXLOD7wsAAEC2omnTpoX/jB49OunW6uvr58yZU1dX179//379+mXfUmWV1dbWNjU1VVRUlJaWJgAAALRn+vTpSfc+7DZbeXn5iBEjktWqsrIyAQAAoBMcMgoAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIiuJCl8zc3NCxYsWLhwYV1dXWNjY0tLSwIAAFDIiouLS0tLKyoq+vbt279///BlUuAKOz6bmprefffdOXPmtLa2JgAAAN1FGKrVt1m0aNHbb789aNCgoUOHlpQUcMEV8I8e/gbTp09P55x9+vSprq6uahP+eSABAAAoZI2Njcva1NTUhPaZNWtWmLqNHj06tE9SmAo1PsNbP2PGjLAoKysLf4BQngkAAEB3EYZqfdqEdejPMHhraGiYOnXqyJEjBw8enBSggjxueP78+Wl5Dhw4cOzYscoTAADoxkLyhPAJ+RPWb7/9dgiipAAVXnzW1dW9/vrrYTFo0KC11lqrG5x3CwAA0LEQPiF/QgSFdQiikEVJoSm8cnvnnXfC5/Ly8jBuTgAAAD41RowYUVZWFhYzZ85MCk2BxWdTU9PChQvDYvTo0UVFRQkAAMCnRph/rr322mGxYMGC5ubmpKAUWHymBzf37NmzqqoqAQAA+JQJNZRe9abgzvwsyPh0hSEAAOBTKw2iMPxMCkqBxWdtbW0iPgEAgE+xMPwMn5ctW5YUlAK7z2dLS0v43KtXrwQAAOBTKY3PNI4KSIHFZ6qkpCB/bAAAgI+utLQ0fG5tbU0KiptkAgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQIjtVWQAABAASURBVHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQnPgEAAIhOfAIAABCd+AQAACA68QkAAEB04hMAAIDoxCcAAADRiU8AAACiE58AAABEJz4BAACITnwCAAAQnfgEAAAgOvEJAABAdOITAACA6MQnAAAA0YlPAAAAohOfAAAARCc+AQAAiE58AgAAEJ34BAAAIDrxCQAAQHTiEwAAgOjEJwAAANGJTwAAAKITnwAAAEQn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" width="1236" height="856" alt="A text box and Save. Nothing asks how long to keep the paste."><svg class="ring" viewBox="0 0 1236 856" preserveAspectRatio="none" aria-hidden="true"><rect x="55" y="731" width="144" height="78" rx="7" vector-effect="non-scaling-stroke"/></svg></div></div>
+  <figcaption class="cap">A text box and Save. Nothing asks how long to keep the paste.</figcaption>
+</figure><div class="sides-w"><div class="sides"><div class="side wide" id="why-table"><h3>Where pastes are kept</h3><div class="side-t"><p>Every paste is one row in the <code>pastes</code> table: an id, the text, and when it was saved. Nothing records how long to keep it.</p></div><figure class="fig fx fig-code" id="why-table-f">
+  <div class="fig-h"><span class="fig-k">Code</span><span class="fig-t">The pastes table</span></div>
+  <div class="code"><div class="code-h"><span class="code-p">src/<wbr>store.<wbr>js</span><span class="code-at">at 328f27e9f</span></div><pre tabindex="0" aria-label="src/store.js, lines 1 to 8"><span class="ln"><span class="no">1</span><span class="sg"></span><span class="tx">// pastebox keeps every paste in one SQLite table.</span></span><span class="ln"><span class="no">2</span><span class="sg"></span><span class="tx">export const SCHEMA = `</span></span><span class="ln hl"><span class="no">3</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>CREATE TABLE pastes (</span></span><span class="ln hl"><span class="no">4</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>  id TEXT PRIMARY KEY,</span></span><span class="ln hl"><span class="no">5</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>  body TEXT NOT NULL,</span></span><span class="ln hl"><span class="no">6</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>  created_at INTEGER NOT NULL</span></span><span class="ln"><span class="no">7</span><span class="sg"></span><span class="tx">);</span></span><span class="ln"><span class="no">8</span><span class="sg"></span><span class="tx">`;</span></span></pre></div>
+  <figcaption class="cap">An id, the text and a time. None of them says when a paste should go.</figcaption>
+</figure></div><div class="side wide" id="why-ask"><h3>What the issue asks</h3><div class="side-t"><p>A choice on the form, with never as the default, so nothing changes for anyone who does not pick.</p></div><figure class="fig fx fig-list" id="why-ask-f">
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">The choices the issue names</span></div>
+  <ul class="rows"><li class=""><span class="t">1 hour</span></li><li class=""><span class="t">1 day</span></li><li class=""><span class="t">1 week</span></li><li class=""><span class="t">never</span><span class="tag tag-acc">default</span></li></ul>
+  
+</figure></div></div></div></div>
+  </div>
+</section>
+<section class="card" id="where" data-sec="1" aria-labelledby="where-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">02 / 06</span><span>Where expiry reaches</span></p>
+      <h2 id="where-h" tabindex="-1">Three places change</h2>
+      
+      <p class="sub">The form gets a choice, the table gets a column, and the server reads it before it answers. A new cleanup job removes what has expired.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 5</summary><ul class="srcs"><li><span class="s-l">The plan: the new choice on the form</span><span class="s-w">PLAN.<wbr>md:3</span><span class="s-q"><q>The new paste form gets an &quot;Expires after&quot; choice: 1 hour, 1 day, 1 week, or never. Never is selected first.</q></span></li><li><span class="s-l">The plan: the new column</span><span class="s-w">PLAN.<wbr>md:4</span><span class="s-q"><q>The `pastes` table gets an `expires_at` column.</q> <q>It stays empty for a paste that never expires, and for every paste saved before this change.</q></span></li><li><span class="s-l">The plan: what an expired paste answers</span><span class="s-w">PLAN.<wbr>md:5</span><span class="s-q"><q>answers 410 Gone, on both `/p/:id` and `/p/:id/raw`</q></span></li><li><span class="s-l">The plan: the cleanup job</span><span class="s-w">PLAN.<wbr>md:6</span><span class="s-q"><q>A cleanup job runs every 10 minutes and deletes the pastes whose `expires_at` has passed.</q> <q>After that, the link answers 404, like any missing paste.</q></span></li><li><span class="s-l">Every route pastebox answers</span><span class="s-w">src/<wbr>routes.<wbr>js:2-<wbr>8 at 328f27e9f</span><span class="s-q"><q>[&quot;POST&quot;, &quot;/pastes&quot;, &quot;createPaste&quot;],</q> <q>[&quot;GET&quot;, &quot;/p/:id/raw&quot;, &quot;rawPaste&quot;],</q> <q>[&quot;DELETE&quot;, &quot;/p/:id&quot;, &quot;deletePaste&quot;],</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-layers" id="where-f">
+  <div class="fig-h"><span class="fig-k">Drawing</span><span class="fig-t">What changes, from the screen down</span></div>
+  <ol class="lay"><li class="lay-r"><div class="lay-n"><b>Form</b><span>what people see</span></div><div class="lay-c"><p class="mini ink">A new choice between the text box and Save.</p><ul class="chips"><li class="chip">Text</li><li class="chip new">Expires after<span class="sr"> (new)</span></li><li class="chip">Save</li></ul></div><div class="lay-tag"><span class="pr-tag acc">changes</span></div></li><li class="lay-r"><div class="lay-n"><b>Server</b><span>what answers</span></div><div class="lay-c"><p class="mini ink">Reading a paste checks expires_at first.</p><ul class="chips"><li class="chip">GET /<wbr>p/<wbr>:id</li><li class="chip">GET /<wbr>p/<wbr>:id/<wbr>raw</li></ul></div><div class="lay-tag"><span class="pr-tag acc">changes</span></div></li><li class="lay-r"><div class="lay-n"><b>Table</b><span>what is stored</span></div><div class="lay-c"><ul class="chips"><li class="chip">id</li><li class="chip">body</li><li class="chip">created_<wbr>at</li><li class="chip new">expires_<wbr>at<span class="sr"> (new)</span></li></ul></div><div class="lay-tag"><span class="pr-tag acc">new column</span></div></li><li class="lay-r"><div class="lay-n"><b>Cleanup job</b><span>runs on its own</span></div><div class="lay-c"><p class="mini ink">Deletes the pastes whose expires_at has passed.</p></div><div class="lay-tag"><span class="pr-tag acc">new</span></div></li></ol>
+  <figcaption class="cap">Blue marks what the change adds or changes.</figcaption>
+</figure><div class="sides-w"><div class="sides"><div class="side wide" id="where-path"><h3>The path of one paste</h3><div class="side-t"><p>The writer picks a time on the form. The server stores it beside the text, and checks it again on every read.</p></div><figure class="fig fx fig-flow" id="where-path-f">
+  <div class="fig-h"><span class="fig-k">Flow</span><span class="fig-t">From the form to a reader</span></div>
+  <ol class="flow" style="--tpl:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr)"><li class="fl-s fl-acc"><b class="">New paste form</b><span>Expires after picked</span><span class="sr"> (changes)</span></li><li class="fl-a" aria-hidden="true"><span class="fl-ar"></span><span class="fl-v">save</span></li><li class="fl-s fl-plain"><span class="sr">then (save): </span><b class="mono">POST /<wbr>pastes</b><span>stores expires_at</span></li><li class="fl-a" aria-hidden="true"><span class="fl-ar"></span></li><li class="fl-s fl-plain"><span class="sr">then: </span><b class="">pastes table</b><span>one row per paste</span></li><li class="fl-a" aria-hidden="true"><span class="fl-ar"></span><span class="fl-v">read</span></li><li class="fl-s fl-acc"><span class="sr">then (read): </span><b class="mono">GET /<wbr>p/<wbr>:id</b><span>410 once expired</span><span class="sr"> (changes)</span></li></ol>
+  
+</figure></div></div></div></div>
+  </div>
+</section>
+<section class="card" id="form" data-sec="2" aria-labelledby="form-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">03 / 06</span><span>The form</span></p>
+      <h2 id="form-h" tabindex="-1">One new choice, never by default</h2>
+      
+      <p class="sub">The new paste form gets an Expires after choice: 1 hour, 1 day, 1 week, or never. Never is selected first, so someone who does not look keeps today&#39;s behaviour.</p>
+      <div class="folds"><details class="src"><summary>Files · 2</summary><ul class="files"><li><span class="file" title="views/new.html"><span class="f-n">new.<wbr>html</span><span class="f-d">The new paste form</span></span></li><li><a class="file" href="#form-markup" data-jump="form-markup" title="Where the choice goes"><span class="f-n">new.<wbr>html</span><span class="f-d">Where the choice goes</span></a></li></ul></details>
+  <details class="src"><summary>Sources · 3</summary><ul class="srcs"><li><span class="s-l">The plan: the new choice on the form</span><span class="s-w">PLAN.<wbr>md:3</span><span class="s-q"><q>The new paste form gets an &quot;Expires after&quot; choice: 1 hour, 1 day, 1 week, or never. Never is selected first.</q></span></li><li><span class="s-l">The issue: pastes never go away</span><span class="s-w">issue-<wbr>41.<wbr>md:3-<wbr>7</span><span class="s-q"><q>its disk is now 90% full</q> <q>pastes are kept until someone deletes them, and almost nobody does</q> <q>1 hour, 1 day, 1 week, or never</q> <q>keep &quot;never&quot; as the default</q></span></li><li><span class="s-l">The new paste form at the base commit</span><span class="s-w">views/<wbr>new.<wbr>html:11-<wbr>15 at 328f27e9f</span><span class="s-q"><q>&lt;textarea id=&quot;body&quot; name=&quot;body&quot; rows=&quot;12&quot; required&gt;&lt;/textarea&gt;</q> <q>&lt;button type=&quot;submit&quot;&gt;Save&lt;/button&gt;</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-pair" id="form-f">
+  <div class="fig-h"><span class="fig-k">Before and after</span><span class="fig-t">The new paste form, before and after</span></div>
+  <div class="pair pair-2"><div class="pair-s">
+    <p class="pair-h"><b class="">Today</b></p>
+    <ul class="rows"><li class=""><span class="t">Text</span><span class="n">the paste</span></li><li class=""><span class="t">Save</span></li></ul>
+    <p class="mini">A text box and Save.</p>
+  </div><div class="pair-s">
+    <p class="pair-h"><b class="acc">After the change</b></p>
+    <ul class="rows"><li class=""><span class="t">Text</span><span class="n">the paste</span></li><li class="new"><span class="t">Expires after</span><span class="sr"> (new)</span><span class="n">1 hour, 1 day, 1 week, never</span><span class="tag tag-acc">new</span></li><li class=""><span class="t">Save</span></li></ul>
+    <p class="mini">The choice sits above Save, with never selected.</p>
+  </div></div>
+  
+</figure><div class="sides-w"><div class="sides"><div class="side wide" id="form-markup"><h3>Where it goes in the page</h3><div class="side-t"><p>The choice goes between the text box and the Save button, inside the same form, so it is sent with the paste.</p></div><figure class="fig fx fig-code" id="form-markup-f">
+  <div class="fig-h"><span class="fig-k">Code</span><span class="fig-t">The form in views/new.html</span></div>
+  <div class="code"><div class="code-h"><span class="code-p">views/<wbr>new.<wbr>html</span><span class="code-at">at 328f27e9f</span></div><pre tabindex="0" aria-label="views/new.html, lines 11 to 15"><span class="ln"><span class="no">11</span><span class="sg"></span><span class="tx">  &lt;form method=&quot;post&quot; action=&quot;/pastes&quot;&gt;</span></span><span class="ln"><span class="no">12</span><span class="sg"></span><span class="tx">    &lt;label for=&quot;body&quot;&gt;Text&lt;/label&gt;</span></span><span class="ln hl"><span class="no">13</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>    &lt;textarea id=&quot;body&quot; name=&quot;body&quot; rows=&quot;12&quot; required&gt;&lt;/textarea&gt;</span></span><span class="ln hl"><span class="no">14</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>    &lt;button type=&quot;submit&quot;&gt;Save&lt;/button&gt;</span></span><span class="ln"><span class="no">15</span><span class="sg"></span><span class="tx">  &lt;/form&gt;</span></span></pre></div>
+  <figcaption class="cap">The new choice goes between the marked lines.</figcaption>
+</figure></div></div></div></div>
+  </div>
+</section>
+<section class="card" id="server" data-sec="3" aria-labelledby="server-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">04 / 06</span><span>The server and the table</span></p>
+      <h2 id="server-h" tabindex="-1">Expired pastes answer 410</h2>
+      
+      <p class="sub">The <code>pastes</code> table gets an <code>expires_at</code> column. Reading a paste whose time has passed answers 410 Gone, and a cleanup job runs every 10 minutes to delete it.</p>
+      <div class="folds"><details class="src"><summary>Files · 3</summary><ul class="files"><li><span class="file" title="src/store.js"><span class="f-n">store.<wbr>js</span><span class="f-d">The new column and the expiry check</span></span></li><li><span class="file" title="src/routes.js"><span class="f-n">routes.<wbr>js</span><span class="f-d">Every route; none is added</span></span></li><li><span class="file" title="New: the cleanup job"><span class="f-n">cleanup.<wbr>js</span><span class="f-d">New: the cleanup job</span><span class="tag tag-acc">new</span></span></li></ul></details>
+  <details class="src"><summary>Sources · 7</summary><ul class="srcs"><li><span class="s-l">The plan: the new column</span><span class="s-w">PLAN.<wbr>md:4</span><span class="s-q"><q>The `pastes` table gets an `expires_at` column.</q> <q>It stays empty for a paste that never expires, and for every paste saved before this change.</q></span></li><li><span class="s-l">The plan: what an expired paste answers</span><span class="s-w">PLAN.<wbr>md:5</span><span class="s-q"><q>answers 410 Gone, on both `/p/:id` and `/p/:id/raw`</q></span></li><li><span class="s-l">The plan: the cleanup job</span><span class="s-w">PLAN.<wbr>md:6</span><span class="s-q"><q>A cleanup job runs every 10 minutes and deletes the pastes whose `expires_at` has passed.</q> <q>After that, the link answers 404, like any missing paste.</q></span></li><li><span class="s-l">Every route pastebox answers</span><span class="s-w">src/<wbr>routes.<wbr>js:2-<wbr>8 at 328f27e9f</span><span class="s-q"><q>[&quot;POST&quot;, &quot;/pastes&quot;, &quot;createPaste&quot;],</q> <q>[&quot;GET&quot;, &quot;/p/:id/raw&quot;, &quot;rawPaste&quot;],</q> <q>[&quot;DELETE&quot;, &quot;/p/:id&quot;, &quot;deletePaste&quot;],</q></span></li><li><span class="s-l">The plan: what does not change</span><span class="s-w">PLAN.<wbr>md:7</span><span class="s-q"><q>Deleting a paste by hand works as before.</q> <q>No other route changes.</q></span></li><li><span class="s-l">The plan: the new choice on the form</span><span class="s-w">PLAN.<wbr>md:3</span><span class="s-q"><q>The new paste form gets an &quot;Expires after&quot; choice: 1 hour, 1 day, 1 week, or never. Never is selected first.</q></span></li><li><span class="s-l">Reading a paste at the base commit</span><span class="s-w">src/<wbr>store.<wbr>js:15-<wbr>24 at 328f27e9f</span><span class="s-q"><q>if (!row) return { status: 404 };</q> <q>const shown = showPaste(db, id);</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-table" id="server-f">
+  <div class="fig-h"><span class="fig-k">Table</span><span class="fig-t">Every route, today and after</span></div>
+  <div class="tbw"><div class="tb" role="table" aria-label="Every route, today and after" style="grid-template-columns:auto minmax(0,1fr) auto auto"><div class="tr th" role="row"><span class="td" role="columnheader">Method</span><span class="td fill" role="columnheader">Route</span><span class="td" role="columnheader">Today</span><span class="td" role="columnheader">After</span></div><div class="tr" role="row"><span class="td mono" role="cell" data-l="Method">GET</span><span class="td mono fill" role="cell" data-l="Route">/</span><span class="td" role="cell" data-l="Today">the form</span><span class="td acc" role="cell" data-l="After">the form, with the choice<span class="sr"> (highlighted)</span></span></div><div class="tr" role="row"><span class="td mono" role="cell" data-l="Method">POST</span><span class="td mono fill" role="cell" data-l="Route">/<wbr>pastes</span><span class="td" role="cell" data-l="Today">saves</span><span class="td acc" role="cell" data-l="After">saves, with expires_at<span class="sr"> (highlighted)</span></span></div><div class="tr" role="row"><span class="td mono" role="cell" data-l="Method">GET</span><span class="td mono fill" role="cell" data-l="Route">/<wbr>p/<wbr>:id</span><span class="td" role="cell" data-l="Today">the paste</span><span class="td acc" role="cell" data-l="After">410 once expired<span class="sr"> (highlighted)</span></span></div><div class="tr" role="row"><span class="td mono" role="cell" data-l="Method">GET</span><span class="td mono fill" role="cell" data-l="Route">/<wbr>p/<wbr>:id/<wbr>raw</span><span class="td" role="cell" data-l="Today">the text</span><span class="td acc" role="cell" data-l="After">410 once expired<span class="sr"> (highlighted)</span></span></div><div class="tr" role="row"><span class="td mono" role="cell" data-l="Method">DELETE</span><span class="td mono fill" role="cell" data-l="Route">/<wbr>p/<wbr>:id</span><span class="td" role="cell" data-l="Today">deletes</span><span class="td" role="cell" data-l="After">as before</span></div></div></div>
+  <figcaption class="cap">Only the reads answer differently. Deleting by hand works as before.</figcaption>
+</figure><div class="sides-w"><div class="sides"><div class="side wide" id="server-check"><h3>The check on every read</h3><div class="side-t"><p>Today a read answers 404 when the row is missing. The expiry check goes right beside it. The raw route calls the same function, so it gets the check too.</p></div><figure class="fig fx fig-code" id="server-check-f">
+  <div class="fig-h"><span class="fig-k">Code</span><span class="fig-t">Reading a paste in src/store.js</span></div>
+  <div class="code"><div class="code-h"><span class="code-p">src/<wbr>store.<wbr>js</span><span class="code-at">at 328f27e9f</span></div><pre tabindex="0" aria-label="src/store.js, lines 15 to 24"><span class="ln"><span class="no">15</span><span class="sg"></span><span class="tx">export function showPaste(db, id) {</span></span><span class="ln"><span class="no">16</span><span class="sg"></span><span class="tx">  const row = db.get(&quot;SELECT body FROM pastes WHERE id = ?&quot;, id);</span></span><span class="ln hl"><span class="no">17</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>  if (!row) return { status: 404 };</span></span><span class="ln"><span class="no">18</span><span class="sg"></span><span class="tx">  return { status: 200, body: row.body };</span></span><span class="ln"><span class="no">19</span><span class="sg"></span><span class="tx">}</span></span><span class="ln"><span class="no">20</span><span class="sg"></span><span class="tx"> </span></span><span class="ln"><span class="no">21</span><span class="sg"></span><span class="tx">export function rawPaste(db, id) {</span></span><span class="ln hl"><span class="no">22</span><span class="sg"></span><span class="tx"><span class="sr">marked: </span>  const shown = showPaste(db, id);</span></span><span class="ln"><span class="no">23</span><span class="sg"></span><span class="tx">  return { ...shown, type: &quot;text/plain&quot; };</span></span><span class="ln"><span class="no">24</span><span class="sg"></span><span class="tx">}</span></span></pre></div>
+  <figcaption class="cap">The expiry check goes beside the missing check, and the raw route inherits it.</figcaption>
+</figure></div><div class="side wide" id="server-life"><h3>A paste&#39;s life</h3><div class="side-t"><p>Once its time passes, a paste answers 410. The cleanup job then deletes the row, and the same link answers 404.</p></div><figure class="fig fx fig-timeline" id="server-life-f">
+  <div class="fig-h"><span class="fig-k">Timeline</span><span class="fig-t">One paste, from saved to gone</span></div>
+  <ol class="trk has-bands" style="--n:4"><span class="band" style="--b1:1;--b2:2">Readable</span><span class="band acc" style="--b1:2;--b2:3">Answers 410<span class="sr"> (highlighted)</span></span><span class="band" style="--b1:3;--b2:5">Answers 404</span><li class="stop first" style="--c:1"><span class="dot" aria-hidden="true"></span><b class="">Saved</b><span>expires_at set</span></li><li class="stop" style="--c:2"><span class="dot acc" aria-hidden="true"></span><b class="">Expires</b><span class="sr"> (highlighted)</span><span>answers 410</span></li><li class="stop" style="--c:3"><span class="dot" aria-hidden="true"></span><b class="">Cleanup job</b><span>deletes the row</span></li><li class="stop last" style="--c:4"><span class="dot ask" aria-hidden="true">?</span><b class="">Read again</b><span class="sr"> (open question)</span><span>answers 404</span></li></ol>
+  <figcaption class="cap">The answer changes from 410 to 404 when the job runs. The last section asks about that.</figcaption>
+</figure></div></div></div></div>
+  </div>
+</section>
+<section class="card" id="kept" data-sec="4" aria-labelledby="kept-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">05 / 06</span><span>What stays the same</span></p>
+      <h2 id="kept-h" tabindex="-1">Old pastes never expire</h2>
+      
+      <p class="sub">The new column stays empty for every paste saved before this change, so those pastes are kept as they are today. Deleting a paste by hand works as before.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 3</summary><ul class="srcs"><li><span class="s-l">The plan: the new column</span><span class="s-w">PLAN.<wbr>md:4</span><span class="s-q"><q>The `pastes` table gets an `expires_at` column.</q> <q>It stays empty for a paste that never expires, and for every paste saved before this change.</q></span></li><li><span class="s-l">The plan: what does not change</span><span class="s-w">PLAN.<wbr>md:7</span><span class="s-q"><q>Deleting a paste by hand works as before.</q> <q>No other route changes.</q></span></li><li><span class="s-l">Every route pastebox answers</span><span class="s-w">src/<wbr>routes.<wbr>js:2-<wbr>8 at 328f27e9f</span><span class="s-q"><q>[&quot;POST&quot;, &quot;/pastes&quot;, &quot;createPaste&quot;],</q> <q>[&quot;GET&quot;, &quot;/p/:id/raw&quot;, &quot;rawPaste&quot;],</q> <q>[&quot;DELETE&quot;, &quot;/p/:id&quot;, &quot;deletePaste&quot;],</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-list" id="kept-f">
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">Kept as it is</span></div>
+  <ul class="rows"><li class=""><span class="t">Pastes saved before the change</span><span class="n">no expires_at, so they never expire</span></li><li class=""><span class="mono-t">DELETE /<wbr>p/<wbr>:id</span><span class="n">deletes by hand, as before</span></li><li class=""><span class="t">The list of routes</span><span class="n">no route is added or removed</span></li></ul>
+  <figcaption class="cap">Nobody has to do anything for an old paste to stay.</figcaption>
+</figure><div class="sides-w"><div class="sides"><div class="side wide" id="kept-routes"><h3>Every route, after the change</h3><div class="side-t"><p>The same routes, with the same names. The reads and the save change what they do; nothing is added or removed.</p></div><figure class="fig fx fig-chips" id="kept-routes-f">
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">The routes</span></div>
+  <ul class="chips"><li class="chip changed">GET /<i aria-hidden="true"></i><span class="sr"> (changes)</span></li><li class="chip changed">POST /<wbr>pastes<i aria-hidden="true"></i><span class="sr"> (changes)</span></li><li class="chip changed">GET /<wbr>p/<wbr>:id<i aria-hidden="true"></i><span class="sr"> (changes)</span></li><li class="chip changed">GET /<wbr>p/<wbr>:id/<wbr>raw<i aria-hidden="true"></i><span class="sr"> (changes)</span></li><li class="chip">DELETE /<wbr>p/<wbr>:id</li></ul><p class="key"><span class="key-i"><span class="chip sm changed" aria-hidden="true">name<i></i></span>stays, but answers differently</span></p>
+  
+</figure></div></div></div></div>
+  </div>
+</section>
+<section class="card" id="open" data-sec="5" aria-labelledby="open-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">06 / 06</span><span>Open question</span></p>
+      <h2 id="open-h" tabindex="-1">One answer that changes mid-way</h2>
+      <p class="question">Should an expired paste answer 404 from the start?</p>
+      <p class="sub">As written, an expired paste answers 410 until the cleanup job runs, then 404. Answering 404 from the start means the answer never changes. The maintainers decide before the release.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">The plan: the open question</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>an expired paste answers 410 until the cleanup job runs, then 404</q> <q>Should it answer 404 from the start, so the answer never changes?</q> <q>The maintainers decide before the release.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-pair" id="open-f">
+  <div class="fig-h"><span class="fig-k">Before and after</span><span class="fig-t">How an expired link can answer</span></div>
+  <div class="pair pair-2"><div class="pair-s">
+    <p class="pair-h"><b class="acc">As written</b></p>
+    <ol class="trk" style="--n:3"><li class="stop first" style="--c:1"><span class="dot" aria-hidden="true"></span><b class="">Expires</b><span>410</span></li><li class="stop" style="--c:2"><span class="dot" aria-hidden="true"></span><b class="">Cleanup job</b><span>deletes the row</span></li><li class="stop last" style="--c:3"><span class="dot ask" aria-hidden="true">?</span><b class="">Read again</b><span class="sr"> (open question)</span><span>404</span></li></ol>
+    <p class="mini">Says the paste existed, until the job runs.</p>
+  </div><div class="pair-s">
+    <p class="pair-h"><b class="">404 from the start</b></p>
+    <ol class="trk" style="--n:3"><li class="stop first" style="--c:1"><span class="dot" aria-hidden="true"></span><b class="">Expires</b><span>404</span></li><li class="stop" style="--c:2"><span class="dot" aria-hidden="true"></span><b class="">Cleanup job</b><span>deletes the row</span></li><li class="stop last" style="--c:3"><span class="dot" aria-hidden="true"></span><b class="">Read again</b><span>404</span></li></ol>
+    <p class="mini">Says nothing, and never changes.</p>
+  </div></div>
+  <figcaption class="cap">One line from the maintainers settles it.</figcaption>
+</figure></div>
+  </div>
+</section>
+</div>
+<p class="keys">j and k, or the up and down arrows, move between sections.</p>
+</main>
+<script>
+(function () {
+  var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('theme');
+  function isDark() { return root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+  function paintTheme() {
+    var dark = isDark();
+    themeBtn.textContent = dark ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+  }
+  themeBtn.addEventListener('click', function () { root.dataset.theme = isDark() ? 'light' : 'dark'; paintTheme(); });
+  paintTheme();
+
+  function focusIn(el) {
+    var h = el.matches('section') ? el.querySelector('h2') : el.querySelector('h3');
+    if (h) { if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+  // Jumps scroll without writing history: the page may sit inside a frame that owns the address.
+  document.querySelectorAll('[data-jump]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var t = document.getElementById(a.dataset.jump);
+      if (!t) return;
+      e.preventDefault();
+      t.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+      focusIn(t);
+    });
+  });
+
+  // j and k (or the arrows) move between sections.
+  var cards = Array.prototype.slice.call(document.querySelectorAll('[data-sec]'));
+  function current() {
+    var best = -1;
+    cards.forEach(function (c, i) { if (c.getBoundingClientRect().top <= 90) best = i; });
+    return best;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'PRE' || t.isContentEditable)) return;
+    var d = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!d) return;
+    var i = current() + d;
+    if (i < 0) { if (d < 0) { e.preventDefault(); window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' }); } return; }
+    if (i >= cards.length) return;
+    e.preventDefault();
+    cards[i].scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    focusIn(cards[i]);
+  });
+})();
+
+</script>
+</body></html>

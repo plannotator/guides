@@ -1,0 +1,1243 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/plannotator/guides/blob/main/skills/guided-plan/system/guided-plan.schema.json",
+  "title": "Guided plan content file (guided-plan/2)",
+  "description": "The shape of plan.json. build.mjs checks more than this: cites that exist, numbers inside cited quotes, jargon, ids that do not collide, paths inside the plan folder, and text that fits.",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "guided-plan/2"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "intent": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "intentCites": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "plan": {
+      "$ref": "#/$defs/planName"
+    },
+    "model": {
+      "type": "string"
+    },
+    "base": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "repos": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "not": {
+          "enum": [
+            "__proto__",
+            "constructor",
+            "prototype"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/repo"
+      }
+    },
+    "sources": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "not": {
+          "enum": [
+            "__proto__",
+            "constructor",
+            "prototype"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "assets": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
+        "not": {
+          "enum": [
+            "__proto__",
+            "constructor",
+            "prototype"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/asset"
+      }
+    },
+    "overview": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/overview"
+      },
+      "minItems": 1
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/section"
+      },
+      "minItems": 1,
+      "maxItems": 10
+    },
+    "ban": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    }
+  },
+  "required": [
+    "format",
+    "title",
+    "intent",
+    "base",
+    "sources",
+    "overview",
+    "sections"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "planName": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "repo": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s\"<>]+$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "git",
+            "file",
+            "capture"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "lines": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*(-[1-9][0-9]*)?$"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$"
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "asset": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "overview": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "Decided",
+            "Change",
+            "Kept",
+            "Open"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "section": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "section",
+        "cites"
+      ],
+      "additionalProperties": false
+    },
+    "section": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "heading": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "lead": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 1
+        },
+        "figure": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/figure"
+            },
+            {
+              "required": [
+                "title",
+                "cites"
+              ]
+            }
+          ]
+        },
+        "cards": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/card"
+          },
+          "maxItems": 6
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/file"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "heading",
+        "lead",
+        "cites",
+        "figure"
+      ],
+      "additionalProperties": false
+    },
+    "card": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "body": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 1,
+          "maxItems": 3
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 1
+        },
+        "figure": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/figure"
+            },
+            {
+              "required": [
+                "title",
+                "cites"
+              ]
+            }
+          ]
+        },
+        "fold": {
+          "type": "boolean"
+        },
+        "wide": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "body",
+        "cites"
+      ],
+      "additionalProperties": false
+    },
+    "file": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "repo": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "const": true
+            }
+          ]
+        },
+        "at": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$"
+        },
+        "card": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "tagAcc": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "screenshot": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "screenshot"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "asset": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "ring": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "scale": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "asset"
+      ],
+      "additionalProperties": false
+    },
+    "code": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "code"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "start": {
+          "type": "integer"
+        },
+        "text": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "maxItems": 40
+        },
+        "at": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$"
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "marked": {
+          "anyOf": [
+            {
+              "const": "all"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          ]
+        },
+        "mark": {
+          "enum": [
+            "hl",
+            "out"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "path",
+        "start",
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "list"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/listRow"
+          },
+          "minItems": 1,
+          "maxItems": 12
+        }
+      },
+      "required": [
+        "type",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "listRow": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "tagAcc": {
+          "type": "boolean"
+        },
+        "mono": {
+          "type": "boolean"
+        },
+        "mark": {
+          "enum": [
+            "out",
+            "new",
+            "acc"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "table": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "table"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "$ref": "#/$defs/column"
+              }
+            ]
+          },
+          "minItems": 2,
+          "maxItems": 5
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/$defs/cell"
+                }
+              ]
+            }
+          },
+          "minItems": 1,
+          "maxItems": 20
+        }
+      },
+      "required": [
+        "type",
+        "columns",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "column": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "mono": {
+          "type": "boolean"
+        },
+        "acc": {
+          "type": "boolean"
+        },
+        "end": {
+          "type": "boolean"
+        },
+        "fill": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "cell": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "mono": {
+          "type": "boolean"
+        },
+        "acc": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "chips": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "chips"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "chips": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/chip"
+          },
+          "minItems": 1,
+          "maxItems": 40
+        },
+        "legend": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/legend"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "chips"
+      ],
+      "additionalProperties": false
+    },
+    "chip": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "mark": {
+          "enum": [
+            "out",
+            "changed",
+            "new",
+            "acc"
+          ]
+        },
+        "acc": {
+          "type": "boolean"
+        },
+        "mono": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "legend": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "mark": {
+          "enum": [
+            "out",
+            "changed",
+            "new",
+            "acc"
+          ]
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "timeline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "timeline"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "stops": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/stop"
+          },
+          "minItems": 1,
+          "maxItems": 6
+        },
+        "bands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/band"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "stops"
+      ],
+      "additionalProperties": false
+    },
+    "stop": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sub": {
+          "type": "string"
+        },
+        "sub2": {
+          "type": "string"
+        },
+        "mark": {
+          "enum": [
+            "acc",
+            "ask"
+          ]
+        },
+        "mono": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "band": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "integer"
+        },
+        "to": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "acc": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "flow": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "flow"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "minItems": 2,
+          "maxItems": 6
+        }
+      },
+      "required": [
+        "type",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "step": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sub": {
+          "type": "string"
+        },
+        "via": {
+          "type": "string"
+        },
+        "mark": {
+          "enum": [
+            "plain",
+            "acc",
+            "new",
+            "gone",
+            "muted"
+          ]
+        },
+        "mono": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "layers"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layer"
+          },
+          "minItems": 1,
+          "maxItems": 5
+        }
+      },
+      "required": [
+        "type",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "layer": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "sub": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "$ref": "#/$defs/layerItem"
+              }
+            ]
+          }
+        },
+        "tag": {
+          "type": "string"
+        },
+        "tagAcc": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "layerItem": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "mark": {
+          "enum": [
+            "out",
+            "changed",
+            "new",
+            "acc"
+          ]
+        },
+        "mono": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "pair": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "pair"
+        },
+        "title": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "sides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/side"
+          },
+          "minItems": 2,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "type",
+        "sides"
+      ],
+      "additionalProperties": false
+    },
+    "side": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "note": {
+          "type": "string"
+        },
+        "acc": {
+          "type": "boolean"
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "figure": {
+          "$ref": "#/$defs/sideFigure"
+        },
+        "caption": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "figure"
+      ],
+      "additionalProperties": false
+    },
+    "figure": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/screenshot"
+        },
+        {
+          "$ref": "#/$defs/code"
+        },
+        {
+          "$ref": "#/$defs/list"
+        },
+        {
+          "$ref": "#/$defs/table"
+        },
+        {
+          "$ref": "#/$defs/chips"
+        },
+        {
+          "$ref": "#/$defs/timeline"
+        },
+        {
+          "$ref": "#/$defs/flow"
+        },
+        {
+          "$ref": "#/$defs/layers"
+        },
+        {
+          "$ref": "#/$defs/pair"
+        }
+      ]
+    },
+    "sideFigure": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/screenshot"
+        },
+        {
+          "$ref": "#/$defs/code"
+        },
+        {
+          "$ref": "#/$defs/list"
+        },
+        {
+          "$ref": "#/$defs/table"
+        },
+        {
+          "$ref": "#/$defs/chips"
+        },
+        {
+          "$ref": "#/$defs/timeline"
+        },
+        {
+          "$ref": "#/$defs/flow"
+        },
+        {
+          "$ref": "#/$defs/layers"
+        }
+      ]
+    }
+  }
+}

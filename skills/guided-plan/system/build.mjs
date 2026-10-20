@@ -13,7 +13,7 @@
 // Needs Node 18+ and git. No dependencies. Only reads: files next to the content file, and
 // `git show` / `git cat-file` at named commits. It never fetches. The same input gives the same bytes.
 
-import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, relative, isAbsolute, sep, resolve as rpath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -89,6 +89,13 @@ function insideSpecDir(p) {
   if (leaves(relative(specDir, rpath(specDir, p)))) return false;
   try { return !leaves(relative(realpathSync(specDir), realpathSync(rpath(specDir, p)))); }
   catch { return true; } // missing: existence is reported elsewhere
+}
+// An asset is a file: true, false when it is missing, or what is wrong with it.
+function assetFile(p) {
+  const f = join(specDir, p);
+  if (!existsSync(f)) return false;
+  if (statSync(f).isDirectory()) return `${p} is a folder; name an image file inside it`;
+  return statSync(f).isFile() ? true : `${p} is not a file`;
 }
 
 // ---------- the re-check ----------
@@ -169,8 +176,10 @@ function imageSize(buf) {
 function loadAssets() {
   const out = {};
   for (const [id, a] of Object.entries(spec.assets || {})) {
-    const buf = readFileSync(join(specDir, a.file));
-    const { w, h, mime } = imageSize(buf);
+    let buf, size;
+    try { buf = readFileSync(join(specDir, a.file)); size = imageSize(buf); }
+    catch (e) { console.error(`Errors:\n  assets.${id}: ${a.file}: ${e.code ? firstLine(e) : e.message}`); process.exit(2); }
+    const { w, h, mime } = size;
     out[id] = { w, h, uri: `data:${mime};base64,${buf.toString("base64")}` };
   }
   return out;
@@ -200,7 +209,7 @@ function linksFor() {
 
 // ---------- main ----------
 
-const { errors: errs, warnings: warns } = validatePlan(spec, { insideFolder: insideSpecDir, fileExists: (p) => existsSync(join(specDir, p)) });
+const { errors: errs, warnings: warns } = validatePlan(spec, { insideFolder: insideSpecDir, fileExists: assetFile });
 warns.forEach((w) => console.error("warn: " + w));
 if (errs.length) { console.error("Errors:\n  " + errs.join("\n  ")); process.exit(2); }
 if (checkMode) process.exit(check() ? 1 : 0);

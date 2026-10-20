@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { lintWith, section } from "./helpers.mjs";
+import { join } from "node:path";
+import { lintWith, section, scratch, build } from "./helpers.mjs";
 
 const refused = (edit, ...parts) => {
   const r = lintWith(edit);
@@ -92,6 +93,19 @@ test("files the build reads stay inside the folder of the content file", () => {
     const r = lintWith(edit);
     assert.equal(r.code, 2, r.out);
     assert.match(r.out, /inside the folder of the content file/);
+  }
+});
+
+test("an asset that names a folder is an error, not a crash", () => {
+  for (const folder of ["assets", "."]) {
+    const edit = (p) => { for (const a of Object.values(p.assets)) a.file = folder; };
+    refused(edit, `${folder} is a folder; name an image file inside it`);
+    const s = scratch(edit);
+    try {
+      const r = build(s.plan, join(s.dir, "out.html"));
+      assert.equal(r.code, 2, r.out);
+      assert.ok(r.out.includes("is a folder") && !r.out.includes("EISDIR"), r.out);
+    } finally { s.done(); }
   }
 });
 

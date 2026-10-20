@@ -14,6 +14,11 @@ export const ownIn = (o, k) => (o && typeof o === "object" && typeof k === "stri
 const SECTION_ID = /^[a-z][a-z0-9-]*$/;
 const KINDS = ["Decided", "Change", "Kept", "Open"];
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
+const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+// The entries of a map that is an object; any other value is reported once, by the map check.
+const entries = (v) => (isObj(v) ? Object.entries(v) : []);
+// A list, or nothing; null and undefined are an empty list, as they always were.
+const notList = (v) => v !== undefined && v !== null && !Array.isArray(v);
 const words = (s) => String(s).trim().split(/\s+/).filter(Boolean).length;
 const MAX_HEADING_WORDS = 8;
 const RESERVED_KEYS = ["__proto__", "constructor", "prototype", "hasOwnProperty", "toString", "valueOf"];
@@ -24,12 +29,15 @@ const RESERVED_CARD_IDS = ["h", "f", "read"];
 const COMMIT = /^[0-9a-f]{7,40}$/;
 const tooLong = (errs, where, what, text, max) => { if (typeof text === "string" && text.length > max) errs.push(`${where}: ${what} "${text}" is ${text.length} characters; keep it to ${max} or fewer`); };
 
-// A path the content file names beside itself stays inside its folder: not absolute, and no ".."
-// that climbs out. This is the check by name alone; build.mjs passes one that also follows symlinks.
+// A path the content file names beside itself stays inside its folder. This is the check by name
+// alone, so it refuses anything a host might resolve somewhere else: a leading "/", any backslash,
+// any ":" (a scheme such as https: or file:, a drive such as C:), any "%" (an escaped ".." or "/"),
+// any control character, and a ".." that climbs out. build.mjs passes its own check, which also
+// follows symlinks on the disk.
 export function insideFolderByName(p) {
-  if (typeof p !== "string" || !p || /^([\\/]|[A-Za-z]:)/.test(p)) return false;
+  if (typeof p !== "string" || !p || p.startsWith("/") || /[\\:%\u0000-\u001f\u007f]/.test(p)) return false;
   let depth = 0;
-  for (const part of p.split(/[\\/]+/)) {
+  for (const part of p.split("/")) {
     if (part === "..") { if (--depth < 0) return false; }
     else if (part && part !== ".") depth++;
   }
@@ -85,7 +93,8 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
     case "chips":
       if (!Array.isArray(f.chips) || !f.chips.length || f.chips.length > 40 || !f.chips.every((c) => c && isStr(c.text))) errs.push(`${where}: chips needs 1 to 40 chips, each with text`);
       else f.chips.forEach((c, i) => { if (c.mark !== undefined && !["out", "changed", "new", "acc"].includes(c.mark)) errs.push(`${where}.chips[${i}]: mark is "out", "changed", "new" or "acc"`); });
-      (f.legend || []).forEach((l, i) => { if (!l || !isStr(l.text) || !["out", "changed", "new", "acc", undefined].includes(l.mark)) errs.push(`${where}.legend[${i}]: a legend item is { "mark", "text" }`); });
+      if (notList(f.legend)) errs.push(`${where}: legend is a list`);
+      else (f.legend || []).forEach((l, i) => { if (!l || !isStr(l.text) || !["out", "changed", "new", "acc", undefined].includes(l.mark)) errs.push(`${where}.legend[${i}]: a legend item is { "mark", "text" }`); });
       break;
     case "timeline":
       if (!Array.isArray(f.stops) || f.stops.length < 1 || f.stops.length > 6 || !f.stops.every((s) => s && isStr(s.label))) { errs.push(`${where}: timeline needs 1 to 6 stops, each with a label`); break; }
@@ -95,7 +104,8 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
         tooLong(errs, `${where}.stops[${i}]`, "sub", s.sub, 60);
         tooLong(errs, `${where}.stops[${i}]`, "sub2", s.sub2, 60);
       });
-      (f.bands || []).forEach((b, i) => { if (!(b && Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}.bands[${i}]: a band needs label, and from and to as stop indexes`); });
+      if (notList(f.bands)) errs.push(`${where}: bands is a list`);
+      else (f.bands || []).forEach((b, i) => { if (!(b && Number.isInteger(b.from) && Number.isInteger(b.to) && b.from >= 0 && b.to < f.stops.length && b.from <= b.to && isStr(b.label))) errs.push(`${where}.bands[${i}]: a band needs label, and from and to as stop indexes`); });
       break;
     case "flow":
       if (!Array.isArray(f.steps) || f.steps.length < 2 || f.steps.length > 6 || !f.steps.every((s) => s && isStr(s.label))) { errs.push(`${where}: flow needs 2 to 6 steps, each with a label`); break; }
@@ -110,8 +120,9 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
     case "layers":
       if (!Array.isArray(f.rows) || !f.rows.length || f.rows.length > 5 || !f.rows.every((r) => r && isStr(r.label))) { errs.push(`${where}: layers needs 1 to 5 rows, each with a label`); break; }
       f.rows.forEach((r, i) => {
-        if (!isStr(r.text) && !(r.items || []).length) errs.push(`${where}.rows[${i}]: a layer needs text, items, or both`);
-        (r.items || []).forEach((it, j) => { if (!(isStr(it) || (it && isStr(it.text) && ["out", "changed", "new", "acc", undefined].includes(it.mark)))) errs.push(`${where}.rows[${i}].items[${j}]: an item is text, or { "text", "mark" }`); });
+        if (notList(r.items)) errs.push(`${where}.rows[${i}]: items is a list`);
+        else if (!isStr(r.text) && !(r.items || []).length) errs.push(`${where}.rows[${i}]: a layer needs text, items, or both`);
+        if (Array.isArray(r.items)) r.items.forEach((it, j) => { if (!(isStr(it) || (it && isStr(it.text) && ["out", "changed", "new", "acc", undefined].includes(it.mark)))) errs.push(`${where}.rows[${i}].items[${j}]: an item is text, or { "text", "mark" }`); });
         tooLong(errs, `${where}.rows[${i}]`, "label", r.label, 24);
         tooLong(errs, `${where}.rows[${i}]`, "tag", r.tag, 24);
       });
@@ -128,8 +139,8 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
   }
 }
 
-export function validate(spec, host = {}) {
-  const { insideFolder = insideFolderByName, fileExists = () => true } = host;
+function validateUnguarded(spec, host) {
+  const { insideFolder = insideFolderByName, fileExists = () => true } = isObj(host) ? host : {};
   const errs = [];
   if (!spec || typeof spec !== "object" || Array.isArray(spec)) return ["the content file is a JSON object"];
   if (spec.format === "guided-plan/1") return [`format: this file is guided-plan/1 (lettered parts). ${MIGRATE}`];
@@ -146,17 +157,19 @@ export function validate(spec, host = {}) {
   for (const k of ["title", "intent", "base"]) if (!isStr(spec[k])) errs.push(`${k}: required`);
   if (spec.base && !/^[0-9a-f]{7,40}$/.test(spec.base)) errs.push("base: a commit hash (7 to 40 hex characters)");
   if (!spec.sources || typeof spec.sources !== "object") errs.push("sources: required");
-  const known = new Set(Object.keys(spec.sources || {}));
+  const known = new Set(entries(spec.sources).map(([k]) => k));
   const cite = (where, ids, required) => {
     if (required && !(Array.isArray(ids) && ids.length)) errs.push(`${where}: no cites`);
+    if (notList(ids)) { if (!required) errs.push(`${where}: cites is a list of source ids`); return; }
     (ids || []).forEach((id) => { if (!known.has(id)) errs.push(`${where}: unknown source ${id}`); });
   };
   const citeFigure = (where, f) => {
     if (!f) return;
     cite(`${where}.figure`, f.cites, false);
-    (f.sides || []).forEach((s, i) => cite(`${where}.figure.sides[${i}]`, s && s.figure && s.figure.cites, false));
+    (Array.isArray(f.sides) ? f.sides : []).forEach((s, i) => cite(`${where}.figure.sides[${i}]`, s && s.figure && s.figure.cites, false));
   };
-  for (const [id, s] of Object.entries(spec.sources || {})) {
+  for (const [id, s] of entries(spec.sources)) {
+    if (!isObj(s)) { errs.push(`sources.${id}: a source is an object`); continue; }
     if (!["git", "file", "capture"].includes(s.kind)) errs.push(`sources.${id}: kind is git, file or capture`);
     if (!isStr(s.path)) errs.push(`sources.${id}: path required`);
     else if (s.kind !== "git" && !insideFolder(s.path)) errs.push(`sources.${id}: path ${s.path} must be inside the folder of the content file`);
@@ -168,21 +181,27 @@ export function validate(spec, host = {}) {
       if (s.repo !== undefined && !ownIn(spec.repos, s.repo)) errs.push(`sources.${id}: unknown repo ${s.repo}`);
     }
   }
-  for (const [name, r] of Object.entries(spec.repos || {})) if (r.url !== undefined && !(typeof r.url === "string" && /^https:\/\/[^\s"<>]+$/.test(r.url))) errs.push(`repos.${name}: url must start with https://`);
-  if (Object.keys(spec.repos || {}).length > 1) {
-    for (const [id, s] of Object.entries(spec.sources || {})) if (s.kind === "git" && s.repo === undefined) errs.push(`sources.${id}: name its repo; this guided plan has more than one`);
+  for (const [name, r] of entries(spec.repos)) if (!isObj(r)) errs.push(`repos.${name}: a repo is an object`); else if (r.url !== undefined && !(typeof r.url === "string" && /^https:\/\/[^\s"<>]+$/.test(r.url))) errs.push(`repos.${name}: url must start with https://`);
+  if (entries(spec.repos).length > 1) {
+    for (const [id, s] of entries(spec.sources)) if (isObj(s) && s.kind === "git" && s.repo === undefined) errs.push(`sources.${id}: name its repo; this guided plan has more than one`);
   }
-  for (const [id, a] of Object.entries(spec.assets || {})) {
+  for (const [id, a] of entries(spec.assets)) {
+    if (!isObj(a)) { errs.push(`assets.${id}: an asset is an object`); continue; }
     if (!isStr(a.file)) errs.push(`assets.${id}: file required`);
     else if (!insideFolder(a.file)) errs.push(`assets.${id}: ${a.file} must be inside the folder of the content file`);
-    else if (!fileExists(a.file)) errs.push(`assets.${id}: ${a.file} not found next to the content file`);
+    else {
+      const found = fileExists(a.file);
+      if (found !== true) errs.push(`assets.${id}: ${typeof found === "string" ? found : `${a.file} not found next to the content file`}`);
+    }
     if (a.from !== undefined && !known.has(a.from)) errs.push(`assets.${id}: unknown source ${a.from}`);
   }
   cite("intent", spec.intentCites, false);
+  if (notList(spec.ban) || (Array.isArray(spec.ban) && !spec.ban.every(isStr))) errs.push("ban: a list of words");
   if (!Array.isArray(spec.sections) || !spec.sections.length || spec.sections.length > 10) { errs.push("sections: 1 to 10"); return errs; }
   if (!Array.isArray(spec.overview) || !spec.overview.length) errs.push("overview: at least one row");
   const secIds = new Set();
-  for (const s of spec.sections) {
+  for (const [i, s] of spec.sections.entries()) {
+    if (!isObj(s)) { errs.push(`sections[${i}]: a section is an object`); continue; }
     const sid = s.id;
     if (!SECTION_ID.test(sid || "")) errs.push(`section ${sid}: id is lower case letters, digits and dashes`);
     if (secIds.has(sid)) errs.push(`section ${sid}: id used twice`);
@@ -211,7 +230,9 @@ export function validate(spec, host = {}) {
       if (c.fold && !c.figure) errs.push(`${where}: fold folds the card's figure; this card has none`);
       if (c.wide !== undefined && typeof c.wide !== "boolean") errs.push(`${where}: wide is true or false`);
     }
+    if (notList(s.files)) { errs.push(`${sid}: files is a list`); continue; }
     for (const a of s.files || []) {
+      if (!isObj(a)) { errs.push(`${sid}: a file is an object`); continue; }
       if (!isStr(a.name)) errs.push(`${sid}: a file needs name`);
       if (a.part) errs.push(`${sid}: file ${a.name} names a part; in ${FORMAT} a file points at a card with "card"`);
       if (a.card && !cardIds.has(a.card)) errs.push(`${sid}: file ${a.name} points at unknown card ${a.card}`);
@@ -236,7 +257,8 @@ export function validate(spec, host = {}) {
       claim(`${s.id}-${c.id}`, `card ${s.id}.${c.id}`); claim(`${s.id}-${c.id}-f`, `card ${s.id}.${c.id}'s figure`);
     }
   }
-  (spec.overview || []).forEach((o, i) => {
+  (Array.isArray(spec.overview) ? spec.overview : []).forEach((o, i) => {
+    if (!isObj(o)) { errs.push(`overview[${i}]: a row is an object`); return; }
     if (!KINDS.includes(o.kind)) errs.push(`overview[${i}]: kind is one of ${KINDS.join(", ")}`);
     if (!isStr(o.text)) errs.push(`overview[${i}]: text required`);
     if (!secIds.has(o.section)) errs.push(`overview[${i}]: unknown section ${o.section}`);
@@ -305,7 +327,7 @@ function readerStrings(spec) {
   return out;
 }
 
-export function lint(spec) {
+function lintUnguarded(spec) {
   const errs = [];
   const warns = [];
   const banned = [...BANNED, ...(spec.ban || []).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))].map((w) => new RegExp(`\\b${w}\\b`, "i"));
@@ -339,13 +361,42 @@ export function lint(spec) {
   return { errors: errs, warnings: warns };
 }
 
-// ---------- both ----------
+// ---------- the exports ----------
 
-// Shape first; the words only once the shape is sound. The same errors, in the same order, as build.mjs prints.
-//   host.insideFolder(path)  true when a path the file names stays inside the content file's folder
-//                            (default: insideFolderByName)
-//   host.fileExists(path)    true when an asset file is there (default: not checked)
-export function validatePlan(spec, host = {}) {
+// None of them throws: a value the checks did not foresee becomes an error, never an exception.
+const unforeseen = (e) => `the content file could not be checked: ${e && e.message ? e.message : String(e)}`;
+
+/**
+ * The shape of a content file. Returns a list of errors; an empty list means the shape is sound.
+ *
+ * @param {unknown} spec  the parsed plan.json
+ * @param {object} [host] what needs a look at the disk. Both defaults go by the name alone, and
+ *   cannot know what a name will reach. A host that has no folder must look an asset up by its
+ *   exact key in its own store, and never resolve the path against a URL or a disk.
+ * @param {(path: string) => boolean} [host.insideFolder]  true when a path the file names stays
+ *   inside the content file's folder. Default: insideFolderByName.
+ * @param {(path: string) => boolean | string} [host.fileExists]  true when the asset file is there;
+ *   false when it is not; a string to say what is wrong with it instead. Default: not checked.
+ * @returns {string[]}
+ */
+export function validate(spec, host) {
+  try { return validateUnguarded(spec, host); } catch (e) { return [unforeseen(e)]; }
+}
+
+/**
+ * The words and numbers a reader sees. Run it on a file whose shape is sound (see validate).
+ * @returns {{ errors: string[], warnings: string[] }}
+ */
+export function lint(spec) {
+  try { return lintUnguarded(spec); } catch (e) { return { errors: [unforeseen(e)], warnings: [] }; }
+}
+
+/**
+ * Shape first; the words only once the shape is sound. The same errors, in the same order, as
+ * build.mjs prints. `host` is as for validate.
+ * @returns {{ errors: string[], warnings: string[] }}
+ */
+export function validatePlan(spec, host) {
   const errors = validate(spec, host);
   if (errors.length) return { errors, warnings: [] };
   return lint(spec);

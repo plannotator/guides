@@ -83,6 +83,35 @@ This is the whole format. A file that follows it builds to the same page anywher
 
 [`system/guided-plan.schema.json`](system/guided-plan.schema.json) is a JSON Schema (draft 2020-12) of the same fields, generated from the table `build.mjs` checks against (`node system/schema.mjs > system/guided-plan.schema.json`). It states the shape; `build.mjs` checks more than a schema can say (cites that exist, numbers inside quotes, jargon, ids that do not collide, paths inside the folder, text that fits). A file that passes `build.mjs` passes the schema.
 
+`system/schema.mjs`, `system/validate.mjs` (the shape checks and the word lint), `system/renderer.mjs`, `system/page.mjs` (`buildPage(spec, files)`: the checks, the screenshots and the page) and `system/static.generated.mjs` (`guide.css` and `runtime.js` as strings; `node system/make-static.mjs` writes it) are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them, run them in a browser or a Worker, and draw the same bytes. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
+
+A host that runs `buildPage` on files it did not write keeps it bounded with `DEFAULT_LIMITS` (exported, frozen, from `page.mjs` and `validate.mjs`). Each one is far above what a real guided plan needs, is reported as an error before the work it guards, and can be changed per call with `buildPage(spec, files, { limits: { ... } })`. A value counts only when it is a whole number from 0 to 2^53 - 1; anything else (`Infinity`, `NaN`, `-1`, `"5"`) keeps the default, so no value turns a limit off. `build.mjs` uses the defaults.
+
+| Limit | Default | Why |
+| --- | --- | --- |
+| `maxStringChars` | 10,000 | One string (a lead, a quote, a code line); the longest in the examples is 237. |
+| `maxTextChars` | 1,000,000 | All strings together: bounds the time every word and number check takes. |
+| `maxSources` | 500 | Keys of `sources`. |
+| `maxAssets` | 100 | Keys of `assets`. |
+| `maxRepos` | 20 | Keys of `repos`. |
+| `maxOverviewRows` | 50 | Rows of `overview`. |
+| `maxCites` | 100 | One `cites` or `intentCites` list. |
+| `maxQuotes` | 50 | One source's `quote` list. |
+| `maxFiles` | 50 | One section's `files`. |
+| `maxBanWords` | 200 | `ban`: each word is checked against every string. |
+| `maxBands` | 20 | One timeline's `bands`. |
+| `maxLegend` | 20 | One chips figure's `legend`. |
+| `maxMarked` | 40 | One code figure's `marked`; an excerpt has at most 40 lines. |
+| `maxLayerItems` | 40 | One layer's `items`. |
+| `maxImageBytes` | 10 MiB | One screenshot file, checked before it is encoded. |
+| `maxImageBytesTotal` | 25 MiB | All screenshot files the page draws, each counted once. |
+| `maxHtmlBytes` | 50 MB | The page in UTF-8 bytes. Checked before anything is encoded or drawn, against an upper bound on the page (every string as often as it is drawn, a source once in each section that cites it, each drawing of a screenshot with its whole image), and again after. |
+| `maxErrors` | 200 | Errors, and warnings, returned; the rest become "…and N more". |
+| `maxEchoChars` | 120 | Plan text quoted back in one error. |
+| `maxErrorChars` | 1,000 | One error, whole; the longest fixed message is about 520. |
+
+Errors and warnings quote the plan (a heading, a path, an id), so a host that shows them must escape them like any other text it did not write.
+
 Rules that apply everywhere:
 
 - **Keys** of `sources`, `assets` and `repos` are 1 to 64 letters, digits, dot, dash or underscore, starting with a letter or digit, and not a name every object already has (`constructor`, `prototype`, `__proto__`, `toString`, `valueOf`, `hasOwnProperty`).

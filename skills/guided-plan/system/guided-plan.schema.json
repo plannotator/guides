@@ -11,11 +11,13 @@
     "title": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 10000,
       "pattern": "\\S"
     },
     "intent": {
       "type": "string",
       "minLength": 1,
+      "maxLength": 10000,
       "pattern": "\\S"
     },
     "intentCites": {
@@ -23,21 +25,26 @@
       "items": {
         "type": "string",
         "minLength": 1,
+        "maxLength": 10000,
         "pattern": "\\S"
-      }
+      },
+      "maxItems": 100
     },
     "plan": {
       "$ref": "#/$defs/planName"
     },
     "model": {
-      "type": "string"
+      "type": "string",
+      "maxLength": 10000
     },
     "base": {
       "type": "string",
+      "maxLength": 10000,
       "pattern": "^[0-9a-f]{7,40}$"
     },
     "repos": {
       "type": "object",
+      "maxProperties": 20,
       "propertyNames": {
         "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
         "not": {
@@ -54,6 +61,7 @@
     },
     "sources": {
       "type": "object",
+      "maxProperties": 500,
       "propertyNames": {
         "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
         "not": {
@@ -70,6 +78,7 @@
     },
     "assets": {
       "type": "object",
+      "maxProperties": 100,
       "propertyNames": {
         "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$",
         "not": {
@@ -89,7 +98,8 @@
       "items": {
         "$ref": "#/$defs/overview"
       },
-      "minItems": 1
+      "minItems": 1,
+      "maxItems": 50
     },
     "sections": {
       "type": "array",
@@ -104,8 +114,10 @@
       "items": {
         "type": "string",
         "minLength": 1,
+        "maxLength": 10000,
         "pattern": "\\S"
-      }
+      },
+      "maxItems": 200
     }
   },
   "required": [
@@ -123,7 +135,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         }
       },
       "required": [],
@@ -134,11 +147,13 @@
       "properties": {
         "url": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^https://[^\\s\"<>]+$"
         },
         "path": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         }
       },
@@ -158,10 +173,12 @@
         "path": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "lines": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[1-9][0-9]*(-[1-9][0-9]*)?$"
         },
         "quote": {
@@ -169,6 +186,7 @@
             {
               "type": "string",
               "minLength": 1,
+              "maxLength": 10000,
               "pattern": "\\S"
             },
             {
@@ -176,22 +194,27 @@
               "items": {
                 "type": "string",
                 "minLength": 1,
+                "maxLength": 10000,
                 "pattern": "\\S"
               },
-              "minItems": 1
+              "minItems": 1,
+              "maxItems": 50
             }
           ]
         },
         "label": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "at": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[0-9a-f]{7,40}$"
         },
         "repo": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         }
       },
@@ -207,11 +230,13 @@
         "file": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "from": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         }
       },
@@ -234,11 +259,13 @@
         "text": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "section": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "cites": {
@@ -246,9 +273,11 @@
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
           },
-          "minItems": 1
+          "minItems": 1,
+          "maxItems": 100
         }
       },
       "required": [
@@ -264,26 +293,31 @@
       "properties": {
         "id": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[a-z][a-z0-9-]*$"
         },
         "title": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "heading": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "question": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "lead": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "cites": {
@@ -291,9 +325,11 @@
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
           },
-          "minItems": 1
+          "minItems": 1,
+          "maxItems": 100
         },
         "figure": {
           "allOf": [
@@ -319,7 +355,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/file"
-          }
+          },
+          "maxItems": 50
         }
       },
       "required": [
@@ -337,11 +374,13 @@
       "properties": {
         "id": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[a-z][a-z0-9-]*$"
         },
         "title": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "body": {
@@ -349,6 +388,7 @@
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
           },
           "minItems": 1,
@@ -359,9 +399,11 @@
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
           },
-          "minItems": 1
+          "minItems": 1,
+          "maxItems": 100
         },
         "figure": {
           "allOf": [
@@ -397,14 +439,17 @@
         "name": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "path": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "repo": {
@@ -412,6 +457,7 @@
             {
               "type": "string",
               "minLength": 1,
+              "maxLength": 10000,
               "pattern": "\\S"
             },
             {
@@ -421,15 +467,18 @@
         },
         "at": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[0-9a-f]{7,40}$"
         },
         "card": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "tagAcc": {
           "type": "boolean"
@@ -447,18 +496,22 @@
           "const": "screenshot"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -466,10 +519,12 @@
         "asset": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "alt": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "ring": {
           "type": "array",
@@ -496,18 +551,22 @@
           "const": "code"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -515,6 +574,7 @@
         "path": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "start": {
@@ -523,18 +583,21 @@
         "text": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "minItems": 1,
           "maxItems": 40
         },
         "at": {
           "type": "string",
+          "maxLength": 10000,
           "pattern": "^[0-9a-f]{7,40}$"
         },
         "repo": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "marked": {
@@ -546,7 +609,8 @@
               "type": "array",
               "items": {
                 "type": "integer"
-              }
+              },
+              "maxItems": 40
             }
           ]
         },
@@ -572,18 +636,22 @@
           "const": "list"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -609,13 +677,16 @@
         "text": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "tagAcc": {
           "type": "boolean"
@@ -643,18 +714,22 @@
           "const": "table"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -666,6 +741,7 @@
               {
                 "type": "string",
                 "minLength": 1,
+                "maxLength": 10000,
                 "pattern": "\\S"
               },
               {
@@ -683,13 +759,15 @@
             "items": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 10000
                 },
                 {
                   "$ref": "#/$defs/cell"
                 }
               ]
-            }
+            },
+            "maxItems": 5
           },
           "minItems": 1,
           "maxItems": 20
@@ -708,6 +786,7 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "mono": {
@@ -732,7 +811,8 @@
       "type": "object",
       "properties": {
         "text": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "mono": {
           "type": "boolean"
@@ -753,18 +833,22 @@
           "const": "chips"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -781,7 +865,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/legend"
-          }
+          },
+          "maxItems": 20
         }
       },
       "required": [
@@ -796,6 +881,7 @@
         "text": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "mark": {
@@ -824,6 +910,7 @@
         "text": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "mark": {
@@ -847,18 +934,22 @@
           "const": "timeline"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -875,7 +966,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/band"
-          }
+          },
+          "maxItems": 20
         }
       },
       "required": [
@@ -890,13 +982,16 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "sub": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "sub2": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "mark": {
           "enum": [
@@ -925,6 +1020,7 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "acc": {
@@ -945,18 +1041,22 @@
           "const": "flow"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -982,13 +1082,16 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "sub": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "via": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "mark": {
           "enum": [
@@ -1015,18 +1118,22 @@
           "const": "layers"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -1052,13 +1159,16 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "sub": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "text": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "items": {
           "type": "array",
@@ -1067,16 +1177,19 @@
               {
                 "type": "string",
                 "minLength": 1,
+                "maxLength": 10000,
                 "pattern": "\\S"
               },
               {
                 "$ref": "#/$defs/layerItem"
               }
             ]
-          }
+          },
+          "maxItems": 40
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "tagAcc": {
           "type": "boolean"
@@ -1093,6 +1206,7 @@
         "text": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "mark": {
@@ -1119,18 +1233,22 @@
           "const": "pair"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "cites": {
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1,
+            "maxLength": 10000,
             "pattern": "\\S"
-          }
+          },
+          "maxItems": 100
         },
         "toy": {
           "type": "boolean"
@@ -1156,10 +1274,12 @@
         "label": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 10000,
           "pattern": "\\S"
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         },
         "acc": {
           "type": "boolean"
@@ -1171,7 +1291,8 @@
           "$ref": "#/$defs/sideFigure"
         },
         "caption": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 10000
         }
       },
       "required": [

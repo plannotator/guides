@@ -266,7 +266,8 @@ export function citesOfFigure(f, out = []) {
 
 export function sectionCites(sec) {
   const ids = [];
-  const add = (l) => arr(l).forEach((c) => { if (!ids.includes(c)) ids.push(c); });
+  const seen = new Set();
+  const add = (l) => arr(l).forEach((c) => { if (!seen.has(c)) { seen.add(c); ids.push(c); } });
   add(sec.cites);
   add(citesOfFigure(sec.figure));
   for (const c of arr(sec.cards)) { if (c) { add(c.cites); add(citesOfFigure(c.figure)); } }
@@ -360,4 +361,80 @@ ${runtime}
 </script>
 </body></html>
 `;
+}
+
+// ---------- size, before drawing ----------
+
+// The most UTF-8 bytes one character of plan text can become in the page, through esc, inline,
+// breaks or plain: & is &amp;, " is &quot;, a backtick may open or close <code>, a dot, dash,
+// underscore or slash may gain <wbr>, a tab in code is two spaces, and anything past ASCII is at
+// most three bytes per UTF-16 unit.
+const WEIGHT = (() => {
+  const w = new Uint8Array(128).fill(1);
+  for (const [c, n] of [["&", 5], ["<", 4], [">", 4], ['"', 6], ["'", 5], ["`", 7], [".", 6], ["_", 6], ["/", 6], ["-", 6], ["\t", 2]]) w[c.charCodeAt(0)] = n;
+  return w;
+})();
+function tw(v) {
+  const s = typeof v === "string" ? v : v == null ? "" : String(v);
+  let n = 0;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); n += c < 128 ? WEIGHT[c] : 3; }
+  return n;
+}
+const hrefw = (h) => (safeHref(h) ? tw(h) : 0);
+
+// An upper bound on the UTF-8 bytes render(spec, opts) returns, read without drawing anything, so a
+// host can refuse a page that would be too large before it spends the memory. It follows render:
+// every string the page draws, as many times as the page draws it (a source once in every section
+// that cites it, and once for each time intentCites names it), and a generous allowance for the
+// markup around each element. `uriLength(assetId)` is the length of that screenshot's data: URI.
+export function renderSizeBound(spec, { css = "", runtime = "", uriLength = () => 0, links } = {}) {
+  links = links || { source: () => null, file: () => null };
+  const sources = spec.sources;
+  const sourceRow = (id) => {
+    const s = own(sources, id);
+    if (!s || typeof s !== "object") return 80 + tw(id);
+    let n = 200 + tw(s.label) + tw(id) + tw(s.path) + tw(s.lines) + 60 + hrefw(links.source(s));
+    for (const q of [].concat(s.quote || [])) n += 24 + tw(q);
+    return n;
+  };
+  const body = (f) => {
+    if (!f || typeof f !== "object") return 0;
+    switch (f.type) {
+      case "screenshot": return 800 + Math.max(0, num(uriLength(f.asset))) + tw(f.alt) + tw(f.caption) + tw(f.title);
+      case "code": return 400 + 2 * tw(f.path) + tw(f.at || spec.base) + arr(f.text).reduce((n, t) => n + 200 + tw(t), 0);
+      case "list": return 60 + arr(f.rows).reduce((n, r) => n + 250 + tw((r || {}).text) + tw((r || {}).note) + tw((r || {}).tag), 0);
+      case "table": {
+        const cols = arr(f.columns).map(col);
+        let n = 300 + tw(f.title) + cols.length * 20 + cols.reduce((m, c) => m + 200 + tw(c.label), 0);
+        for (const r of arr(f.rows)) cols.forEach((c, i) => { n += 250 + tw(c.label) + tw(cellText(arr(r)[i])); });
+        return n + arr(f.rows).length * 40;
+      }
+      case "chips": return 120 + arr(f.chips).reduce((n, c) => n + 200 + tw((c || {}).text), 0) + arr(f.legend).reduce((n, l) => n + 250 + tw((l || {}).text), 0);
+      case "timeline": return 200 + arr(f.bands).reduce((n, b) => n + 250 + tw((b || {}).label), 0) + arr(f.stops).reduce((n, s) => n + 400 + tw((s || {}).label) + tw((s || {}).sub) + tw((s || {}).sub2), 0);
+      case "flow": return 200 + arr(f.steps).reduce((n, s) => n + 450 + tw((s || {}).label) + tw((s || {}).sub) + 2 * tw((s || {}).via), 0);
+      case "layers": return 60 + arr(f.rows).reduce((n, r) => { r = r || {}; return n + 400 + tw(r.label) + tw(r.sub) + tw(r.text) + tw(r.tag) + arr(r.items).reduce((m, t) => m + 200 + tw(typeof t === "string" ? t : (t || {}).text), 0); }, 0);
+      case "pair": return 100 + arr(f.sides).reduce((n, s) => { s = s || {}; return n + 300 + tw(s.label) + tw(s.note) + tw(s.caption) + (s.figure && s.figure.type !== "pair" ? body(s.figure) : 0); }, 0);
+      default: return 0;
+    }
+  };
+  const figure = (f, idw) => (f ? 500 + idw + tw(f.title) + tw(f.caption) + body(f) : 0);
+  let n = 3000 + tw(css) + tw(runtime) + 2 * tw(spec.title) + tw(spec.intent) + tw(spec.plan && spec.plan.name) + tw(spec.model);
+  for (const o of arr(spec.overview)) n += 300 + tw((o || {}).text) + 2 * tw((o || {}).section);
+  for (const id of arr(spec.intentCites)) n += sourceRow(id);
+  for (const sec of arr(spec.sections)) {
+    const s = sec || {};
+    const sid = tw(s.id);
+    n += 1500 + 3 * sid + tw(s.title) + tw(s.heading) + tw(s.question) + tw(s.lead) + figure(s.figure, sid);
+    for (const c of arr(s.cards)) {
+      const cc = c || {};
+      n += 300 + sid + tw(cc.id) + tw(cc.title) + arr(cc.body).reduce((m, b) => m + 20 + tw(b), 0);
+      if (cc.figure) n += figure(cc.figure, sid + tw(cc.id)) + 100 + tw(cc.figure.title);
+    }
+    for (const a of arr(s.files)) {
+      const f = a || {};
+      n += 300 + tw(f.tag) + 2 * tw(f.name) + 2 * tw(f.note) + tw(f.path) + (f.card ? 2 * (sid + tw(f.card)) : hrefw(links.file(f)));
+    }
+    for (const id of sectionCites(s)) n += sourceRow(id);
+  }
+  return n;
 }

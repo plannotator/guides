@@ -12,7 +12,7 @@
     "name": "PLAN.md"
   },
   "model": "Claude Opus 5.5",
-  "base": "e443b483e561abb39fe19954e31aff5900396b12",
+  "base": "42ec8feb06f1475e21c323a5fc32de1c41a0040a",
   "repos": {
     "larkspur": {
       "path": ".repo"
@@ -374,7 +374,7 @@
       ],
       "figure": {
         "type": "list",
-        "title": "What the shop takes on",
+        "title": "New for the shop, and what stays",
         "cites": [
           "PLAN-BOARD",
           "PLAN-BAKER",
@@ -404,7 +404,7 @@
     },
     {
       "id": "decisions",
-      "title": "The decisions",
+      "title": "Your choices",
       "heading": "Two choices, each with a recommendation",
       "lead": "The baker cannot plan flour a week ahead, and paying online needs a card service, a second project.",
       "cites": [
@@ -413,7 +413,7 @@
       ],
       "figure": {
         "type": "table",
-        "title": "What we recommend, and the alternative",
+        "title": "Our pick for each question, and the other option",
         "cites": [
           "Q-AHEAD",
           "Q-PAY"
@@ -453,7 +453,7 @@
       ],
       "figure": {
         "type": "timeline",
-        "title": "The order of the work",
+        "title": "Pieces of work, first to last",
         "cites": [
           "ORDER"
         ],
@@ -490,14 +490,14 @@
     {
       "id": "risks",
       "title": "Risks",
-      "heading": "What would make us stop",
+      "heading": "When we would end order ahead",
       "lead": "If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.",
       "cites": [
         "RISKS"
       ],
       "figure": {
         "type": "list",
-        "title": "Each risk, and what we do",
+        "title": "What could go wrong, and our answer",
         "cites": [
           "RISKS"
         ],

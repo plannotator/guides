@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { EXAMPLE, build } from "./helpers.mjs";
 import { makeExampleRepo } from "./make-example-repo.mjs";
 import { buildPage, linksFor, utf8Length } from "../system/page.mjs";
-import { render, renderSizeBound, featuresOf, featureCss, wrapLines, FEATURES } from "../system/renderer.mjs";
+import { render, renderSizeBound, featuresOf, featureCss, wrapLines, textWidth, laneWordsTooWide, laneSize, laneTextWidth, FEATURES } from "../system/renderer.mjs";
 import { validate, validatePlan, lint, BUSINESS_WORD_BUDGET, DEFAULT_LIMITS } from "../system/validate.mjs";
 import { GUIDE_CSS, RUNTIME_JS, FEATURE_CSS } from "../system/static.generated.mjs";
 
@@ -48,7 +48,7 @@ test("a page that uses nothing new carries none of features.css, and audience en
   const before = buildPage(spec, files).html;
   assert.deepEqual(featuresOf(spec), []);
   for (const css of Object.values(FEATURE_CSS)) assert.ok(!before.includes(css));
-  assert.ok(!/class="(aud|ask)"|fig-screen"|fig-lanes"/.test(before));
+  assert.ok(!/class="(audience|decide)"|fig-screen"|fig-lanes"/.test(before));
   const explicit = buildPage({ ...spec, audience: "engineering" }, files);
   assert.equal(explicit.html, before, "audience engineering draws the same bytes as no audience");
   // build.mjs reads features.css from the disk; static.generated.mjs holds the same blocks
@@ -86,7 +86,7 @@ test("audience is engineering or business", () => {
 
 test("a business page says who it is for, above the title and in the meta line", () => {
   const html = page(biz());
-  assert.match(html, /<header class="top">\n  <p class="aud"><b>For business stakeholders<\/b> who shape the product<\/p>\n  <h1>/);
+  assert.match(html, /<header class="top">\n  <p class="audience"><b>For business stakeholders<\/b> who shape the product<\/p>\n  <h1>/);
   assert.match(html, /<p class="line">7 sections · for business stakeholders · from PLAN\.md/);
   assert.ok(html.includes(FEATURE_CSS.business));
 });
@@ -121,10 +121,10 @@ test("Ask rows are drawn as the decide panel above the other rows, one line each
   const p = biz();
   p.overview.push({ kind: "Kept", text: "Paying at pickup stays.", section: "for-us", cites: ["PLAN-KEPT"] });
   const html = page(p);
-  const panel = html.indexOf('<section class="ask"'), list = html.indexOf('<ol class="overview"');
+  const panel = html.indexOf('<section class="decide"'), list = html.indexOf('<ol class="overview"');
   assert.ok(panel > html.indexOf('<p class="intent">') && panel < list, "the panel sits between the intent and the other rows");
-  assert.equal((html.match(/<li><a href="#decisions" data-jump="decisions"><span class="ask-q">/g) || []).length, 2);
-  assert.ok(html.includes('<span class="ask-r"><span class="sr">Recommended: </span>Up to two days</span><span class="ask-n">05</span>'));
+  assert.equal((html.match(/<li><a class="decide-row" href="#decisions" data-jump="decisions"><span class="decide-q">/g) || []).length, 2);
+  assert.ok(html.includes('<span class="decide-rec"><span class="sr">Recommended: </span>Up to two days</span><span class="decide-at">05</span>'));
   assert.equal((html.match(/<li class="ov /g) || []).length, 1, "only the Kept row is in the list");
   // every row an Ask: no overview list at all
   assert.ok(!page(biz()).includes('<ol class="overview"'));
@@ -135,16 +135,16 @@ test("nothing to decide: a business plan with no Ask row says so, and asks nothi
   p.overview = [{ kind: "Decided", text: "Customers can order for a day and an hour.", section: "customer-sees", cites: ["PLAN-CHOICE"] }];
   clean(p);
   const html = page(p);
-  assert.ok(html.includes('<section class="ask" aria-labelledby="decide_h"><h2 id="decide_h">What you are asked to decide</h2><p class="ask-none">Nothing to decide. This guided plan asks you no question.</p></section>'));
-  assert.ok(!html.includes('class="ask-l"'));
+  assert.ok(html.includes('<section class="decide" aria-labelledby="decide_h"><h2 id="decide_h">What you are asked to decide</h2><p class="decide-none">Nothing to decide. This guided plan asks you no question.</p></section>'));
+  assert.ok(!html.includes('class="decide-list"'));
   assert.ok(html.includes('<ol class="overview"'));
   // an engineering plan with no Ask row has no panel at all; with one, it has the panel
-  assert.ok(!page({ ...p, audience: "engineering" }).includes('class="ask"'));
+  assert.ok(!page({ ...p, audience: "engineering" }).includes('class="decide"'));
   const e = eng();
   e.overview.push({ kind: "Ask", text: "Keep never as the default?", recommended: "Yes", section: "why", cites: ["ISSUE"] });
   const r = buildPage(e, engFiles(e));
   assert.deepEqual(r.errors, []);
-  assert.ok(r.html.includes("<span class=\"ask-q\">Keep never as the default?</span>"));
+  assert.ok(r.html.includes("<span class=\"decide-q\">Keep never as the default?</span>"));
   assert.ok(r.html.includes(FEATURE_CSS.ask) && !r.html.includes(FEATURE_CSS.business));
 });
 
@@ -199,18 +199,18 @@ test("a screen is drawn as a frame: adjacent buttons share a row, marks carry wo
     { as: "card", parts: [{ as: "message", by: "Ann", text: "Hi", mark: "changed" }] },
   ], { address: "shop.example" }));
   assert.ok(html.includes('<span class="fig-k">Mock-up</span>'));
-  assert.ok(html.includes('<span class="scr-addr">shop.example</span>'));
-  assert.ok(html.includes('<div class="sp-row"><span class="sp-b">Save</span><span class="sp-b m-new">Send<span class="sr"> (new)</span></span></div><p class="sp-t">Between</p><div class="sp-row"><span class="sp-b">Later</span></div>'));
-  assert.ok(html.includes('<span class="sr"> (a note is pinned here)</span>'));
-  assert.ok(html.includes('<p class="sp-s m-out"><i aria-hidden="true"></i><span>Done</span><span class="sr"> (goes)</span></p>'));
-  assert.ok(html.includes('<div class="sp-card"><div class="sp-m m-changed"><b>Ann</b><span>Hi</span><span class="sr"> (changes)</span></div></div>'));
+  assert.ok(html.includes('<span class="mock-url">shop.example</span>'));
+  assert.ok(html.includes('<div class="mk-buttons"><span class="mk-btn">Save</span><span class="mk-btn" data-mark="new">Send<span class="sr"> (new)</span></span></div><p class="mk-text">Between</p><div class="mk-buttons"><span class="mk-btn">Later</span></div>'));
+  assert.ok(html.includes('<div class="mk-box" data-pin>Summary<span class="sr"> (a note is pinned here)</span></div>'));
+  assert.ok(html.includes('<p class="mk-status" data-mark="out">Done<span class="sr"> (goes)</span></p>'));
+  assert.ok(html.includes('<div class="mk-card"><div class="mk-msg" data-mark="changed"><b class="mk-by">Ann</b><span>Hi</span><span class="sr"> (changes)</span></div></div>'));
   assert.ok(html.includes(FEATURE_CSS.screen));
 });
 
 test("two screens in a pair are a before and after", () => {
   const html = page(biz());
   assert.match(html, /<span class="fig-k">Before and after<\/span><span class="fig-t">The order page, today and with this plan<\/span>/);
-  assert.equal((html.match(/<div class="scr">/g) || []).length, 3);
+  assert.equal((html.match(/<div class="mock">/g) || []).length, 3);
 });
 
 // ---------- lanes ----------
@@ -245,14 +245,14 @@ test("lanes are drawn on one grid: equal boxes, connectors from bottom centre to
   const html = page(p);
   for (const cls of ["lanes-w", "lanes-n"]) {
     const svg = html.match(new RegExp(`<svg class="${cls}"[\\s\\S]*?</svg>`))[0];
-    const boxes = [...svg.matchAll(/<rect class="ln-box[^"]*" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)].map((m) => m.slice(1).map(Number));
+    const boxes = [...svg.matchAll(/<rect class="lg-step[^"]*" x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)].map((m) => m.slice(1).map(Number));
     assert.equal(boxes.length, fig.steps.length);
     assert.equal(new Set(boxes.map((b) => b[2])).size, 1, "every box the same width");
     assert.equal(new Set(boxes.map((b) => b[3])).size, 1, "every box the same height");
     const lanesX = [...new Set(boxes.map((b) => b[0]))];
     assert.equal(lanesX.length, new Set(fig.steps.map((s) => s.lane)).size, "a box per lane column, one x per lane");
-    const arrows = [...svg.matchAll(/<path class="ln-a" d="M([\d.]+) ([\d.]+) /g)].map((m) => [Number(m[1]), Number(m[2])]);
-    const starts = [...svg.matchAll(/<path class="ln-c" d="M([\d.]+) ([\d.]+) /g)].map((m) => [Number(m[1]), Number(m[2])]);
+    const arrows = [...svg.matchAll(/<polygon class="lg-tip" points="([\d.]+),([\d.]+) /g)].map((m) => [Number(m[1]), Number(m[2])]);
+    const starts = [...svg.matchAll(/<path class="lg-link" d="M([\d.]+) ([\d.]+) /g)].map((m) => [Number(m[1]), Number(m[2])]);
     assert.equal(arrows.length, fig.steps.length - 1);
     for (let i = 0; i + 1 < boxes.length; i++) {
       const [x, y, w, h] = boxes[i], [nx, ny, nw] = boxes[i + 1];
@@ -267,13 +267,14 @@ test("lanes are drawn on one grid: equal boxes, connectors from bottom centre to
 });
 
 test("wrapped lines balance, and a word wider than the box is cut, so text stays inside", () => {
-  assert.deepEqual(wrapLines("Orders and picks a pickup time", 12, 60), ["Orders", "and", "picks a", "pickup", "time"]);
-  for (const t of ["Bakes from the morning list, grouped by hour", "Supercalifragilisticexpialidocious and more", "a", ""]) {
-    for (const [fs, w] of [[13, 170], [12, 60], [11.5, 30]]) {
+  for (const t of ["Bakes from the morning list, grouped by hour", "Supercalifragilisticexpialidocious and more", "Notification acknowledged", "a", ""]) {
+    for (const [fs, w] of [[13, 170], [13, 92], [12, 60], [11.5, 30]]) {
       const lines = wrapLines(t, fs, w);
-      const per = Math.max(1, Math.floor(w / (fs * 0.56)));
-      for (const l of lines) assert.ok(l.length <= per, `${JSON.stringify(l)} fits ${per}`);
+      for (const l of lines) assert.ok(textWidth(l, fs) <= w || !l.includes(" ") && [...l].length === 1, `${JSON.stringify(l)} fits ${w}`);
       assert.equal(lines.join(" ").replace(/\s+/g, ""), t.replace(/\s+/g, ""), "no character is lost");
+      // a word is cut only when it cannot fit on its own
+      const cut = lines.filter((l) => !t.split(/\s+/).includes(l) && !l.includes(" "));
+      for (const piece of cut) assert.ok(t.split(/\s+/).some((word) => word.includes(piece) && textWidth(word, fs) > w), `${piece} was cut from a word that fits`);
     }
   }
   // balanced: two lines of similar length rather than a long line and a stub
@@ -305,7 +306,7 @@ test("screen, lanes and the panel come out escaped and finite for hostile values
   assert.ok(!/<img src=x/.test(html));
   assert.ok(!html.includes("DEEP"), "a card's card is not drawn");
   for (const m of html.matchAll(/ (?:x|y|width|height|x1|x2|y1|y2)="([^"]*)"/g)) assert.ok(Number.isFinite(Number(m[1])), `coordinate ${m[1]}`);
-  for (const m of html.matchAll(/ d="([^"]*)"/g)) assert.match(m[1], /^[MVHQLZ\d. -]+$/, `path ${m[1]}`);
+  for (const m of html.matchAll(/ d="([^"]*)"/g)) assert.match(m[1], /^[MVHAQLZ\d. -]+$/, `path ${m[1]}`);
   for (const m of html.matchAll(/class="([^"]*)"/g)) assert.ok(!/[<>]|function|native code/.test(m[1]), `class ${m[1]}`);
   assert.ok(!/function Object|native code|\[object/.test(html));
   const bound = renderSizeBound(spec, { css: "", runtime: "/*r*/", features: FEATURE_CSS });
@@ -392,7 +393,58 @@ test("SKILL.md teaches the business section with the numbers and words the build
   const section = md.split("## 3. For business stakeholders")[1].split("\n## 4.")[0];
   assert.ok(section.includes(`under ${BUSINESS_WORD_BUDGET.toLocaleString("en-US")} words`), "the word budget");
   const html = page((() => { const p = biz(); p.overview = [{ kind: "Decided", text: "Customers can order for a day and an hour.", section: "customer-sees", cites: ["PLAN-CHOICE"] }]; return p; })());
-  const none = html.match(/<p class="ask-none">([^<]*)<\/p>/)[1];
+  const none = html.match(/<p class="decide-none">([^<]*)<\/p>/)[1];
   assert.ok(section.includes(`"${none}"`), "the nothing-to-decide words");
   for (const rule of ["Show what changes", "Nothing to decide", "is a `lanes` figure", "Do not strengthen", "Define each technical term once", "No code", "Money is who pays for what", ":::question"]) assert.ok(section.includes(rule), rule);
+});
+
+test("five lanes with long words: whole words where they fit, a warning where a phone's box cannot hold one", () => {
+  const steps = [
+    { lane: 0, text: "Notification acknowledged" }, { lane: 1, text: "Reconciles the payments" }, { lane: 2, text: "Escalates overseas" },
+    { lane: 3, text: "Signs" }, { lane: 4, text: "Archives" },
+  ];
+  const p = lanesOf(["Customer", "Counter", "Baker", "Manager", "Accounts"], steps);
+  assert.deepEqual(errorsOf(p), []);
+  const html = page(p);
+  const words = new Set(steps.flatMap((s) => s.text.split(" ")));
+  const lines = (cls) => [...html.match(new RegExp(`<svg class="${cls}"[\\s\\S]*?</svg>`))[0].matchAll(/<text class="lg-label[^"]*"[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
+  // wide: every word is whole
+  for (const l of lines("lanes-w")) for (const w of l.split(" ")) assert.ok(words.has(w), `wide drawing cut a word: ${l}`);
+  // narrow: a word is cut only when it cannot fit the narrow box, and those words are the warnings
+  const narrow = laneSize(5), narrowW = laneTextWidth(5);
+  for (const l of lines("lanes-n")) for (const w of l.split(" ")) if (!words.has(w)) assert.ok([...words].some((word) => word.includes(w) && textWidth(word, narrow.fs) > narrowW), `narrow drawing cut a word that fits: ${w}`);
+  const tooWide = laneWordsTooWide(sec(p, "who-does-what").figure).map((x) => x.word);
+  assert.ok(tooWide.includes("Notification") && !tooWide.includes("Signs"), tooWide.join(", "));
+  const warns = lint(p).warnings.filter((w) => w.includes("too wide for a box of 5 lanes on a phone"));
+  assert.ok(warns.some((w) => w.startsWith('who-does-what.figure.steps[0]: "Notification"')), warns.join("\n"));
+  assert.ok(!warns.some((w) => w.includes('"Signs"')));
+  // the example's own lanes fit a phone
+  assert.deepEqual(lint(biz()).warnings, []);
+});
+
+test("render() on its own survives a huge hostile lanes figure, and a huge table", () => {
+  const words = Array.from({ length: 200000 }, (_, i) => (i % 7 ? "word" : "Supercalifragilistic")).join(" ");
+  const lanes = Array.from({ length: 200000 }, (_, i) => (i % 2 ? "A" : ""));
+  const spec = {
+    format: "guided-plan/2", title: "t", intent: "i", base: "abcdef1", sources: {}, overview: [],
+    sections: [{ id: "s", title: "t", heading: "h", lead: "l", cites: [],
+      figure: { type: "lanes", title: "t", lanes: ["A", "B"], steps: [{ lane: 0, text: words }, { lane: 1, text: "b" }] },
+      cards: [
+        { id: "a", title: "a", body: ["b"], cites: [], figure: { type: "lanes", title: "t", lanes, steps: [{ lane: 0, text: "x" }, { lane: 199999, text: "y" }] } },
+        { id: "b", title: "b", body: ["b"], cites: [], figure: { type: "table", title: "t", columns: ["A", "B"], rows: Array.from({ length: 200000 }, () => ["a", "b"]) } },
+      ],
+    }],
+  };
+  let html;
+  assert.doesNotThrow(() => { html = render(spec, { css: "", runtime: "", features: FEATURE_CSS }); });
+  assert.ok(html.includes("Supercalifragilistic"));
+  assert.ok(renderSizeBound(spec, { features: FEATURE_CSS }) >= utf8Length(html));
+});
+
+test("the new styles take their colours from the page's tokens, so they work in light and dark", () => {
+  for (const [name, css] of Object.entries(FEATURE_CSS)) {
+    const outside = css.replace(/@media \(forced-colors:active\)\{[\s\S]*?\n\}\n?|@media \(forced-colors:active\)\{[^\n]*\}\}?/g, "");
+    assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(outside), `${name}: a fixed colour`);
+  }
+  assert.match(FEATURE_CSS.screen, /\.mk-card\{[^}]*box-shadow:0 6px 16px var\(--grey\)/);
 });

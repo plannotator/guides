@@ -2,7 +2,7 @@
 // words and numbers a reader sees (lint). Pure: no file system, no process, no I/O, so it runs in
 // Node, a browser or a Worker. build.mjs reads the files and runs it; anything that has to look at
 // the disk is a function the caller passes in (see validate's `host`).
-import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
+import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES, laneWordsTooWide } from "./renderer.mjs";
 import { unknownFields, limitErrors, limitsOf, MAP_KEY, DEFAULT_LIMITS } from "./schema.mjs";
 
 export { DEFAULT_LIMITS, limitsOf };
@@ -361,9 +361,8 @@ function validateUnguarded(spec, host) {
 
 // Words a new engineer would not know on day one, or that are house jargon. A plan may ban more with "ban".
 const BANNED = ["doors?", "prefix(es)?", "seams?", "census", "specs?", "rulings?", "goldens?", "lanes?", "stub", "canonical"];
-// The whole page of a business guided plan, every word a reader sees but the folded sources. The
-// round-two pages that read well were under this; the ones the live eval found too long ran two to
-// five times over it, with the words moved from the left column into captions, cards and tables.
+// The most words a business guided plan's page should hold: every word a reader sees, figures,
+// captions and cards included, but not the folded sources. Past it, the build warns.
 export const BUSINESS_WORD_BUDGET = 1200;
 const NUMWORDS = { two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10" };
 
@@ -509,6 +508,16 @@ function lintUnguarded(spec, limits) {
       const alt = NUMWORDS[n] || Object.keys(NUMWORDS).find((k) => NUMWORDS[k] === n);
       if (!(held.has(n) || (alt && held.has(alt)))) errs.push(`${where}: the number "${errs.clip(n)}" is not in any quote ${ids.length ? "this text cites" : "(a section label cites nothing, so it may not hold a digit)"}: "${shown}"`);
     }
+  }
+  // A lane's word too wide for its box on a phone is cut inside the word there: say so.
+  const lanesIn = (f, where) => {
+    if (!isObj(f)) return;
+    if (f.type === "lanes") for (const { where: w, word } of laneWordsTooWide(f)) warns.push(`${where}.${w}: "${errs.clip(word)}" is too wide for a box of ${(Array.isArray(f.lanes) ? f.lanes : []).length} lanes on a phone, so it is cut inside the word there; use a shorter word, or fewer lanes`);
+    if (f.type === "pair" && Array.isArray(f.sides)) f.sides.forEach((sd, i) => lanesIn(sd && sd.figure, `${where}.sides[${i}]`));
+  };
+  for (const sc of spec.sections) {
+    lanesIn(sc.figure, `${sc.id}.figure`);
+    for (const c of sc.cards || []) lanesIn(c.figure, `${sc.id}.${c.id}.figure`);
   }
   if (business && pageWords > BUSINESS_WORD_BUDGET) warns.push(`the page holds ${pageWords} words of text (figures, captions and cards included); ${BUSINESS} reads best under ${BUSINESS_WORD_BUDGET}: drop cards, shorten captions, and let a picture carry what words repeat`);
   return { errors: errs.list(), warnings: warns.list() };

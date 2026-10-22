@@ -18,16 +18,19 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const EXAMPLE = resolve(here, "../../../examples/paste-expiry");
 // Each example with a repository, and the folder of its invented project.
 export const PROJECTS = { "paste-expiry": "pastebox", "pickup-times": "larkspur" };
+// Who commits it. pastebox keeps the name its commit was first made with, so its hash stays.
+const AUTHORS = { "paste-expiry": ["pastebox", "pastebox@example.invalid"], "pickup-times": ["Example Author", "author@example.invalid"] };
 
 export function makeExampleRepo(dir = join(EXAMPLE, ".repo"), { example = "paste-expiry" } = {}) {
   const from = join(EXAMPLE, "..", example, PROJECTS[example]);
   if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   cpSync(from, dir, { recursive: true });
+  const [name, email] = AUTHORS[example];
   const env = {
     ...process.env,
-    GIT_AUTHOR_NAME: "pastebox", GIT_AUTHOR_EMAIL: "pastebox@example.invalid", GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
-    GIT_COMMITTER_NAME: "pastebox", GIT_COMMITTER_EMAIL: "pastebox@example.invalid", GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
+    GIT_AUTHOR_NAME: name, GIT_AUTHOR_EMAIL: email, GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
+    GIT_COMMITTER_NAME: name, GIT_COMMITTER_EMAIL: email, GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
     GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
   };
   const git = (...a) => execFileSync("git", ["-C", dir, "-c", "core.autocrlf=false", "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main", ...a], { env, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();

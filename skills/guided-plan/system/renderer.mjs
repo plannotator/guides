@@ -103,7 +103,8 @@ export function fillColumn(fig) {
   if (marked >= 0) return marked;
   let best = 0, len = -1;
   cols.forEach((_, i) => {
-    const l = Math.max(...arr(fig.rows).map((r) => String(cellText(arr(r)[i])).length), 0);
+    let l = 0;
+    for (const r of arr(fig.rows)) l = Math.max(l, String(cellText(arr(r)[i])).length);
     if (l > len) { len = l; best = i; }
   });
   return best;
@@ -206,39 +207,47 @@ function drawPair(fig, spec, assets) {
 const SCREEN_AS = ["heading", "text", "box", "button", "message", "status", "menu", "card"];
 const SCREEN_MARKS = ["new", "changed", "out", "acc"];
 const SCREEN_SAID = { new: "new", changed: "changes", out: "goes", acc: "highlighted" };
-const sm = (p) => { const m = oneOf(p.mark, SCREEN_MARKS); return m ? ` m-${m}` : ""; };
-const ssr = (p) => sr(own(SCREEN_SAID, oneOf(p.mark, SCREEN_MARKS)));
+// A part's mark as a data attribute, and the words a screen reader hears for it.
+const markOf = (p) => oneOf(p.mark, SCREEN_MARKS);
+const markAttr = (p) => (markOf(p) ? ` data-mark="${markOf(p)}"` : "");
+const markSaid = (p) => sr(own(SCREEN_SAID, markOf(p)));
 
-// Adjacent buttons share a row. A card holds its own parts, one level deep: a card's card is not drawn.
-function drawParts(parts, depth) {
-  const list = arr(parts).map((p) => (p && typeof p === "object" ? p : {}));
-  const out = [];
-  for (let i = 0; i < list.length; i++) {
-    const p = list[i];
-    const as = oneOf(p.as, SCREEN_AS);
-    if (as === "button") {
-      const row = [];
-      for (; i < list.length && list[i].as === "button"; i++) row.push(`<span class="sp-b${sm(list[i])}">${esc(list[i].text)}${ssr(list[i])}</span>`);
-      i--;
-      out.push(`<div class="sp-row">${row.join("")}</div>`);
-      continue;
-    }
-    switch (as) {
-      case "heading": out.push(`<p class="sp-h${sm(p)}">${esc(p.text)}${ssr(p)}</p>`); break;
-      case "text": out.push(`<p class="sp-t${sm(p)}">${esc(p.text)}${ssr(p)}</p>`); break;
-      case "box": out.push(`<div class="sp-box${sm(p)}">${esc(p.text)}${p.pin === true ? `<span class="sp-pin" aria-hidden="true"></span><span class="sr"> (a note is pinned here)</span>` : ""}${ssr(p)}</div>`); break;
-      case "message": out.push(`<div class="sp-m${sm(p)}">${p.by ? `<b>${esc(p.by)}</b>` : ""}<span>${esc(p.text)}</span>${ssr(p)}</div>`); break;
-      case "status": out.push(`<p class="sp-s${sm(p)}"><i aria-hidden="true"></i><span>${esc(p.text)}</span>${ssr(p)}</p>`); break;
-      case "menu": out.push(`<ul class="sp-menu${sm(p)}">${arr(p.items).map((t) => `<li>${esc(t)}</li>`).join("")}${ssr(p) ? `<li class="sr">${ssr(p)}</li>` : ""}</ul>`); break;
-      case "card": if (depth === 0) out.push(`<div class="sp-card${sm(p)}">${drawParts(p.parts, 1)}${ssr(p)}</div>`); break;
-      default: break;
-    }
+// The parts, gathered first: each run of buttons becomes one group, so buttons that follow each
+// other share a row; every other part is a group of its own.
+function screenGroups(parts) {
+  const groups = [];
+  for (const raw of arr(parts)) {
+    const p = raw && typeof raw === "object" ? raw : {};
+    const last = groups[groups.length - 1];
+    if (p.as === "button" && last && last.buttons) last.buttons.push(p);
+    else groups.push(p.as === "button" ? { buttons: [p] } : { part: p });
   }
-  return out.join("");
+  return groups;
+}
+
+// A card holds its own parts, one level deep: at depth 1 a card is not drawn.
+function screenPart(p, depth) {
+  const t = esc(p.text);
+  switch (oneOf(p.as, SCREEN_AS)) {
+    case "heading": return `<p class="mk-heading"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "text": return `<p class="mk-text"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "box": return `<div class="mk-box"${markAttr(p)}${p.pin === true ? " data-pin" : ""}>${t}${p.pin === true ? sr("a note is pinned here") : ""}${markSaid(p)}</div>`;
+    case "message": return `<div class="mk-msg"${markAttr(p)}>${p.by ? `<b class="mk-by">${esc(p.by)}</b>` : ""}<span>${t}</span>${markSaid(p)}</div>`;
+    case "status": return `<p class="mk-status"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "menu": return `<ul class="mk-menu"${markAttr(p)}>${arr(p.items).map((x) => `<li>${esc(x)}</li>`).join("")}${markOf(p) ? `<li class="sr">${own(SCREEN_SAID, markOf(p))}</li>` : ""}</ul>`;
+    case "card": return depth ? "" : `<div class="mk-card"${markAttr(p)}>${screenParts(p.parts, 1)}${markSaid(p)}</div>`;
+    default: return "";
+  }
+}
+function screenParts(parts, depth) {
+  return screenGroups(parts).map((g) => (g.buttons
+    ? `<div class="mk-buttons">${g.buttons.map((b) => `<span class="mk-btn"${markAttr(b)}>${esc(b.text)}${markSaid(b)}</span>`).join("")}</div>`
+    : screenPart(g.part, depth))).join("");
 }
 
 function drawScreen(fig) {
-  return `<div class="scr"><div class="scr-bar" aria-hidden="true"><i></i><i></i><i></i>${fig.address ? `<span class="scr-addr">${esc(fig.address)}</span>` : ""}</div><div class="scr-body">${drawParts(fig.parts, 0)}</div></div>`;
+  const url = fig.address ? `<span class="mock-url">${esc(fig.address)}</span>` : "";
+  return `<div class="mock"><div class="mock-top" aria-hidden="true">${url}</div><div class="mock-body">${screenParts(fig.parts, 0)}</div></div>`;
 }
 
 // ---------- lanes: who does what, in order ----------
@@ -251,87 +260,146 @@ function drawScreen(fig) {
 // is escaped. A screen reader gets the steps as an ordered list, "lane: step".
 
 const r1 = (n) => Math.round(num(n) * 10) / 10;
-// Average advance of the system face, as a share of the font size; a little wide, so text fits.
-const ADVANCE = 0.56;
+const maxOf = (list, from = 0) => { let m = from; for (const v of list) if (v > m) m = v; return m; };
+
+// Advance widths of the system face (SF Pro, Segoe UI, Roboto agree within a few per cent), in ems,
+// a little on the wide side so text measured to fit does fit. Anything not listed is 0.6.
+const EM = (() => {
+  const w = {};
+  const set = (chars, v) => { for (const c of chars) w[c] = v; };
+  set("iljI'|!.,:;", 0.26); set("ftr()[]{}\" ", 0.36); set("Jsz?-/", 0.5);
+  set("abcdeghknopquvxy", 0.56); set("ABCDEFGHKLNOPQRSTUVXYZ0123456789&", 0.68); set("mwMW%@", 0.92);
+  return w;
+})();
+export function textWidth(s, fs) {
+  let n = 0;
+  for (const c of String(s ?? "")) n += EM[c] ?? 0.62;
+  return n * fs * 1.06; // marked steps are semibold, a little wider than the table
+}
 
 // Words wrapped to at most `maxW` px: the fewest lines greedy wrapping gives, then the narrowest
-// width that still gives that many lines, so the lines balance. A word wider than the box is cut.
+// width that still gives that many lines, so the lines balance. A word is cut only when it is
+// wider than the box on its own.
 export function wrapLines(text, fs, maxW) {
-  const cw = fs * ADVANCE;
-  const per = Math.max(1, Math.floor(maxW / cw));
   const words = [];
-  for (const w of String(text ?? "").split(/\s+/).filter(Boolean)) for (let i = 0; i < w.length; i += per) words.push(w.slice(i, i + per));
+  for (const w of String(text ?? "").split(/\s+/)) {
+    if (!w) continue;
+    if (textWidth(w, fs) <= maxW) { words.push(w); continue; }
+    let piece = "";
+    for (const c of w) {
+      if (piece && textWidth(piece + c, fs) > maxW) { words.push(piece); piece = ""; }
+      piece += c;
+    }
+    if (piece) words.push(piece);
+  }
   if (!words.length) return [""];
+  const space = textWidth(" ", fs);
+  const widths = words.map((w) => textWidth(w, fs));
   const greedy = (limit) => {
     const lines = [];
-    let cur = "";
-    for (const w of words) {
-      if (!cur) cur = w;
-      else if ((cur.length + 1 + w.length) <= limit) cur += " " + w;
-      else { lines.push(cur); cur = w; }
-    }
+    let cur = "", cw = 0;
+    words.forEach((w, i) => {
+      if (cur && cw + space + widths[i] <= limit) { cur += " " + w; cw += space + widths[i]; }
+      else { if (cur) lines.push(cur); cur = w; cw = widths[i]; }
+    });
     lines.push(cur);
     return lines;
   };
-  const n = greedy(per).length;
-  let lo = Math.max(...words.map((w) => w.length)), hi = per;
+  const n = greedy(maxW).length;
+  let lo = Math.ceil(maxOf(widths)), hi = Math.max(lo, Math.ceil(maxW));
   while (lo < hi) { const mid = (lo + hi) >> 1; if (greedy(mid).length <= n) hi = mid; else lo = mid + 1; }
   return greedy(lo);
 }
 
-function textLines(lines, cx, cy, fs, cls) {
-  const lh = fs * 1.28;
-  return lines.map((l, k) => `<text class="${cls}" x="${r1(cx)}" y="${r1(cy + (k - (lines.length - 1) / 2) * lh)}" font-size="${fs}" text-anchor="middle" dominant-baseline="central">${esc(l)}</text>`).join("");
+function svgLines(lines, cx, cy, fs, cls) {
+  const step = fs * 1.28;
+  const top = cy - ((lines.length - 1) * step) / 2;
+  return lines.map((l, k) => `<text class="${cls}" x="${r1(cx)}" y="${r1(top + k * step)}" font-size="${fs}" text-anchor="middle" dominant-baseline="central">${esc(l)}</text>`).join("");
 }
 
-const LANE_R = 5, ARROW_H = 6.5, ARROW_W = 4;
-// From (sx, sy), the bottom centre of a box, to (ex, ey), the top centre of the next: down, across
-// at the middle of the gap with rounded corners, down again; the arrow's tip on the edge.
-function laneConnector(sx, sy, ex, ey) {
-  const my = (sy + ey) / 2, end = ey - ARROW_H, d = Math.sign(ex - sx), r = Math.min(LANE_R, Math.abs(ex - sx) / 2, (ey - sy) / 4);
-  const path = d === 0
-    ? `M${r1(sx)} ${r1(sy)} V${r1(end)}`
-    : `M${r1(sx)} ${r1(sy)} V${r1(my - r)} Q${r1(sx)} ${r1(my)} ${r1(sx + d * r)} ${r1(my)} H${r1(ex - d * r)} Q${r1(ex)} ${r1(my)} ${r1(ex)} ${r1(my + r)} V${r1(end)}`;
-  return `<path class="ln-c" d="${path}"/><path class="ln-a" d="M${r1(ex)} ${r1(ey)} L${r1(ex - ARROW_W)} ${r1(ey - ARROW_H)} L${r1(ex + ARROW_W)} ${r1(ey - ARROW_H)} Z"/>`;
+const BEND = 6, TIP_LEN = 7, TIP_HALF = 4;
+// The link from one box's bottom centre (x1, y1) to the next box's top centre (x2, y2): straight
+// down when they share a lane; otherwise down to a rail halfway between the rows, along it, and down
+// again, each turn a quarter circle of one radius. The arrow is its own triangle, tip on the edge.
+function laneLink(x1, y1, x2, y2) {
+  const rail = y1 + (y2 - y1) / 2;
+  const stop = y2 - TIP_LEN;
+  const pts = [`M${r1(x1)} ${r1(y1)}`];
+  if (Math.abs(x2 - x1) < 0.05) pts.push(`V${r1(stop)}`);
+  else {
+    const dir = x2 > x1 ? 1 : -1, r = Math.min(BEND, Math.abs(x2 - x1) / 2, (stop - rail), (rail - y1));
+    const sweep = dir > 0 ? 0 : 1;
+    pts.push(`V${r1(rail - r)}`, `A${r1(r)} ${r1(r)} 0 0 ${sweep} ${r1(x1 + dir * r)} ${r1(rail)}`, `H${r1(x2 - dir * r)}`, `A${r1(r)} ${r1(r)} 0 0 ${1 - sweep} ${r1(x2)} ${r1(rail + r)}`, `V${r1(stop)}`);
+  }
+  const tip = `${r1(x2)},${r1(y2)} ${r1(x2 - TIP_HALF)},${r1(stop)} ${r1(x2 + TIP_HALF)},${r1(stop)}`;
+  return `<path class="lg-link" d="${pts.join(" ")}"/><polygon class="lg-tip" points="${tip}"/>`;
 }
 
-const LANE_SIZES = {
-  wide: { cls: "lanes-w", W: 640, pad: 16, fs: 13, hs: 12.5, gap: 30, padY: 12, padX: 14 },
-  narrow: { cls: "lanes-n", W: 340, pad: 8, fs: 12, hs: 11.5, gap: 28, padY: 10, padX: 8 },
+// The two sizes: W is the drawing's width in px at 1:1; inset is the space between a box and its
+// lane's edges; padX and padY are inside a box.
+export const LANE_SIZES = {
+  wide: { cls: "lanes-w", W: 640, inset: 6, fs: 13, hs: 12.5, gap: 30, padY: 12, padX: 8 },
+  narrow: { cls: "lanes-n", W: 340, inset: 3, fs: 12, hs: 11.5, gap: 28, padY: 10, padX: 7 },
 };
-function laneDrawing(lanes, steps, o) {
-  // Box corners and sizes are rounded first, and every connector is taken from the rounded boxes,
-  // so a connector meets its box exactly.
-  const nl = Math.max(lanes.length, 1), laneW = o.W / nl, bw = r1(laneW - o.pad), maxText = bw - 2 * o.padX;
-  const heads = lanes.map((l) => wrapLines(l, o.hs, laneW - 12));
-  const HH = Math.max(...heads.map((h) => h.length), 1) * o.hs * 1.28 + 2 * o.padY;
-  const texts = steps.map((s) => wrapLines(s.text, o.fs, maxText));
-  const bh = r1(Math.max(...texts.map((t) => t.length), 1) * o.fs * 1.28 + 2 * o.padY);
-  const rowH = bh + o.gap;
-  const H = HH + steps.length * rowH;
-  const box = (i) => ({ x: r1(steps[i].lane * laneW + (laneW - bw) / 2), y: r1(HH + i * rowH + o.gap / 2) });
-  let g = `<line class="ln-sep" x1="0" y1="${r1(HH)}" x2="${o.W}" y2="${r1(HH)}"/>`;
-  for (let k = 1; k < nl; k++) g += `<line class="ln-sep" x1="${r1(k * laneW)}" y1="0" x2="${r1(k * laneW)}" y2="${r1(H)}"/>`;
-  heads.forEach((h, k) => { g += textLines(h, k * laneW + laneW / 2, HH / 2, o.hs, "ln-l"); });
-  for (let i = 0; i + 1 < steps.length; i++) { const a = box(i), b = box(i + 1); g += laneConnector(a.x + bw / 2, a.y + bh, b.x + bw / 2, b.y); }
+// One size, fitted to the lane count: on a phone, four or five lanes get smaller type and less
+// padding, so a box holds a real word.
+export function laneSize(laneCount, o = LANE_SIZES.narrow) {
+  return o === LANE_SIZES.narrow && laneCount >= 4 ? { ...o, fs: 11, hs: 10.5, padX: 4 } : o;
+}
+// How wide a step's text may be, at one size, for this many lanes.
+export function laneTextWidth(laneCount, o = LANE_SIZES.narrow) {
+  const z = laneSize(laneCount, o);
+  return z.W / Math.max(laneCount, 1) - 2 * z.inset - 2 * z.padX;
+}
+function laneDrawing(lanes, steps, size) {
+  const count = Math.max(lanes.length, 1), o = laneSize(count, size), colW = o.W / count;
+  // Box corners and sizes are rounded first, and every link is taken from the rounded boxes, so a
+  // link meets its box exactly.
+  const boxW = r1(colW - 2 * o.inset), textW = laneTextWidth(count, size);
+  const heads = lanes.map((l) => wrapLines(l, o.hs, colW - 2 * o.inset));
+  const headH = maxOf(heads.map((h) => h.length), 1) * o.hs * 1.28 + 2 * o.padY;
+  const texts = steps.map((s) => wrapLines(s.text, o.fs, textW));
+  const boxH = r1(maxOf(texts.map((t) => t.length), 1) * o.fs * 1.28 + 2 * o.padY);
+  const pitch = boxH + o.gap, total = headH + steps.length * pitch;
+  const at = (i) => ({ x: r1(steps[i].lane * colW + o.inset), y: r1(headH + o.gap / 2 + i * pitch) });
+  const out = [`<line class="lg-rule" x1="0" y1="${r1(headH)}" x2="${o.W}" y2="${r1(headH)}"/>`];
+  for (let k = 1; k < count; k++) out.push(`<line class="lg-rule" x1="${r1(k * colW)}" y1="0" x2="${r1(k * colW)}" y2="${r1(total)}"/>`);
+  heads.forEach((h, k) => out.push(svgLines(h, (k + 0.5) * colW, headH / 2, o.hs, "lg-head")));
+  for (let i = 1; i < steps.length; i++) {
+    const a = at(i - 1), b = at(i);
+    out.push(laneLink(a.x + boxW / 2, a.y + boxH, b.x + boxW / 2, b.y));
+  }
   steps.forEach((s, i) => {
-    const b = box(i);
-    g += `<rect class="ln-box${s.mark ? " " + s.mark : ""}" x="${r1(b.x)}" y="${r1(b.y)}" width="${r1(bw)}" height="${r1(bh)}" rx="8"/>${textLines(texts[i], b.x + bw / 2, b.y + bh / 2, o.fs, s.mark ? "ln-t em" : "ln-t")}`;
+    const b = at(i);
+    out.push(`<rect class="lg-step${s.mark ? " is-" + s.mark : ""}" x="${b.x}" y="${b.y}" width="${boxW}" height="${boxH}" rx="8"/>`, svgLines(texts[i], b.x + boxW / 2, b.y + boxH / 2, o.fs, s.mark ? "lg-label is-marked" : "lg-label"));
   });
-  return `<svg class="${o.cls}" viewBox="-1 -1 ${o.W + 2} ${r1(H + 2)}" aria-hidden="true" focusable="false">${g}</svg>`;
+  return `<svg class="${o.cls}" viewBox="-1 -1 ${o.W + 2} ${r1(total + 2)}" aria-hidden="true" focusable="false">${out.join("")}</svg>`;
 }
 
 const LANE_SAID = { acc: "highlighted", new: "new" };
+// The steps as the drawing reads them: each in a lane that exists, each mark one it knows.
+function laneSteps(fig, count) {
+  return arr(fig.steps).map((s) => {
+    s = s && typeof s === "object" ? s : {};
+    return { lane: Math.min(Math.max(int(s.lane), 0), count - 1), text: String(s.text ?? ""), mark: oneOf(s.mark, ["acc", "new"]) };
+  });
+}
 function drawLanes(fig) {
   const lanes = arr(fig.lanes).map((l) => String(l ?? ""));
-  const nl = Math.max(lanes.length, 1);
-  const steps = arr(fig.steps).map((s) => {
-    s = s && typeof s === "object" ? s : {};
-    const lane = Math.min(Math.max(int(s.lane), 0), nl - 1);
-    return { lane, text: String(s.text ?? ""), mark: oneOf(s.mark, ["acc", "new"]) };
-  });
-  const said = `<ol class="sr">${steps.map((s) => `<li>${esc(lanes[s.lane] ?? "")}: ${esc(s.text)}${sr(own(LANE_SAID, s.mark))}</li>`).join("")}</ol>`;
-  return `<div class="lanes">${laneDrawing(lanes, steps, LANE_SIZES.wide)}${laneDrawing(lanes, steps, LANE_SIZES.narrow)}${said}</div>`;
+  const steps = laneSteps(fig, Math.max(lanes.length, 1));
+  const heard = `<ol class="sr">${steps.map((s) => `<li>${esc(lanes[s.lane] ?? "")}: ${esc(s.text)}${sr(own(LANE_SAID, s.mark))}</li>`).join("")}</ol>`;
+  return `<div class="lanes">${laneDrawing(lanes, steps, LANE_SIZES.wide)}${laneDrawing(lanes, steps, LANE_SIZES.narrow)}${heard}</div>`;
+}
+
+// Words of a lane figure too wide for their box on a phone (the narrow drawing), where they would be
+// cut: { where: "lanes[i]" | "steps[i]", word }.
+export function laneWordsTooWide(fig) {
+  const lanes = arr(fig.lanes), count = Math.max(lanes.length, 1), o = laneSize(count);
+  const out = [];
+  const check = (text, fs, w, where) => { for (const word of String(text ?? "").split(/\s+/)) if (word && textWidth(word, fs) > w) out.push({ where, word }); };
+  lanes.forEach((l, i) => check(l, o.hs, o.W / count - 2 * o.inset, `lanes[${i}]`));
+  arr(fig.steps).forEach((s, i) => check(s && s.text, o.fs, laneTextWidth(count), `steps[${i}]`));
+  return out;
 }
 
 export function drawBody(fig, spec, assets) {
@@ -496,13 +564,13 @@ const NOTHING_TO_DECIDE = "Nothing to decide. This guided plan asks you no quest
 function askPanel(spec, secIndex) {
   const asks = arr(spec.overview).filter(isAsk);
   if (!asks.length && !isBusiness(spec)) return "";
-  const rows = asks.map((o) => {
-    const at = secIndex.has(o.section) ? pad2(secIndex.get(o.section) + 1) : "";
-    const rec = o.recommended ? `<span class="ask-r"><span class="sr">Recommended: </span>${inline(o.recommended)}</span>` : "";
-    return `<li><a href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="ask-q">${inline(o.text)}</span>${rec}<span class="ask-n">${at}</span></a></li>`;
-  }).join("");
-  const body = asks.length ? `<ol class="ask-l">${rows}</ol>` : `<p class="ask-none">${NOTHING_TO_DECIDE}</p>`;
-  return `\n  <section class="ask" aria-labelledby="${ASK_ID}"><h2 id="${ASK_ID}">What you are asked to decide</h2>${body}</section>`;
+  const item = (o) => {
+    const where = secIndex.has(o.section) ? `<span class="decide-at">${pad2(secIndex.get(o.section) + 1)}</span>` : "";
+    const answer = o.recommended ? `<span class="decide-rec"><span class="sr">Recommended: </span>${inline(o.recommended)}</span>` : "";
+    return `<li><a class="decide-row" href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="decide-q">${inline(o.text)}</span>${answer}${where}</a></li>`;
+  };
+  const body = asks.length ? `<ol class="decide-list">${asks.map(item).join("")}</ol>` : `<p class="decide-none">${NOTHING_TO_DECIDE}</p>`;
+  return `\n  <section class="decide" aria-labelledby="${ASK_ID}"><h2 id="${ASK_ID}">What you are asked to decide</h2>${body}</section>`;
 }
 
 export function render(spec, opts) {
@@ -532,7 +600,7 @@ export function render(spec, opts) {
 <body>
 <main class="page">
 <button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
-<header class="top">${isBusiness(spec) ? `\n  <p class="aud"><b>For business stakeholders</b> who shape the product</p>` : ""}
+<header class="top">${isBusiness(spec) ? `\n  <p class="audience"><b>For business stakeholders</b> who shape the product</p>` : ""}
   <h1>${esc(spec.title)}</h1>
   <p class="intent">${inline(spec.intent)}</p>${askPanel(spec, secIndex)}${overview ? `\n  <ol class="overview" aria-label="Decisions and changes">${overview}</ol>` : ""}
   <p class="line">${meta}</p>

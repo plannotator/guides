@@ -290,91 +290,91 @@ a.file:hover{border-color:var(--line)}
   .fl-a,.fl-a .fl-v{forced-color-adjust:none;color:CanvasText}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
-.aud{margin:0 0 8px;padding-right:80px;font-size:12.5px;color:var(--ink3)}
-.aud b{display:inline-block;margin-right:6px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:10px;padding:1px 9px}
-@media (max-width:760px){.aud{padding-right:64px}}
-@media (forced-colors:active){.aud b{border:1px solid Highlight}}
-.ask{margin:0 0 22px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px 6px}
-.ask h2{margin:0 0 4px;font-size:15px;font-weight:600}
-.ask-l{list-style:none;margin:0;padding:0}
-.ask-l a{display:grid;grid-template-columns:minmax(0,1fr) auto 28px;gap:14px;align-items:baseline;padding:10px 2px;border-top:1px solid var(--hair);text-decoration:none;color:inherit}
-.ask-l li:first-child a{border-top:0}
-.ask-q{font-size:15px;font-weight:600;color:var(--accent);overflow-wrap:anywhere}
-.ask-r{font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);border-radius:10px;padding:2px 10px;overflow-wrap:anywhere;max-width:30ch}
-.ask-n{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;color:var(--ink3);text-align:right}
-.ask-l a:hover .ask-n{color:var(--accent)}
-.ask-none{margin:4px 0 10px;font-size:15px;color:var(--ink2)}
-@media (max-width:760px){.ask{padding:12px 14px 4px}.ask-l a{grid-template-columns:minmax(0,1fr) 22px;gap:6px 10px}.ask-r{grid-row:2;justify-self:start;max-width:none}.ask-n{grid-row:1;grid-column:2}}
-@media (forced-colors:active){.ask-r{border:1px solid Highlight}}
-.scr{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg);min-width:0}
-.scr-bar{display:flex;align-items:center;gap:5px;padding:7px 10px;border-bottom:1px solid var(--hair);background:var(--tint)}
-.scr-bar i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--grey)}
-.scr-addr{margin-left:8px;flex:1;min-width:0;font-size:11.5px;color:var(--ink3);background:var(--surface);border:1px solid var(--hair);border-radius:6px;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scr-body{padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.sp-h{margin:0;font-size:16px;font-weight:600;overflow-wrap:anywhere}
-.sp-t{margin:0;font-size:13px;line-height:1.45;color:var(--ink2);overflow-wrap:anywhere}
-.sp-box{position:relative;border:1px solid var(--hair);background:var(--surface);border-radius:8px;padding:12px;font-size:13px;color:var(--ink2);min-height:44px;overflow-wrap:anywhere}
-.sp-pin{position:absolute;top:-7px;right:18px;width:16px;height:16px;border-radius:50% 50% 50% 0;background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
-.sp-card{margin-left:12%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;box-shadow:0 6px 18px rgba(0,0,0,.08);min-width:0}
-.sp-m{display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.4;border-left:1.5px solid transparent;padding-left:9px;overflow-wrap:anywhere}
-.sp-m b{font-size:12px;font-weight:600;color:var(--ink2)}
-.sp-s{margin:0;display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.4;color:var(--ink3);padding-left:10.5px;overflow-wrap:anywhere}
-.sp-s i{flex:none;width:7px;height:7px;margin-top:5px;border-radius:50%;background:var(--ink3)}
-.sp-row{display:flex;flex-wrap:wrap;gap:6px}
-.sp-card>.sp-row{padding-left:10.5px}
-.sp-b{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:3px 9px;color:var(--ink);background:var(--surface);overflow-wrap:anywhere;min-width:0}
-.sp-menu{list-style:none;margin:-4px 0 0;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px;width:max-content;max-width:100%;min-width:min(150px,100%)}
-.sp-card>.sp-menu{margin-left:10.5px;max-width:calc(100% - 10.5px)}
-.sp-menu li{padding:3px 8px;border-radius:5px;overflow-wrap:anywhere}
-.m-new.sp-b,.m-new.sp-menu,.m-new.sp-box,.m-new.sp-card{border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--accent)}
-.m-acc.sp-b,.m-acc.sp-menu,.m-acc.sp-box,.m-acc.sp-card{border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--accent)}
-.m-new.sp-m,.m-acc.sp-m{border-left-color:var(--accent)}
-.m-new.sp-m{border-left-style:dashed}
-.m-new.sp-m b,.m-new.sp-s,.m-new.sp-h,.m-new.sp-t,.m-acc.sp-m b,.m-acc.sp-s,.m-acc.sp-h,.m-acc.sp-t,.m-changed{color:var(--accent)}
-.m-new.sp-s i,.m-acc.sp-s i{background:var(--accent)}
-.m-out{opacity:var(--ghost);text-decoration:line-through}
-.pair:has(>.pair-s>.scr){align-items:stretch}
-.pair-s:has(>.scr){display:flex;flex-direction:column}
-.pair-s>.scr{flex:1}
-@container (max-width:470px){.sp-card{margin-left:0}}
+.audience{margin:0 0 8px;padding-right:80px;font-size:12.5px;line-height:1.6;color:var(--ink3)}
+.audience b{margin-right:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);white-space:nowrap}
+@media (max-width:760px){.audience{padding-right:64px}}
+@media (forced-colors:active){.audience b{outline:1px solid Highlight}}
+.decide{margin:0 0 22px;padding:16px 18px 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.decide h2{margin:0;font-size:15px;line-height:1.4;font-weight:600}
+.decide-list{margin:6px 0 0;padding:0;list-style:none}
+.decide-list li+li{border-top:1px solid var(--hair)}
+.decide-row{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:6px;padding:10px 0;color:inherit;text-decoration:none}
+.decide-q{flex:1 1 22ch;min-width:0;font-size:15px;font-weight:600;color:var(--accent);overflow-wrap:anywhere}
+.decide-rec{flex:0 1 auto;max-width:32ch;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);overflow-wrap:anywhere}
+.decide-at{flex:none;width:24px;text-align:end;font:11.5px ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink3)}
+.decide-row:hover .decide-at{color:var(--accent)}
+.decide-none{margin:8px 0 10px;font-size:15px;color:var(--ink2)}
+@media (max-width:760px){.decide{padding:12px 14px 6px}.decide-q{flex-basis:calc(100% - 40px)}.decide-rec{order:3;max-width:none}}
+@media (forced-colors:active){.decide-rec{outline:1px solid Highlight}}
+.mock{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.mock-top{display:flex;align-items:center;min-height:30px;padding:6px 10px 6px 46px;position:relative;background:var(--tint);border-bottom:1px solid var(--hair)}
+.mock-top::before{content:"";position:absolute;left:10px;top:50%;width:28px;height:8px;margin-top:-4px;background:radial-gradient(circle 4px at 4px 4px,var(--grey) 98%,transparent) 0 0/10px 8px repeat-x}
+.mock-url{flex:1;min-width:0;padding:1px 8px;border:1px solid var(--hair);border-radius:6px;background:var(--surface);font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mock-body{display:grid;gap:10px;padding:14px;min-width:0}
+.mock-body>*,.mk-card>*{margin:0;min-width:0;overflow-wrap:anywhere}
+.mk-heading{font-size:16px;font-weight:600;line-height:1.3}
+.mk-text{font-size:13px;line-height:1.45;color:var(--ink2)}
+.mk-box{position:relative;min-height:42px;padding:11px 12px;border:1px solid var(--hair);border-radius:8px;background:var(--surface);font-size:13px;color:var(--ink2)}
+.mk-box[data-pin]::after{content:"";position:absolute;top:-8px;right:16px;width:15px;height:15px;background:var(--accent);border-radius:50% 50% 50% 0;transform:rotate(-45deg);outline:3px solid var(--bg)}
+.mk-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.mk-btn{padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:12px;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.mk-msg{display:grid;gap:2px;padding-left:9px;border-left:2px solid transparent;font-size:13px;line-height:1.4}
+.mk-by{font-size:12px;font-weight:600;color:var(--ink2)}
+.mk-status{display:flex;gap:7px;align-items:baseline;font-size:12px;line-height:1.4;color:var(--ink3)}
+.mk-status::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:currentColor;transform:translateY(-1px)}
+.mk-menu{width:max-content;max-width:100%;min-width:min(150px,100%);padding:4px;list-style:none;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px}
+.mk-menu li{padding:3px 8px;overflow-wrap:anywhere}
+.mk-card{display:grid;gap:9px;margin-left:12%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 6px 16px var(--grey)}
+.mk-card .mk-buttons,.mk-card .mk-menu,.mk-card .mk-status{margin-left:11px}
+.mk-card .mk-menu{max-width:calc(100% - 11px)}
+[data-mark=new],[data-mark=acc]{color:var(--accent)}
+:is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=new]{border:1.5px dashed var(--accent);background:var(--accent-soft)}
+:is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=acc]{border:1.5px solid var(--accent);background:var(--accent-soft)}
+.mk-msg:is([data-mark=new],[data-mark=acc]){color:var(--ink);border-left-color:var(--accent)}
+.mk-msg[data-mark=new]{border-left-style:dashed}
+.mk-msg:is([data-mark=new],[data-mark=acc]) .mk-by,[data-mark=changed]{color:var(--accent)}
+[data-mark=out]{text-decoration:line-through;text-decoration-color:var(--ink3);opacity:var(--ghost)}
+.pair:has(>.pair-s>.mock){align-items:stretch}
+.pair-s:has(>.mock){display:flex;flex-direction:column}
+.pair-s>.mock{flex:1}
+@container (max-width:470px){.mk-card{margin-left:0}}
 @media (forced-colors:active){
-  .m-new.sp-b,.m-new.sp-menu,.m-new.sp-box,.m-new.sp-card{border:2px dashed Highlight}
-  .m-acc.sp-b,.m-acc.sp-menu,.m-acc.sp-box,.m-acc.sp-card{border:2px solid Highlight}
-  .m-new.sp-m,.m-acc.sp-m{border-left:3px solid Highlight}
-  .sp-pin,.sp-s i,.scr-bar i{forced-color-adjust:none;background:CanvasText}
+  :is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=new]{border:2px dashed Highlight}
+  :is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=acc]{border:2px solid Highlight}
+  .mk-msg:is([data-mark=new],[data-mark=acc]){border-left:3px solid Highlight}
+  .mk-box[data-pin]::after,.mock-top::before{forced-color-adjust:none;background:CanvasText}
 }
-.lanes svg{display:block;width:100%;height:auto;overflow:visible}
-.lanes .lanes-n{display:none;max-width:440px;margin:0 auto}
-@container (max-width:480px){.lanes .lanes-w{display:none}.lanes .lanes-n{display:block}}
-.lanes text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif}
-.ln-sep{stroke:var(--hair);stroke-width:1}
-.ln-l{fill:var(--ink2);font-weight:500}
-.ln-box{fill:var(--surface);stroke:var(--line);stroke-width:1}
-.ln-box.acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
-.ln-box.new{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
-.ln-t{fill:var(--ink);font-weight:500}
-.ln-t.em{fill:var(--accent);font-weight:600}
-.ln-c{fill:none;stroke:var(--ink3);stroke-width:1.5;stroke-linejoin:round}
-.ln-a{fill:var(--ink3)}
+.lanes>svg{display:block;width:100%;height:auto;overflow:visible}
+.lanes>.lanes-n{display:none;max-width:440px;margin-inline:auto}
+@container (max-width:480px){.lanes>.lanes-w{display:none}.lanes>.lanes-n{display:block}}
+.lanes text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;font-weight:500;fill:var(--ink)}
+.lanes .lg-head{fill:var(--ink2)}
+.lanes .lg-label.is-marked{fill:var(--accent);font-weight:600}
+.lg-rule{stroke:var(--hair)}
+.lg-step{fill:var(--surface);stroke:var(--line)}
+.lg-step.is-acc,.lg-step.is-new{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.lg-step.is-new{stroke-dasharray:4 3}
+.lg-link{fill:none;stroke:var(--ink3);stroke-width:1.5}
+.lg-tip{fill:var(--ink3)}
 @media (forced-colors:active){
-  .lanes svg{forced-color-adjust:none}
-  .ln-sep{stroke:GrayText}
-  .ln-l,.ln-t{fill:CanvasText}
-  .ln-box{fill:Canvas;stroke:CanvasText}
-  .ln-box.acc,.ln-box.new{fill:Canvas;stroke:Highlight;stroke-width:3}
-  .ln-t.em{fill:Highlight}
-  .ln-c{stroke:CanvasText}
-  .ln-a{fill:CanvasText}
+  .lanes>svg{forced-color-adjust:none}
+  .lanes text,.lanes .lg-head{fill:CanvasText}
+  .lanes .lg-label.is-marked{fill:Highlight}
+  .lg-rule{stroke:GrayText}
+  .lg-step{fill:Canvas;stroke:CanvasText}
+  .lg-step.is-acc,.lg-step.is-new{fill:Canvas;stroke:Highlight;stroke-width:3}
+  .lg-link{stroke:CanvasText}
+  .lg-tip{fill:CanvasText}
 }
 </style></head>
 <body>
 <main class="page">
 <button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
 <header class="top">
-  <p class="aud"><b>For business stakeholders</b> who shape the product</p>
+  <p class="audience"><b>For business stakeholders</b> who shape the product</p>
   <h1>Order ahead for a pickup time</h1>
   <p class="intent">Customers can order for a day and an hour, and the counter and the baker work from that pickup time. Last month the counter took 41 order-ahead requests by phone. Orders for now work as today.</p>
-  <section class="ask" aria-labelledby="decide_h"><h2 id="decide_h">What you are asked to decide</h2><ol class="ask-l"><li><a href="#decisions" data-jump="decisions"><span class="ask-q">How far ahead may a customer order?</span><span class="ask-r"><span class="sr">Recommended: </span>Up to two days</span><span class="ask-n">05</span></a></li><li><a href="#decisions" data-jump="decisions"><span class="ask-q">Do customers pay when they order ahead, or at pickup?</span><span class="ask-r"><span class="sr">Recommended: </span>At pickup, as today</span><span class="ask-n">05</span></a></li></ol></section>
+  <section class="decide" aria-labelledby="decide_h"><h2 id="decide_h">What you are asked to decide</h2><ol class="decide-list"><li><a class="decide-row" href="#decisions" data-jump="decisions"><span class="decide-q">How far ahead may a customer order?</span><span class="decide-rec"><span class="sr">Recommended: </span>Up to two days</span><span class="decide-at">05</span></a></li><li><a class="decide-row" href="#decisions" data-jump="decisions"><span class="decide-q">Do customers pay when they order ahead, or at pickup?</span><span class="decide-rec"><span class="sr">Recommended: </span>At pickup, as today</span><span class="decide-at">05</span></a></li></ol></section>
   <p class="line">7 sections · for business stakeholders · from PLAN.md · generated by Claude Opus 5.5</p>
   <details class="src top-src"><summary>Sources for this summary</summary><ul class="srcs"><li><span class="s-l">Why customers ask for it</span><span class="s-w">PLAN.<wbr>md:5</span><span class="s-q"><q>Customers ask to order on Friday for a Saturday cake, and today they cannot.</q> <q>The counter staff took 41 order-ahead requests by phone last month and wrote them on paper.</q></span></li><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details>
 </header>
@@ -387,17 +387,17 @@ a.file:hover{border-color:var(--line)}
       
       <p class="sub">The customer picks when to collect: as soon as possible, as today, or a day and an hour.</p>
       <div class="folds">
-  <details class="src"><summary>Sources · 2</summary><ul class="srcs"><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The order page today</span><span class="s-w">views/<wbr>order.<wbr>html:6-<wbr>14 at e443b483e</span><span class="s-q"><q>Order for pickup</q> <q>Your name</q> <q>Phone</q> <q>What you would like</q> <q>Ready as soon as it is baked. We text you when it is on the counter.</q> <q>Place order</q></span></li></ul></details></div>
+  <details class="src"><summary>Sources · 2</summary><ul class="srcs"><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The order page today</span><span class="s-w">views/<wbr>order.<wbr>html:6-<wbr>14 at 42ec8feb0</span><span class="s-q"><q>Order for pickup</q> <q>Your name</q> <q>Phone</q> <q>What you would like</q> <q>Ready as soon as it is baked. We text you when it is on the counter.</q> <q>Place order</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-pair" id="customer-sees-f">
   <div class="fig-h"><span class="fig-k">Before and after</span><span class="fig-t">The order page, today and with this plan</span></div>
   <div class="pair pair-2"><div class="pair-s">
     <p class="pair-h"><b class="">Today</b></p>
-    <div class="scr"><div class="scr-bar" aria-hidden="true"><i></i><i></i><i></i><span class="scr-addr">larkspur.example/order</span></div><div class="scr-body"><p class="sp-h">Order for pickup</p><div class="sp-box">Your name</div><div class="sp-box">Phone</div><div class="sp-box">What you would like</div><p class="sp-t">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="sp-row"><span class="sp-b">Place order</span></div></div></div>
+    <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">larkspur.example/order</span></div><div class="mock-body"><p class="mk-heading">Order for pickup</p><div class="mk-box">Your name</div><div class="mk-box">Phone</div><div class="mk-box">What you would like</div><p class="mk-text">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="mk-buttons"><span class="mk-btn">Place order</span></div></div></div>
     
   </div><div class="pair-s">
     <p class="pair-h"><b class="acc">With this plan</b></p>
-    <div class="scr"><div class="scr-bar" aria-hidden="true"><i></i><i></i><i></i><span class="scr-addr">larkspur.example/order</span></div><div class="scr-body"><p class="sp-h">Order for pickup</p><div class="sp-box">Your name</div><div class="sp-box">Phone</div><div class="sp-box">What you would like</div><div class="sp-box m-new">Pickup time: as soon as possible<span class="sr"> (new)</span></div><ul class="sp-menu m-new"><li>As soon as possible</li><li>Tomorrow, morning</li><li>Saturday, noon</li><li class="sr"><span class="sr"> (new)</span></li></ul><p class="sp-t">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="sp-row"><span class="sp-b">Place order</span></div></div></div>
+    <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">larkspur.example/order</span></div><div class="mock-body"><p class="mk-heading">Order for pickup</p><div class="mk-box">Your name</div><div class="mk-box">Phone</div><div class="mk-box">What you would like</div><div class="mk-box" data-mark="new">Pickup time: as soon as possible<span class="sr"> (new)</span></div><ul class="mk-menu" data-mark="new"><li>As soon as possible</li><li>Tomorrow, morning</li><li>Saturday, noon</li><li class="sr">new</li></ul><p class="mk-text">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="mk-buttons"><span class="mk-btn">Place order</span></div></div></div>
     
   </div></div>
   <figcaption class="cap">As soon as possible stays the default, so an order for now works as today.</figcaption>
@@ -412,11 +412,11 @@ a.file:hover{border-color:var(--line)}
       
       <p class="sub">The counter&#39;s board and the baker&#39;s morning list follow the pickup time, not the time the order arrived.</p>
       <div class="folds">
-  <details class="src"><summary>Sources · 6</summary><ul class="srcs"><li><span class="s-l">The board by pickup time</span><span class="s-w">PLAN.<wbr>md:10</span><span class="s-q"><q>The counter&#39;s board lists orders by pickup time, not by when they arrived.</q> <q>Orders for later days sit under a &quot;Later&quot; heading.</q></span></li><li><span class="s-l">The baker&#39;s morning list</span><span class="s-w">PLAN.<wbr>md:11</span><span class="s-q"><q>The baker&#39;s morning list is the board for that day, grouped by hour.</q></span></li><li><span class="s-l">The board today</span><span class="s-w">src/<wbr>orders.<wbr>js:2 at e443b483e</span><span class="s-q"><q>Every order is for now: the board shows orders in the order they arrived.</q></span></li><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The morning text</span><span class="s-w">PLAN.<wbr>md:12</span><span class="s-q"><q>The customer gets one text message on the morning of pickup.</q> <q>The text we send today when an order is on the counter stays.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details></div>
+  <details class="src"><summary>Sources · 6</summary><ul class="srcs"><li><span class="s-l">The board by pickup time</span><span class="s-w">PLAN.<wbr>md:10</span><span class="s-q"><q>The counter&#39;s board lists orders by pickup time, not by when they arrived.</q> <q>Orders for later days sit under a &quot;Later&quot; heading.</q></span></li><li><span class="s-l">The baker&#39;s morning list</span><span class="s-w">PLAN.<wbr>md:11</span><span class="s-q"><q>The baker&#39;s morning list is the board for that day, grouped by hour.</q></span></li><li><span class="s-l">The board today</span><span class="s-w">src/<wbr>orders.<wbr>js:2 at 42ec8feb0</span><span class="s-q"><q>Every order is for now: the board shows orders in the order they arrived.</q></span></li><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The morning text</span><span class="s-w">PLAN.<wbr>md:12</span><span class="s-q"><q>The customer gets one text message on the morning of pickup.</q> <q>The text we send today when an order is on the counter stays.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-lanes" id="who-does-what-f">
   <div class="fig-h"><span class="fig-k">Who does what</span><span class="fig-t">One order ahead, from the page to the counter</span></div>
-  <div class="lanes"><svg class="lanes-w" viewBox="-1 -1 642 565.8" aria-hidden="true" focusable="false"><line class="ln-sep" x1="0" y1="40" x2="640" y2="40"/><line class="ln-sep" x1="213.3" y1="0" x2="213.3" y2="563.8"/><line class="ln-sep" x1="426.7" y1="0" x2="426.7" y2="563.8"/><text class="ln-l" x="106.7" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="ln-l" x="320" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="ln-l" x="533.3" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="ln-c" d="M106.7 112.3 V122.3 Q106.7 127.3 111.7 127.3 H315.1 Q320.1 127.3 320.1 132.3 V135.8"/><path class="ln-a" d="M320.1 142.3 L316.1 135.8 L324.1 135.8 Z"/><path class="ln-c" d="M320.1 199.6 V209.6 Q320.1 214.6 325.1 214.6 H528.4 Q533.4 214.6 533.4 219.6 V223.1"/><path class="ln-a" d="M533.4 229.6 L529.4 223.1 L537.4 223.1 Z"/><path class="ln-c" d="M533.4 286.9 V296.9 Q533.4 301.9 528.4 301.9 H111.7 Q106.7 301.9 106.7 306.9 V310.4"/><path class="ln-a" d="M106.7 316.9 L102.7 310.4 L110.7 310.4 Z"/><path class="ln-c" d="M106.7 374.2 V384.2 Q106.7 389.2 111.7 389.2 H315.1 Q320.1 389.2 320.1 394.2 V397.7"/><path class="ln-a" d="M320.1 404.2 L316.1 397.7 L324.1 397.7 Z"/><path class="ln-c" d="M320.1 461.5 V471.5 Q320.1 476.5 315.1 476.5 H111.7 Q106.7 476.5 106.7 481.5 V485"/><path class="ln-a" d="M106.7 491.5 L102.7 485 L110.7 485 Z"/><rect class="ln-box new" x="8" y="55" width="197.3" height="57.3" rx="8"/><text class="ln-t em" x="106.7" y="75.3" font-size="13" text-anchor="middle" dominant-baseline="central">Orders and picks</text><text class="ln-t em" x="106.7" y="92" font-size="13" text-anchor="middle" dominant-baseline="central">a pickup time</text><rect class="ln-box acc" x="221.4" y="142.3" width="197.3" height="57.3" rx="8"/><text class="ln-t em" x="320.1" y="162.6" font-size="13" text-anchor="middle" dominant-baseline="central">Sees it on the board</text><text class="ln-t em" x="320.1" y="179.3" font-size="13" text-anchor="middle" dominant-baseline="central">by pickup time</text><rect class="ln-box new" x="434.7" y="229.6" width="197.3" height="57.3" rx="8"/><text class="ln-t em" x="533.4" y="249.9" font-size="13" text-anchor="middle" dominant-baseline="central">Bakes from the morning</text><text class="ln-t em" x="533.4" y="266.6" font-size="13" text-anchor="middle" dominant-baseline="central">list, grouped by hour</text><rect class="ln-box new" x="8" y="316.9" width="197.3" height="57.3" rx="8"/><text class="ln-t em" x="106.7" y="337.2" font-size="13" text-anchor="middle" dominant-baseline="central">Gets a text on the</text><text class="ln-t em" x="106.7" y="353.9" font-size="13" text-anchor="middle" dominant-baseline="central">morning of pickup</text><rect class="ln-box" x="221.4" y="404.2" width="197.3" height="57.3" rx="8"/><text class="ln-t" x="320.1" y="432.9" font-size="13" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="ln-box" x="8" y="491.5" width="197.3" height="57.3" rx="8"/><text class="ln-t" x="106.7" y="520.2" font-size="13" text-anchor="middle" dominant-baseline="central">Pays at pickup</text></svg><svg class="lanes-n" viewBox="-1 -1 342 693.1" aria-hidden="true" focusable="false"><line class="ln-sep" x1="0" y1="34.7" x2="340" y2="34.7"/><line class="ln-sep" x1="113.3" y1="0" x2="113.3" y2="691.1"/><line class="ln-sep" x1="226.7" y1="0" x2="226.7" y2="691.1"/><text class="ln-l" x="56.7" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="ln-l" x="170" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="ln-l" x="283.3" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="ln-c" d="M56.7 130.1 V139.1 Q56.7 144.1 61.7 144.1 H165.1 Q170.1 144.1 170.1 149.1 V151.6"/><path class="ln-a" d="M170.1 158.1 L166.1 151.6 L174.1 151.6 Z"/><path class="ln-c" d="M170.1 239.5 V248.5 Q170.1 253.5 175.1 253.5 H278.3 Q283.3 253.5 283.3 258.5 V261"/><path class="ln-a" d="M283.3 267.5 L279.3 261 L287.3 261 Z"/><path class="ln-c" d="M283.3 348.9 V357.9 Q283.3 362.9 278.3 362.9 H61.7 Q56.7 362.9 56.7 367.9 V370.4"/><path class="ln-a" d="M56.7 376.9 L52.7 370.4 L60.7 370.4 Z"/><path class="ln-c" d="M56.7 458.3 V467.3 Q56.7 472.3 61.7 472.3 H165.1 Q170.1 472.3 170.1 477.3 V479.8"/><path class="ln-a" d="M170.1 486.3 L166.1 479.8 L174.1 479.8 Z"/><path class="ln-c" d="M170.1 567.7 V576.7 Q170.1 581.7 165.1 581.7 H61.7 Q56.7 581.7 56.7 586.7 V589.2"/><path class="ln-a" d="M56.7 595.7 L52.7 589.2 L60.7 589.2 Z"/><rect class="ln-box new" x="4" y="48.7" width="105.3" height="81.4" rx="8"/><text class="ln-t em" x="56.7" y="74" font-size="12" text-anchor="middle" dominant-baseline="central">Orders and</text><text class="ln-t em" x="56.7" y="89.4" font-size="12" text-anchor="middle" dominant-baseline="central">picks a</text><text class="ln-t em" x="56.7" y="104.8" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="ln-box acc" x="117.4" y="158.1" width="105.3" height="81.4" rx="8"/><text class="ln-t em" x="170.1" y="183.4" font-size="12" text-anchor="middle" dominant-baseline="central">Sees it on</text><text class="ln-t em" x="170.1" y="198.8" font-size="12" text-anchor="middle" dominant-baseline="central">the board by</text><text class="ln-t em" x="170.1" y="214.2" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="ln-box new" x="230.7" y="267.5" width="105.3" height="81.4" rx="8"/><text class="ln-t em" x="283.3" y="285.2" font-size="12" text-anchor="middle" dominant-baseline="central">Bakes from</text><text class="ln-t em" x="283.3" y="300.5" font-size="12" text-anchor="middle" dominant-baseline="central">the morning</text><text class="ln-t em" x="283.3" y="315.9" font-size="12" text-anchor="middle" dominant-baseline="central">list, grouped</text><text class="ln-t em" x="283.3" y="331.2" font-size="12" text-anchor="middle" dominant-baseline="central">by hour</text><rect class="ln-box new" x="4" y="376.9" width="105.3" height="81.4" rx="8"/><text class="ln-t em" x="56.7" y="394.6" font-size="12" text-anchor="middle" dominant-baseline="central">Gets a text</text><text class="ln-t em" x="56.7" y="409.9" font-size="12" text-anchor="middle" dominant-baseline="central">on the</text><text class="ln-t em" x="56.7" y="425.3" font-size="12" text-anchor="middle" dominant-baseline="central">morning of</text><text class="ln-t em" x="56.7" y="440.6" font-size="12" text-anchor="middle" dominant-baseline="central">pickup</text><rect class="ln-box" x="117.4" y="486.3" width="105.3" height="81.4" rx="8"/><text class="ln-t" x="170.1" y="527" font-size="12" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="ln-box" x="4" y="595.7" width="105.3" height="81.4" rx="8"/><text class="ln-t" x="56.7" y="628.7" font-size="12" text-anchor="middle" dominant-baseline="central">Pays at</text><text class="ln-t" x="56.7" y="644.1" font-size="12" text-anchor="middle" dominant-baseline="central">pickup</text></svg><ol class="sr"><li>Customer: Orders and picks a pickup time<span class="sr"> (new)</span></li><li>Counter: Sees it on the board by pickup time<span class="sr"> (highlighted)</span></li><li>Baker: Bakes from the morning list, grouped by hour<span class="sr"> (new)</span></li><li>Customer: Gets a text on the morning of pickup<span class="sr"> (new)</span></li><li>Counter: Hands it over</li><li>Customer: Pays at pickup</li></ol></div>
+  <div class="lanes"><svg class="lanes-w" viewBox="-1 -1 642 565.8" aria-hidden="true" focusable="false"><line class="lg-rule" x1="0" y1="40" x2="640" y2="40"/><line class="lg-rule" x1="213.3" y1="0" x2="213.3" y2="563.8"/><line class="lg-rule" x1="426.7" y1="0" x2="426.7" y2="563.8"/><text class="lg-head" x="106.7" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="lg-head" x="320" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="lg-head" x="533.3" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="lg-link" d="M106.7 112.3 V121.3 A6 6 0 0 0 112.7 127.3 H314 A6 6 0 0 1 320 133.3 V135.3"/><polygon class="lg-tip" points="320,142.3 316,135.3 324,135.3"/><path class="lg-link" d="M320 199.6 V208.6 A6 6 0 0 0 326 214.6 H527.4 A6 6 0 0 1 533.4 220.6 V222.6"/><polygon class="lg-tip" points="533.4,229.6 529.4,222.6 537.4,222.6"/><path class="lg-link" d="M533.4 286.9 V295.9 A6 6 0 0 1 527.4 301.9 H112.7 A6 6 0 0 0 106.7 307.9 V309.9"/><polygon class="lg-tip" points="106.7,316.9 102.7,309.9 110.7,309.9"/><path class="lg-link" d="M106.7 374.2 V383.2 A6 6 0 0 0 112.7 389.2 H314 A6 6 0 0 1 320 395.2 V397.2"/><polygon class="lg-tip" points="320,404.2 316,397.2 324,397.2"/><path class="lg-link" d="M320 461.5 V470.5 A6 6 0 0 1 314 476.5 H112.7 A6 6 0 0 0 106.7 482.5 V484.5"/><polygon class="lg-tip" points="106.7,491.5 102.7,484.5 110.7,484.5"/><rect class="lg-step is-new" x="6" y="55" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="106.7" y="75.3" font-size="13" text-anchor="middle" dominant-baseline="central">Orders and picks</text><text class="lg-label is-marked" x="106.7" y="92" font-size="13" text-anchor="middle" dominant-baseline="central">a pickup time</text><rect class="lg-step is-acc" x="219.3" y="142.3" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="320" y="162.6" font-size="13" text-anchor="middle" dominant-baseline="central">Sees it on the board</text><text class="lg-label is-marked" x="320" y="179.3" font-size="13" text-anchor="middle" dominant-baseline="central">by pickup time</text><rect class="lg-step is-new" x="432.7" y="229.6" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="533.4" y="249.9" font-size="13" text-anchor="middle" dominant-baseline="central">Bakes from the morning</text><text class="lg-label is-marked" x="533.4" y="266.6" font-size="13" text-anchor="middle" dominant-baseline="central">list, grouped by hour</text><rect class="lg-step is-new" x="6" y="316.9" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="106.7" y="337.2" font-size="13" text-anchor="middle" dominant-baseline="central">Gets a text on the</text><text class="lg-label is-marked" x="106.7" y="353.9" font-size="13" text-anchor="middle" dominant-baseline="central">morning of pickup</text><rect class="lg-step" x="219.3" y="404.2" width="201.3" height="57.3" rx="8"/><text class="lg-label" x="320" y="432.9" font-size="13" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="lg-step" x="6" y="491.5" width="201.3" height="57.3" rx="8"/><text class="lg-label" x="106.7" y="520.2" font-size="13" text-anchor="middle" dominant-baseline="central">Pays at pickup</text></svg><svg class="lanes-n" viewBox="-1 -1 342 693.1" aria-hidden="true" focusable="false"><line class="lg-rule" x1="0" y1="34.7" x2="340" y2="34.7"/><line class="lg-rule" x1="113.3" y1="0" x2="113.3" y2="691.1"/><line class="lg-rule" x1="226.7" y1="0" x2="226.7" y2="691.1"/><text class="lg-head" x="56.7" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="lg-head" x="170" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="lg-head" x="283.3" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="lg-link" d="M56.7 130.1 V138.1 A6 6 0 0 0 62.7 144.1 H164 A6 6 0 0 1 170 150.1 V151.1"/><polygon class="lg-tip" points="170,158.1 166,151.1 174,151.1"/><path class="lg-link" d="M170 239.5 V247.5 A6 6 0 0 0 176 253.5 H277.3 A6 6 0 0 1 283.3 259.5 V260.5"/><polygon class="lg-tip" points="283.3,267.5 279.3,260.5 287.3,260.5"/><path class="lg-link" d="M283.3 348.9 V356.9 A6 6 0 0 1 277.3 362.9 H62.7 A6 6 0 0 0 56.7 368.9 V369.9"/><polygon class="lg-tip" points="56.7,376.9 52.7,369.9 60.7,369.9"/><path class="lg-link" d="M56.7 458.3 V466.3 A6 6 0 0 0 62.7 472.3 H164 A6 6 0 0 1 170 478.3 V479.3"/><polygon class="lg-tip" points="170,486.3 166,479.3 174,479.3"/><path class="lg-link" d="M170 567.7 V575.7 A6 6 0 0 1 164 581.7 H62.7 A6 6 0 0 0 56.7 587.7 V588.7"/><polygon class="lg-tip" points="56.7,595.7 52.7,588.7 60.7,588.7"/><rect class="lg-step is-new" x="3" y="48.7" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="56.7" y="74" font-size="12" text-anchor="middle" dominant-baseline="central">Orders and</text><text class="lg-label is-marked" x="56.7" y="89.4" font-size="12" text-anchor="middle" dominant-baseline="central">picks a</text><text class="lg-label is-marked" x="56.7" y="104.8" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="lg-step is-acc" x="116.3" y="158.1" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="170" y="183.4" font-size="12" text-anchor="middle" dominant-baseline="central">Sees it on</text><text class="lg-label is-marked" x="170" y="198.8" font-size="12" text-anchor="middle" dominant-baseline="central">the board by</text><text class="lg-label is-marked" x="170" y="214.2" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="lg-step is-new" x="229.7" y="267.5" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="283.3" y="285.2" font-size="12" text-anchor="middle" dominant-baseline="central">Bakes from</text><text class="lg-label is-marked" x="283.3" y="300.5" font-size="12" text-anchor="middle" dominant-baseline="central">the morning</text><text class="lg-label is-marked" x="283.3" y="315.9" font-size="12" text-anchor="middle" dominant-baseline="central">list, grouped</text><text class="lg-label is-marked" x="283.3" y="331.2" font-size="12" text-anchor="middle" dominant-baseline="central">by hour</text><rect class="lg-step is-new" x="3" y="376.9" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="56.7" y="402.2" font-size="12" text-anchor="middle" dominant-baseline="central">Gets a text on</text><text class="lg-label is-marked" x="56.7" y="417.6" font-size="12" text-anchor="middle" dominant-baseline="central">the morning</text><text class="lg-label is-marked" x="56.7" y="433" font-size="12" text-anchor="middle" dominant-baseline="central">of pickup</text><rect class="lg-step" x="116.3" y="486.3" width="107.3" height="81.4" rx="8"/><text class="lg-label" x="170" y="527" font-size="12" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="lg-step" x="3" y="595.7" width="107.3" height="81.4" rx="8"/><text class="lg-label" x="56.7" y="636.4" font-size="12" text-anchor="middle" dominant-baseline="central">Pays at pickup</text></svg><ol class="sr"><li>Customer: Orders and picks a pickup time<span class="sr"> (new)</span></li><li>Counter: Sees it on the board by pickup time<span class="sr"> (highlighted)</span></li><li>Baker: Bakes from the morning list, grouped by hour<span class="sr"> (new)</span></li><li>Customer: Gets a text on the morning of pickup<span class="sr"> (new)</span></li><li>Counter: Hands it over</li><li>Customer: Pays at pickup</li></ol></div>
   <figcaption class="cap">Orders for later days wait on the board under a Later heading.</figcaption>
 </figure></div>
   </div>
@@ -433,7 +433,7 @@ a.file:hover{border-color:var(--line)}
     </div></div>
     <div class="right"><figure class="fig fx fig-screen" id="morning-text-f">
   <div class="fig-h"><span class="fig-k">Mock-up</span><span class="fig-t">The customer&#39;s messages on pickup day</span></div>
-  <div class="scr"><div class="scr-bar" aria-hidden="true"><i></i><i></i><i></i><span class="scr-addr">Messages: Larkspur</span></div><div class="scr-body"><p class="sp-s m-new"><i aria-hidden="true"></i><span>Sent on the morning of pickup</span><span class="sr"> (new)</span></p><div class="sp-m m-new"><b>Larkspur</b><span>Good morning! Your order is for today. See you at the counter.</span><span class="sr"> (new)</span></div><p class="sp-s"><i aria-hidden="true"></i><span>Sent when it is on the counter, as today</span></p><div class="sp-m"><b>Larkspur</b><span>Your order is on the counter.</span></div></div></div>
+  <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">Messages: Larkspur</span></div><div class="mock-body"><p class="mk-status" data-mark="new">Sent on the morning of pickup<span class="sr"> (new)</span></p><div class="mk-msg" data-mark="new"><b class="mk-by">Larkspur</b><span>Good morning! Your order is for today. See you at the counter.</span><span class="sr"> (new)</span></div><p class="mk-status">Sent when it is on the counter, as today</p><div class="mk-msg"><b class="mk-by">Larkspur</b><span>Your order is on the counter.</span></div></div></div>
   <figcaption class="cap">The wording here is an example; the plan names when each text goes, not what it says.</figcaption>
 </figure></div>
   </div>
@@ -449,7 +449,7 @@ a.file:hover{border-color:var(--line)}
   <details class="src"><summary>Sources · 4</summary><ul class="srcs"><li><span class="s-l">The board by pickup time</span><span class="s-w">PLAN.<wbr>md:10</span><span class="s-q"><q>The counter&#39;s board lists orders by pickup time, not by when they arrived.</q> <q>Orders for later days sit under a &quot;Later&quot; heading.</q></span></li><li><span class="s-l">The baker&#39;s morning list</span><span class="s-w">PLAN.<wbr>md:11</span><span class="s-q"><q>The baker&#39;s morning list is the board for that day, grouped by hour.</q></span></li><li><span class="s-l">What it costs</span><span class="s-w">PLAN.<wbr>md:29</span><span class="s-q"><q>The morning text uses the text service we already pay for, one more message per order ahead.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-list" id="for-us-f">
-  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">What the shop takes on</span></div>
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">New for the shop, and what stays</span></div>
   <ul class="rows"><li class=""><span class="t">The order board, by pickup time</span><span class="tag tag-acc">Changes</span></li><li class=""><span class="t">The baker&#39;s morning list</span><span class="tag">New</span></li><li class=""><span class="t">One more text per order ahead</span><span class="tag">Text service we pay for</span></li><li class=""><span class="t">Paying at pickup</span><span class="tag">Stays</span></li></ul>
   
 </figure></div>
@@ -458,7 +458,7 @@ a.file:hover{border-color:var(--line)}
 <section class="card" id="decisions" data-sec="4" aria-labelledby="decisions-h">
   <div class="card-grid">
     <div class="left"><div class="left-in">
-      <p class="label"><span class="pos">05 / 07</span><span>The decisions</span></p>
+      <p class="label"><span class="pos">05 / 07</span><span>Your choices</span></p>
       <h2 id="decisions-h" tabindex="-1">Two choices, each with a recommendation</h2>
       
       <p class="sub">The baker cannot plan flour a week ahead, and paying online needs a card service, a second project.</p>
@@ -466,8 +466,8 @@ a.file:hover{border-color:var(--line)}
   <details class="src"><summary>Sources · 2</summary><ul class="srcs"><li><span class="s-l">Question: how far ahead</span><span class="s-w">PLAN.<wbr>md:20</span><span class="s-q"><q>How far ahead may a customer order? We recommend up to two days.</q> <q>A week would let customers plan parties, but the baker cannot plan flour that far.</q></span></li><li><span class="s-l">Question: when customers pay</span><span class="s-w">PLAN.<wbr>md:21</span><span class="s-q"><q>Should a customer pay when they order ahead, or at pickup? We recommend at pickup, as today.</q> <q>Paying online needs a card service, which is a second project.</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-table" id="decisions-f">
-  <div class="fig-h"><span class="fig-k">Table</span><span class="fig-t">What we recommend, and the alternative</span></div>
-  <div class="tbw"><div class="tb" role="table" aria-label="What we recommend, and the alternative" style="grid-template-columns:auto auto minmax(0,1fr)"><div class="tr th" role="row"><span class="td" role="columnheader">Question</span><span class="td" role="columnheader">Recommended</span><span class="td fill" role="columnheader">Instead</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">How far ahead?</span><span class="td acc" role="cell" data-l="Recommended">Up to two days<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">A week, for parties</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">When do they pay?</span><span class="td acc" role="cell" data-l="Recommended">At pickup, as today<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">When they order, online</span></div></div></div>
+  <div class="fig-h"><span class="fig-k">Table</span><span class="fig-t">Our pick for each question, and the other option</span></div>
+  <div class="tbw"><div class="tb" role="table" aria-label="Our pick for each question, and the other option" style="grid-template-columns:auto auto minmax(0,1fr)"><div class="tr th" role="row"><span class="td" role="columnheader">Question</span><span class="td" role="columnheader">Recommended</span><span class="td fill" role="columnheader">Instead</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">How far ahead?</span><span class="td acc" role="cell" data-l="Recommended">Up to two days<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">A week, for parties</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">When do they pay?</span><span class="td acc" role="cell" data-l="Recommended">At pickup, as today<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">When they order, online</span></div></div></div>
   
 </figure></div>
   </div>
@@ -483,7 +483,7 @@ a.file:hover{border-color:var(--line)}
   <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">The order of the work</span><span class="s-w">PLAN.<wbr>md:25</span><span class="s-q"><q>(1) the pickup time on the order page; (2) the board by pickup time; (3) the baker&#39;s morning list; (4) the morning text.</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-timeline" id="work-f">
-  <div class="fig-h"><span class="fig-k">Timeline</span><span class="fig-t">The order of the work</span></div>
+  <div class="fig-h"><span class="fig-k">Timeline</span><span class="fig-t">Pieces of work, first to last</span></div>
   <ol class="trk has-bands" style="--n:4"><span class="band acc" style="--b1:1;--b2:2">What customers see<span class="sr"> (highlighted)</span></span><span class="band" style="--b1:2;--b2:5">Behind the counter</span><li class="stop first" style="--c:1"><span class="dot acc" aria-hidden="true"></span><b class="">Pickup time on the page</b><span class="sr"> (highlighted)</span></li><li class="stop" style="--c:2"><span class="dot" aria-hidden="true"></span><b class="">Board by pickup time</b></li><li class="stop" style="--c:3"><span class="dot" aria-hidden="true"></span><b class="">Baker&#39;s morning list</b></li><li class="stop last" style="--c:4"><span class="dot" aria-hidden="true"></span><b class="">Morning text</b></li></ol>
   
 </figure></div>
@@ -493,14 +493,14 @@ a.file:hover{border-color:var(--line)}
   <div class="card-grid">
     <div class="left"><div class="left-in">
       <p class="label"><span class="pos">07 / 07</span><span>Risks</span></p>
-      <h2 id="risks-h" tabindex="-1">What would make us stop</h2>
+      <h2 id="risks-h" tabindex="-1">When we would end order ahead</h2>
       
       <p class="sub">If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.</p>
       <div class="folds">
   <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">Risks</span><span class="s-w">PLAN.<wbr>md:33-<wbr>35</span><span class="s-q"><q>Too many orders for one hour on a Saturday. We would cap the orders per hour</q> <q>If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.</q> <q>The board&#39;s new order confuses the counter for a week. The counter staff see it before it goes live.</q></span></li></ul></details></div>
     </div></div>
     <div class="right"><figure class="fig fx fig-list" id="risks-f">
-  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">Each risk, and what we do</span></div>
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">What could go wrong, and our answer</span></div>
   <ul class="rows"><li class=""><span class="t">Customers order ahead and do not come</span><span class="tag tag-acc">Stop order ahead</span></li><li class=""><span class="t">Too many orders for one hour on a Saturday</span><span class="tag">Cap orders per hour</span></li><li class=""><span class="t">The new board confuses the counter</span><span class="tag">Shown to the counter first</span></li></ul>
   
 </figure></div>

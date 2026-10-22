@@ -5,7 +5,7 @@ import { render, renderSizeBound } from "./renderer.mjs";
 import { validatePlan, insideFolderByName, ownIn, limitsOf, DEFAULT_LIMITS } from "./validate.mjs";
 
 export { DEFAULT_LIMITS };
-import { GUIDE_CSS, RUNTIME_JS } from "./static.generated.mjs";
+import { GUIDE_CSS, RUNTIME_JS, FEATURE_CSS } from "./static.generated.mjs";
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 
@@ -165,6 +165,8 @@ const capErrors = (list, L) => (list.length > L.maxErrors ? [...list.slice(0, L.
  * @param {Partial<typeof DEFAULT_LIMITS>} [options.limits]  any of DEFAULT_LIMITS to change
  * @param {string} [options.css]  default: guide.css, from static.generated.mjs
  * @param {string} [options.runtime]  default: runtime.js, from static.generated.mjs
+ * @param {Record<string, string>} [options.features]  default: features.css by feature, from
+ *   static.generated.mjs; a page carries a feature's styles only when it uses the feature
  * @returns {{ html: string | null, errors: string[], warnings: string[] }}  html is null when
  *   there are errors. Error text quotes the plan: a host that shows it must escape it.
  */
@@ -181,6 +183,7 @@ export function buildPage(spec, files, options = {}) {
     const { insideFolder = insideFolderByName, fileExists = (p) => bytes(p) !== undefined } = opts;
     const css = typeof opts.css === "string" ? opts.css : GUIDE_CSS;
     const runtime = typeof opts.runtime === "string" ? opts.runtime : RUNTIME_JS;
+    const features = isObj(opts.features) ? opts.features : FEATURE_CSS;
     const checked = validatePlan(spec, { insideFolder, fileExists, limits: L });
     const errors = checked.errors;
     warnings = checked.warnings;
@@ -219,7 +222,7 @@ export function buildPage(spec, files, options = {}) {
     if (uriChars > L.maxHtmlBytes) errors.push(`assets: the screenshots alone would make the page ${uriChars} bytes (each drawing carries the whole image); keep the page to ${L.maxHtmlBytes} or fewer`);
     if (errors.length) return { html: null, errors, warnings };
     const links = linksFor(spec);
-    const bound = renderSizeBound(spec, { css, runtime, uriLength, links });
+    const bound = renderSizeBound(spec, { css, runtime, uriLength, links, features });
     if (bound > L.maxHtmlBytes) return { html: null, errors: [`the page could be up to ${bound} bytes (its text, with each source drawn in every section that cites it, and its screenshots); keep it to ${L.maxHtmlBytes} or fewer`], warnings };
     const uris = new Map(); // path -> data: URI, encoded once
     const assets = {};
@@ -230,7 +233,7 @@ export function buildPage(spec, files, options = {}) {
       if (!uris.has(a.file)) uris.set(a.file, `data:${f.size.mime};base64,${base64(f.b)}`);
       assets[id] = { w: f.size.w, h: f.size.h, uri: uris.get(a.file) };
     }
-    const html = render(spec, { css, runtime, assets, links });
+    const html = render(spec, { css, runtime, assets, links, features });
     // The bound above is an upper bound; this is the backstop.
     const size = utf8Length(html);
     if (size > L.maxHtmlBytes) return { html: null, errors: [`the page is ${size} bytes; keep it to ${L.maxHtmlBytes} or fewer`], warnings };

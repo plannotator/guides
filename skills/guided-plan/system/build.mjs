@@ -20,6 +20,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { ownIn, insideFolderByName, DEFAULT_LIMITS } from "./validate.mjs";
 import { buildPage, repoName as repoOf } from "./page.mjs";
+import { featureCss } from "./renderer.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -184,6 +185,7 @@ const page = buildPage(spec, readAssets(), {
   fileExists: assetFile,
   css: readFileSync(join(here, "guide.css"), "utf8"),
   runtime: readFileSync(join(here, "runtime.js"), "utf8"),
+  features: featureCss(readFileSync(join(here, "features.css"), "utf8")),
 });
 const { errors: errs, warnings: warns, html } = page;
 warns.forEach((w) => console.error("warn: " + w));

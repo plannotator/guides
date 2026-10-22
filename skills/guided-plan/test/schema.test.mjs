@@ -69,7 +69,7 @@ test("the section shown in SKILL.md is valid and passes the lint", async () => {
   const { dirname, join } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
   const md = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../SKILL.md"), "utf8");
-  const block = md.split("## 6. A worked example")[1].match(/```json\n([\s\S]*?)\n```/)[1];
+  const block = md.split("## 7. A worked example")[1].match(/```json\n([\s\S]*?)\n```/)[1];
   const shown = JSON.parse(block);
   const r = lintWith((p) => { p.sections = p.sections.map((s) => (s.id === shown.id ? shown : s)); });
   assert.equal(r.code, 0, r.out);

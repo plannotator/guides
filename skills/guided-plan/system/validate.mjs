@@ -2,7 +2,7 @@
 // words and numbers a reader sees (lint). Pure: no file system, no process, no I/O, so it runs in
 // Node, a browser or a Worker. build.mjs reads the files and runs it; anything that has to look at
 // the disk is a function the caller passes in (see validate's `host`).
-import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES } from "./renderer.mjs";
+import { citesOfFigure, FORMAT, FIGURE_TYPES, SIDE_TYPES, laneWordsTooWide } from "./renderer.mjs";
 import { unknownFields, limitErrors, limitsOf, MAP_KEY, DEFAULT_LIMITS } from "./schema.mjs";
 
 export { DEFAULT_LIMITS, limitsOf };
@@ -14,7 +14,9 @@ export const ownIn = (o, k) => (o && typeof o === "object" && typeof k === "stri
 // ---------- structure ----------
 
 const SECTION_ID = /^[a-z][a-z0-9-]*$/;
-const KINDS = ["Decided", "Change", "Kept", "Open"];
+const KINDS = ["Decided", "Change", "Kept", "Open", "Ask"];
+const AUDIENCES = ["engineering", "business"];
+const BUSINESS = "a guided plan for business stakeholders";
 const isStr = (s) => typeof s === "string" && s.trim().length > 0;
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 // The entries of a map that is an object; any other value is reported once, by the map check.
@@ -76,11 +78,40 @@ export function insideFolderByName(p) {
 }
 
 // What a guided-plan/1 file needs to become a guided-plan/2 file, said once.
-const MIGRATE = `guided-plan/2 draws each section as one card with its story on the left and its figures on the right: give each section "heading" (a few words), "lead" (one paragraph), "cites" and one "figure"; its other parts become "cards": [{ "id", "title", "body", "cites", "figure"? }]. "parts" are gone. A toggle or steps becomes a "pair" figure (each state side by side), a drawing becomes a "flow" or "layers" figure, and controls and rules are gone. See SKILL.md, section 5`;
+const MIGRATE = `guided-plan/2 draws each section as one card with its story on the left and its figures on the right: give each section "heading" (a few words), "lead" (one paragraph), "cites" and one "figure"; its other parts become "cards": [{ "id", "title", "body", "cites", "figure"? }]. "parts" are gone. A toggle or steps becomes a "pair" figure (each state side by side), a drawing becomes a "flow" or "layers" figure, and controls and rules are gone. See SKILL.md, section 6`;
+
+// One part of a screen: what its kind takes, and nothing it does not.
+const SCREEN_TEXT = ["heading", "text", "box", "button", "message", "status"];
+const SCREEN_MARKS = ["new", "changed", "out", "acc"];
+const SCREEN_FITS = { heading: 80, text: 200, box: 120, button: 40, message: 240, status: 120 };
+function validateScreenParts(parts, where, errs, inCard) {
+  if (!Array.isArray(parts) || !parts.length) { errs.push(`${where}: ${inCard ? "a card holds parts" : "a screen needs parts"}: [{ "as": "heading", "text": "..." }, ...]`); return; }
+  parts.forEach((p, i) => {
+    const w = `${where}[${i}]`;
+    if (!isObj(p)) { errs.push(`${w}: a part is { "as", ... }`); return; }
+    const as = p.as;
+    if (!["heading", "text", "box", "button", "message", "status", "menu", "card"].includes(as)) { errs.push(`${w}: "as" is heading, text, box, button, message, status, menu or card`); return; }
+    if (inCard && as === "card") { errs.push(`${w}: a card holds parts one level deep; no card inside a card`); return; }
+    if (SCREEN_TEXT.includes(as)) {
+      if (!isStr(p.text)) errs.push(`${w}: a ${as} needs text`);
+      else tooLong(errs, w, "text", p.text, SCREEN_FITS[as]);
+    } else if (p.text !== undefined) errs.push(`${w}: a ${as} takes no text; ${as === "menu" ? "its words are its items" : "its words are in its parts"}`);
+    if (p.by !== undefined) { if (as !== "message") errs.push(`${w}: "by" is the author of a message; a ${as} takes none`); else if (!isStr(p.by)) errs.push(`${w}: by is text`); else tooLong(errs, w, "by", p.by, 60); }
+    if (p.pin !== undefined && (as !== "box" || typeof p.pin !== "boolean")) errs.push(`${w}: "pin" is true or false, on a box`);
+    if (as === "menu") {
+      if (!Array.isArray(p.items) || !p.items.length || !p.items.every(isStr)) errs.push(`${w}: a menu needs items, a list of words`);
+      else p.items.forEach((t, j) => tooLong(errs, `${w}.items[${j}]`, "item", t, 40));
+    } else if (p.items !== undefined) errs.push(`${w}: "items" belong to a menu; a ${as} takes none`);
+    if (p.mark !== undefined && !SCREEN_MARKS.includes(p.mark)) errs.push(`${w}: mark is "new", "changed", "out" or "acc"`);
+    if (as === "card") validateScreenParts(p.parts, `${w}.parts`, errs, true);
+    else if (p.parts !== undefined) errs.push(`${w}: "parts" belong to a card; a ${as} takes none`);
+  });
+}
 
 function validateFigure(spec, f, where, errs, { nested = false } = {}) {
   if (!f || typeof f !== "object") { errs.push(`${where}: no figure`); return; }
   const t = f.type;
+  if (t === "code" && spec.audience === "business") { errs.push(`${where}: ${BUSINESS} shows no code; show what a person sees with a "screen" (a mock-up) or a "screenshot", who does what with "lanes", or the facts as a "list" or "table"`); return; }
   if (["toggle", "steps"].includes(t)) { errs.push(`${where}: ${t} is gone in ${FORMAT}; draw the states side by side with a "pair" figure: { "type": "pair", "sides": [{ "label": "Before", "figure": {...}, "caption": "..." }, ...] }`); return; }
   if (t === "drawing") { errs.push(`${where}: drawing is gone in ${FORMAT}; use "flow" (steps in order, with arrows) or "layers" (labelled rows with a tag each)`); return; }
   if (f.controls || f.rules) errs.push(`${where}: figures take no controls or rules in ${FORMAT}; show each case instead: a "pair", or a "table" with a row per case`);
@@ -158,6 +189,22 @@ function validateFigure(spec, f, where, errs, { nested = false } = {}) {
         tooLong(errs, `${where}.rows[${i}]`, "tag", r.tag, 24);
       });
       break;
+    case "screen":
+      if (f.address !== undefined && !isStr(f.address)) errs.push(`${where}: address is text, the bar at the top of the mock-up`);
+      else tooLong(errs, where, "address", f.address, 80);
+      validateScreenParts(f.parts, `${where}.parts`, errs, false);
+      break;
+    case "lanes": {
+      if (!Array.isArray(f.lanes) || f.lanes.length < 2 || f.lanes.length > 5 || !f.lanes.every(isStr)) { errs.push(`${where}: lanes needs 2 to 5 lanes, each a label (a person or a role)`); break; }
+      f.lanes.forEach((l, i) => tooLong(errs, `${where}.lanes[${i}]`, "label", l, 40));
+      if (!Array.isArray(f.steps) || f.steps.length < 2 || f.steps.length > 12 || !f.steps.every((s) => isObj(s) && isStr(s.text))) { errs.push(`${where}: lanes needs 2 to 12 steps, each { "lane", "text" }`); break; }
+      f.steps.forEach((s, i) => {
+        if (!(Number.isInteger(s.lane) && s.lane >= 0 && s.lane < f.lanes.length)) errs.push(`${where}.steps[${i}]: lane is the index of its lane, 0 to ${f.lanes.length - 1}`);
+        if (s.mark !== undefined && !["acc", "new"].includes(s.mark)) errs.push(`${where}.steps[${i}]: mark is "acc" or "new"`);
+        tooLong(errs, `${where}.steps[${i}]`, "text", s.text, 60);
+      });
+      break;
+    }
     case "pair":
       if (!Array.isArray(f.sides) || f.sides.length < 2 || f.sides.length > 4) { errs.push(`${where}: pair needs 2 to 4 sides`); break; }
       f.sides.forEach((s, i) => {
@@ -191,6 +238,7 @@ function validateUnguarded(spec, host) {
     for (const k of Object.keys(v)) if (!keyRe.test(k) || RESERVED_KEYS.includes(k)) errs.push(`${m}.${k}: a key is 1 to 64 letters, digits, dot, dash or underscore, starting with a letter or digit, and not ${RESERVED_KEYS.join(", ")}`);
   }
   for (const k of ["title", "intent", "base"]) if (!isStr(spec[k])) errs.push(`${k}: required`);
+  if (spec.audience !== undefined && !AUDIENCES.includes(spec.audience)) errs.push(`audience: "engineering" (the default, when it is left out) or "business"`);
   if (spec.base && !/^[0-9a-f]{7,40}$/.test(spec.base)) errs.push("base: a commit hash (7 to 40 hex characters)");
   if (!spec.sources || typeof spec.sources !== "object") errs.push("sources: required");
   const known = new Set(entries(spec.sources).map(([k]) => k));
@@ -267,6 +315,7 @@ function validateUnguarded(spec, host) {
       if (c.wide !== undefined && typeof c.wide !== "boolean") errs.push(`${where}: wide is true or false`);
     }
     if (notList(s.files)) { errs.push(`${sid}: files is a list`); continue; }
+    if (spec.audience === "business" && Array.isArray(s.files) && s.files.length) errs.push(`${sid}: ${BUSINESS} lists no files, since its reader does not open code; name the work as plain pieces in a "timeline" or a "list" instead`);
     for (const a of s.files || []) {
       if (!isObj(a)) { errs.push(`${sid}: a file is an object`); continue; }
       if (!isStr(a.name)) errs.push(`${sid}: a file needs name`);
@@ -298,6 +347,10 @@ function validateUnguarded(spec, host) {
     if (!isObj(o)) { errs.push(`overview[${i}]: a row is an object`); return; }
     if (!KINDS.includes(o.kind)) errs.push(`overview[${i}]: kind is one of ${KINDS.join(", ")}`);
     if (!isStr(o.text)) errs.push(`overview[${i}]: text required`);
+    if (o.kind === "Ask") {
+      tooLong(errs, `overview[${i}]`, "question", o.text, 120);
+      if (o.recommended !== undefined) { if (!isStr(o.recommended)) errs.push(`overview[${i}]: recommended is text, the answer this guided plan recommends`); else tooLong(errs, `overview[${i}]`, "recommended", o.recommended, 60); }
+    } else if (o.recommended !== undefined) errs.push(`overview[${i}]: recommended belongs to an Ask row (a question for the reader); a ${KINDS.includes(o.kind) ? o.kind : "row"} row takes none`);
     if (!secIds.has(o.section)) errs.push(`overview[${i}]: unknown section ${o.section}`);
     cite(`overview[${i}]`, o.cites, true);
   });
@@ -308,6 +361,9 @@ function validateUnguarded(spec, host) {
 
 // Words a new engineer would not know on day one, or that are house jargon. A plan may ban more with "ban".
 const BANNED = ["doors?", "prefix(es)?", "seams?", "census", "specs?", "rulings?", "goldens?", "lanes?", "stub", "canonical"];
+// The most words a business guided plan's page should hold: every word a reader sees, figures,
+// captions and cards included, but not the folded sources. Past it, the build warns.
+export const BUSINESS_WORD_BUDGET = 1200;
 const NUMWORDS = { two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10" };
 
 // Every string a figure draws: add(where, text, isCode, toy)
@@ -333,6 +389,15 @@ function figureStrings(f, add, toy) {
     case "timeline": (f.stops || []).forEach((s) => { a("stop", s.label, s.mono); a("stop", s.sub); a("stop", s.sub2); }); (f.bands || []).forEach((b) => a("band", b.label)); break;
     case "flow": (f.steps || []).forEach((s) => { a("step", s.label, s.mono); a("step", s.sub); a("step", s.via); }); break;
     case "layers": (f.rows || []).forEach((r) => { a("layer", r.label); a("layer", r.sub); a("layer", r.text); a("layer", r.tag); (r.items || []).forEach((it) => a("layer.item", typeof it === "string" ? it : it && it.text, typeof it === "object" && it ? it.mono : false)); }); break;
+    // A mock-up shows invented example content (a name, a sentence a customer might write), so its
+    // contents are checked as an illustration: no digit. Its title and caption are claims, as usual.
+    case "screen": {
+      add("screen.address", f.address, false, true);
+      const parts = (ps) => (Array.isArray(ps) ? ps : []).forEach((p) => { if (!p) return; add("screen.part", p.text, false, true); add("screen.part", p.by, false, true); (Array.isArray(p.items) ? p.items : []).forEach((t) => add("screen.item", t, false, true)); parts(p.parts); });
+      parts(f.parts);
+      break;
+    }
+    case "lanes": (f.lanes || []).forEach((l) => a("lane", l)); (f.steps || []).forEach((s) => a("lane.step", s && s.text)); break;
     case "pair": (f.sides || []).forEach((s) => { if (!s) return; const st = toy || Boolean(s.toy); add("side", s.label, false, st); add("side", s.note, false, st); add("side.caption", s.caption, false, st); figureStrings(s.figure, add, st); }); break;
   }
 }
@@ -344,7 +409,7 @@ function readerStrings(spec) {
   const out = [];
   out.push(["title", spec.title, spec.intentCites || [], false, false]);
   out.push(["intent", spec.intent, spec.intentCites || [], false, false]);
-  (spec.overview || []).forEach((o, i) => out.push([`overview[${i}]`, o.text, o.cites || [], false, false]));
+  (spec.overview || []).forEach((o, i) => { out.push([`overview[${i}]`, o.text, o.cites || [], false, false]); if (o.recommended !== undefined) out.push([`overview[${i}].recommended`, o.recommended, o.cites || [], false, false]); });
   for (const s of spec.sections) {
     // The label cites nothing; the heading, question and lead lean on the section's cites and its figure's.
     const sc = [...(s.cites || []), ...figureCites(s.figure)];
@@ -394,8 +459,24 @@ function lintUnguarded(spec, limits) {
     if (!sourceNumbers.has(id)) sourceNumbers.set(id, numbersIn([].concat((ownIn(spec.sources, id) || {}).quote || []).join(" ").toLowerCase()));
     return sourceNumbers.get(id);
   };
+  const business = spec.audience === "business";
+  let pageWords = 0;
+  const quotesOf = new Map(); // cites list -> the lower-case text of all its quotes
+  const quoteText = (ids) => {
+    const key = [...new Set(ids)].sort().join("\u0000");
+    if (!quotesOf.has(key)) quotesOf.set(key, [...new Set(ids)].flatMap((id) => [].concat((ownIn(spec.sources, id) || {}).quote || [])).join(" ").toLowerCase());
+    return quotesOf.get(key);
+  };
   for (const [where, text, ids, isCode, toy, inFigure, isTitle] of readerStrings(spec)) {
     if (!isStr(text)) continue;
+    if (business) {
+      pageWords += words(text);
+      // Do not strengthen: a word that makes a claim absolute must come from the plan's own words.
+      if (!isCode && !toy && ids !== null) for (const m of text.replace(/`[^`]*`/g, " ").matchAll(/\b(never|always|only)\b/gi)) {
+        const w = m[1].toLowerCase();
+        if (!new RegExp(`\\b${w}\\b`).test(quoteText(ids))) warns.push(`${where}: "${w}" is not in any quote this text cites; say no more than the plan says: "${errs.clip(text)}"`);
+      }
+    }
     const shown = errs.clip(text);
     // code in backticks and code-like names (mono) are not prose, so the word list does not apply to them
     const prose = isCode ? "" : text.replace(/`[^`]*`/g, " ");
@@ -428,6 +509,17 @@ function lintUnguarded(spec, limits) {
       if (!(held.has(n) || (alt && held.has(alt)))) errs.push(`${where}: the number "${errs.clip(n)}" is not in any quote ${ids.length ? "this text cites" : "(a section label cites nothing, so it may not hold a digit)"}: "${shown}"`);
     }
   }
+  // A lane's word too wide for its box on a phone is cut inside the word there: say so.
+  const lanesIn = (f, where) => {
+    if (!isObj(f)) return;
+    if (f.type === "lanes") for (const { where: w, word } of laneWordsTooWide(f)) warns.push(`${where}.${w}: "${errs.clip(word)}" is too wide for a box of ${(Array.isArray(f.lanes) ? f.lanes : []).length} lanes on a phone, so it is cut inside the word there; use a shorter word, or fewer lanes`);
+    if (f.type === "pair" && Array.isArray(f.sides)) f.sides.forEach((sd, i) => lanesIn(sd && sd.figure, `${where}.sides[${i}]`));
+  };
+  for (const sc of spec.sections) {
+    lanesIn(sc.figure, `${sc.id}.figure`);
+    for (const c of sc.cards || []) lanesIn(c.figure, `${sc.id}.${c.id}.figure`);
+  }
+  if (business && pageWords > BUSINESS_WORD_BUDGET) warns.push(`the page holds ${pageWords} words of text (figures, captions and cards included); ${BUSINESS} reads best under ${BUSINESS_WORD_BUDGET}: drop cards, shorten captions, and let a picture carry what words repeat`);
   return { errors: errs.list(), warnings: warns.list() };
 }
 

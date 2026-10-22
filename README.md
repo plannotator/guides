@@ -73,7 +73,9 @@ The code that displays a guide loads from guides.show and never changes out from
 
 Ask your agent for a guided plan of a change: an issue, a PR you are about to open, or a plan document. It reads the change and the code it touches, writes `plan.json`, re-checks every citation, and builds `guided-plan.html`.
 
-The page opens with the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is one card: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls. The pictures are a fixed set any guided plan can use: a screenshot, a code excerpt, a list, a table, chips, a timeline, a flow of steps, layers, and a pair that sets two to four of them side by side (before and after). `j` and `k` move between sections. Light and dark; on a phone every picture reflows and nothing scrolls sideways.
+The page opens with the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Each section is one card: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls. The pictures are a fixed set any guided plan can use: a screenshot, a code excerpt, a list, a table, chips, a timeline, a flow of steps, layers, a mock-up of a screen that does not exist yet, who does what (one lane per role, in order), and a pair that sets two to four of them side by side (before and after). `j` and `k` move between sections. Light and dark; on a phone every picture reflows and nothing scrolls sideways.
+
+A guided plan is written for engineers unless it says `"audience": "business"`. A guided plan for business stakeholders, who shape the product and do not build it, shows what changes (mock-ups of what people will see, who does what), then the questions asked of the reader with the recommended answer beside each, the work as named pieces and the risks. It has no code and no file lists, and when the plan has already decided everything its panel says "Nothing to decide" rather than inventing a question.
 
 What the build guarantees:
 
@@ -91,11 +93,18 @@ The method, the content format (`guided-plan/2`) and every picture type are in [
 
 ### Examples
 
-- [`examples/paste-expiry`](examples/paste-expiry) is the worked example the skill points to: an invented small pastebin, pastebox, and a change that lets pastes expire. It uses every picture type. pastebox does not exist, so its repository is made on the spot, with the same commit hash every time:
+- [`examples/paste-expiry`](examples/paste-expiry) is the worked example the skill points to: an invented small pastebin, pastebox, and a change that lets pastes expire. It uses every picture type but the two a business guided plan adds (the mock-up and who does what). pastebox does not exist, so its repository is made on the spot, with the same commit hash every time:
 
   ```bash
   node skills/guided-plan/test/make-example-repo.mjs        # writes examples/paste-expiry/.repo
   cd examples/paste-expiry && node ../../skills/guided-plan/system/build.mjs --check plan.json
+  ```
+
+- [`examples/pickup-times`](examples/pickup-times) is a guided plan for business stakeholders: an invented bakery, Larkspur, and a plan to let customers order ahead for a pickup time. It uses the decide panel, two mock-ups as a before and after, a third for the morning text, and a who-does-what figure. Its repository is made on the spot too:
+
+  ```bash
+  node skills/guided-plan/test/make-example-repo.mjs --example pickup-times   # writes examples/pickup-times/.repo
+  cd examples/pickup-times && node ../../skills/guided-plan/system/build.mjs --check plan.json
   ```
 
 - [`examples/inbox-text-size`](examples/inbox-text-size) is the guided plan for a real, merged change in the open-source [Plannotator](https://github.com/backnotprop/plannotator) repository: the Inbox's Text size setting ([PR 1990](https://github.com/backnotprop/plannotator/pull/1990)), written as the plan it was. It cites the base commit `44210bd` for what existed and the merge commit `4507cdc` for what the change adds. The screenshots show a scratch Inbox with sample threads. Open `guided-plan.html` in a browser, or check it yourself:
@@ -113,7 +122,7 @@ The method, the content format (`guided-plan/2`) and every picture type are in [
 node --test skills/guided-plan/test/*.test.mjs
 ```
 
-They cover the format's refusals (unknown fields, reserved and colliding ids, unsafe keys and paths), the renderer on its own with hostile values, the word lint on every text field, colour contrast and forced colours, same input same bytes (and that the committed examples are current), the pure core building both examples byte for byte with no `process` or `Buffer`, every limit on untrusted input and a plan at the limits built in about a second, `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
+They cover the format's refusals (unknown fields, reserved and colliding ids, unsafe keys and paths), the business audience (its refusals, the decide panel and its nothing-to-decide state, mock-ups and who-does-what figures drawn on one grid, the word budget and "do not strengthen" warnings), the renderer on its own with hostile values, the word lint on every text field, colour contrast and forced colours, same input same bytes (and that the committed examples are current), the pure core building every example byte for byte with no `process` or `Buffer`, every limit on untrusted input and a plan at the limits built in about a second, `--check` against the example's repository, and, when Playwright is available (`PLAYWRIGHT=/path/to/node_modules/playwright`), that nothing is wider than the window at 390, 1130 and 1440 px, light and dark, in headless Chromium. `node skills/guided-plan/test/render.mjs page.html --shots DIR` saves those renders.
 
 ## Related
 

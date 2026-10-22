@@ -19,7 +19,9 @@
 // and `runtime` are trusted: they are the skill's own files.
 
 export const FORMAT = "guided-plan/2";
-export const FIGURE_TYPES = ["screenshot", "code", "list", "table", "chips", "timeline", "flow", "layers", "pair"];
+export const FIGURE_TYPES = ["screenshot", "code", "list", "table", "chips", "timeline", "flow", "layers", "pair", "screen", "lanes"];
+// Who the guided plan is written for. Absent means engineering, and the page is drawn as it always was.
+export const AUDIENCES = ["engineering", "business"];
 // A pair's sides hold any figure but another pair.
 export const SIDE_TYPES = FIGURE_TYPES.filter((t) => t !== "pair");
 
@@ -46,7 +48,7 @@ const sr = (t) => (t ? `<span class="sr"> (${t})</span>` : "");
 
 // ---------- figures ----------
 
-const KIND = { screenshot: "Screenshot", code: "Code", list: "List", table: "Table", chips: "List", timeline: "Timeline", flow: "Flow", layers: "Drawing" };
+const KIND = { screenshot: "Screenshot", code: "Code", list: "List", table: "Table", chips: "List", timeline: "Timeline", flow: "Flow", layers: "Drawing", screen: "Mock-up", lanes: "Who does what" };
 
 export function kindLabel(fig) {
   let k = fig.type === "pair" ? (arr(fig.sides).length === 2 ? "Before and after" : "Compare") : own(KIND, fig.type) || "Figure";
@@ -101,7 +103,8 @@ export function fillColumn(fig) {
   if (marked >= 0) return marked;
   let best = 0, len = -1;
   cols.forEach((_, i) => {
-    const l = Math.max(...arr(fig.rows).map((r) => String(cellText(arr(r)[i])).length), 0);
+    let l = 0;
+    for (const r of arr(fig.rows)) l = Math.max(l, String(cellText(arr(r)[i])).length);
     if (l > len) { len = l; best = i; }
   });
   return best;
@@ -199,6 +202,206 @@ function drawPair(fig, spec, assets) {
   }).join("")}</div>`;
 }
 
+// ---------- screen: a mock-up of what a person sees ----------
+
+const SCREEN_AS = ["heading", "text", "box", "button", "message", "status", "menu", "card"];
+const SCREEN_MARKS = ["new", "changed", "out", "acc"];
+const SCREEN_SAID = { new: "new", changed: "changes", out: "goes", acc: "highlighted" };
+// A part's mark as a data attribute, and the words a screen reader hears for it.
+const markOf = (p) => oneOf(p.mark, SCREEN_MARKS);
+const markAttr = (p) => (markOf(p) ? ` data-mark="${markOf(p)}"` : "");
+const markSaid = (p) => sr(own(SCREEN_SAID, markOf(p)));
+
+// The parts, gathered first: each run of buttons becomes one group, so buttons that follow each
+// other share a row; every other part is a group of its own.
+function screenGroups(parts) {
+  const groups = [];
+  for (const raw of arr(parts)) {
+    const p = raw && typeof raw === "object" ? raw : {};
+    const last = groups[groups.length - 1];
+    if (p.as === "button" && last && last.buttons) last.buttons.push(p);
+    else groups.push(p.as === "button" ? { buttons: [p] } : { part: p });
+  }
+  return groups;
+}
+
+// A card holds its own parts, one level deep: at depth 1 a card is not drawn.
+function screenPart(p, depth) {
+  const t = esc(p.text);
+  switch (oneOf(p.as, SCREEN_AS)) {
+    case "heading": return `<p class="mk-heading"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "text": return `<p class="mk-text"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "box": return `<div class="mk-box"${markAttr(p)}${p.pin === true ? " data-pin" : ""}>${t}${p.pin === true ? sr("a note is pinned here") : ""}${markSaid(p)}</div>`;
+    case "message": return `<div class="mk-msg"${markAttr(p)}>${p.by ? `<b class="mk-by">${esc(p.by)}</b>` : ""}<span>${t}</span>${markSaid(p)}</div>`;
+    case "status": return `<p class="mk-status"${markAttr(p)}>${t}${markSaid(p)}</p>`;
+    case "menu": return `<ul class="mk-menu"${markAttr(p)}>${arr(p.items).map((x) => `<li>${esc(x)}</li>`).join("")}${markOf(p) ? `<li class="sr">${own(SCREEN_SAID, markOf(p))}</li>` : ""}</ul>`;
+    case "card": return depth ? "" : `<div class="mk-card"${markAttr(p)}>${screenParts(p.parts, 1)}${markSaid(p)}</div>`;
+    default: return "";
+  }
+}
+function screenParts(parts, depth) {
+  return screenGroups(parts).map((g) => (g.buttons
+    ? `<div class="mk-buttons">${g.buttons.map((b) => `<span class="mk-btn"${markAttr(b)}>${esc(b.text)}${markSaid(b)}</span>`).join("")}</div>`
+    : screenPart(g.part, depth))).join("");
+}
+
+function drawScreen(fig) {
+  const url = fig.address ? `<span class="mock-url">${esc(fig.address)}</span>` : "";
+  return `<div class="mock"><div class="mock-top" aria-hidden="true">${url}</div><div class="mock-body">${screenParts(fig.parts, 0)}</div></div>`;
+}
+
+// ---------- lanes: who does what, in order ----------
+//
+// One layout, laid out on a fixed grid at two sizes (the CSS shows one by the figure's own width):
+// a column per lane with its label on top, a row per step, every step box the same size, text
+// centred and wrapped to balanced lines, and an orthogonal connector from the bottom centre of each
+// step to the top centre of the next, with one corner radius, one stroke and one arrowhead whose
+// tip sits on the box edge. Every number is computed here from counts and fixed sizes; every string
+// is escaped. A screen reader gets the steps as an ordered list, "lane: step".
+
+const r1 = (n) => Math.round(num(n) * 10) / 10;
+const maxOf = (list, from = 0) => { let m = from; for (const v of list) if (v > m) m = v; return m; };
+
+// Advance widths of the system face (SF Pro, Segoe UI, Roboto agree within a few per cent), in ems,
+// a little on the wide side so text measured to fit does fit. Anything not listed is 0.6.
+const EM = (() => {
+  const w = {};
+  const set = (chars, v) => { for (const c of chars) w[c] = v; };
+  set("iljI'|!.,:;", 0.26); set("ftr()[]{}\" ", 0.36); set("Jsz?-/", 0.5);
+  set("abcdeghknopquvxy", 0.56); set("ABCDEFGHKLNOPQRSTUVXYZ0123456789&", 0.68); set("mwMW%@", 0.92);
+  return w;
+})();
+export function textWidth(s, fs) {
+  let n = 0;
+  for (const c of String(s ?? "")) n += EM[c] ?? 0.62;
+  return n * fs * 1.06; // marked steps are semibold, a little wider than the table
+}
+
+// Words wrapped to at most `maxW` px: the fewest lines greedy wrapping gives, then the narrowest
+// width that still gives that many lines, so the lines balance. A word is cut only when it is
+// wider than the box on its own.
+export function wrapLines(text, fs, maxW) {
+  const words = [];
+  for (const w of String(text ?? "").split(/\s+/)) {
+    if (!w) continue;
+    if (textWidth(w, fs) <= maxW) { words.push(w); continue; }
+    let piece = "";
+    for (const c of w) {
+      if (piece && textWidth(piece + c, fs) > maxW) { words.push(piece); piece = ""; }
+      piece += c;
+    }
+    if (piece) words.push(piece);
+  }
+  if (!words.length) return [""];
+  const space = textWidth(" ", fs);
+  const widths = words.map((w) => textWidth(w, fs));
+  const greedy = (limit) => {
+    const lines = [];
+    let cur = "", cw = 0;
+    words.forEach((w, i) => {
+      if (cur && cw + space + widths[i] <= limit) { cur += " " + w; cw += space + widths[i]; }
+      else { if (cur) lines.push(cur); cur = w; cw = widths[i]; }
+    });
+    lines.push(cur);
+    return lines;
+  };
+  const n = greedy(maxW).length;
+  let lo = Math.ceil(maxOf(widths)), hi = Math.max(lo, Math.ceil(maxW));
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (greedy(mid).length <= n) hi = mid; else lo = mid + 1; }
+  return greedy(lo);
+}
+
+function svgLines(lines, cx, cy, fs, cls) {
+  const step = fs * 1.28;
+  const top = cy - ((lines.length - 1) * step) / 2;
+  return lines.map((l, k) => `<text class="${cls}" x="${r1(cx)}" y="${r1(top + k * step)}" font-size="${fs}" text-anchor="middle" dominant-baseline="central">${esc(l)}</text>`).join("");
+}
+
+const BEND = 6, TIP_LEN = 7, TIP_HALF = 4;
+// The link from one box's bottom centre (x1, y1) to the next box's top centre (x2, y2): straight
+// down when they share a lane; otherwise down to a rail halfway between the rows, along it, and down
+// again, each turn a quarter circle of one radius. The arrow is its own triangle, tip on the edge.
+function laneLink(x1, y1, x2, y2) {
+  const rail = y1 + (y2 - y1) / 2;
+  const stop = y2 - TIP_LEN;
+  const pts = [`M${r1(x1)} ${r1(y1)}`];
+  if (Math.abs(x2 - x1) < 0.05) pts.push(`V${r1(stop)}`);
+  else {
+    const dir = x2 > x1 ? 1 : -1, r = Math.min(BEND, Math.abs(x2 - x1) / 2, (stop - rail), (rail - y1));
+    const sweep = dir > 0 ? 0 : 1;
+    pts.push(`V${r1(rail - r)}`, `A${r1(r)} ${r1(r)} 0 0 ${sweep} ${r1(x1 + dir * r)} ${r1(rail)}`, `H${r1(x2 - dir * r)}`, `A${r1(r)} ${r1(r)} 0 0 ${1 - sweep} ${r1(x2)} ${r1(rail + r)}`, `V${r1(stop)}`);
+  }
+  const tip = `${r1(x2)},${r1(y2)} ${r1(x2 - TIP_HALF)},${r1(stop)} ${r1(x2 + TIP_HALF)},${r1(stop)}`;
+  return `<path class="lg-link" d="${pts.join(" ")}"/><polygon class="lg-tip" points="${tip}"/>`;
+}
+
+// The two sizes: W is the drawing's width in px at 1:1; inset is the space between a box and its
+// lane's edges; padX and padY are inside a box.
+export const LANE_SIZES = {
+  wide: { cls: "lanes-w", W: 640, inset: 6, fs: 13, hs: 12.5, gap: 30, padY: 12, padX: 8 },
+  narrow: { cls: "lanes-n", W: 340, inset: 3, fs: 12, hs: 11.5, gap: 28, padY: 10, padX: 7 },
+};
+// One size, fitted to the lane count: on a phone, four or five lanes get smaller type and less
+// padding, so a box holds a real word.
+export function laneSize(laneCount, o = LANE_SIZES.narrow) {
+  return o === LANE_SIZES.narrow && laneCount >= 4 ? { ...o, fs: 11, hs: 10.5, padX: 4 } : o;
+}
+// How wide a step's text may be, at one size, for this many lanes.
+export function laneTextWidth(laneCount, o = LANE_SIZES.narrow) {
+  const z = laneSize(laneCount, o);
+  return z.W / Math.max(laneCount, 1) - 2 * z.inset - 2 * z.padX;
+}
+function laneDrawing(lanes, steps, size) {
+  const count = Math.max(lanes.length, 1), o = laneSize(count, size), colW = o.W / count;
+  // Box corners and sizes are rounded first, and every link is taken from the rounded boxes, so a
+  // link meets its box exactly.
+  const boxW = r1(colW - 2 * o.inset), textW = laneTextWidth(count, size);
+  const heads = lanes.map((l) => wrapLines(l, o.hs, colW - 2 * o.inset));
+  const headH = maxOf(heads.map((h) => h.length), 1) * o.hs * 1.28 + 2 * o.padY;
+  const texts = steps.map((s) => wrapLines(s.text, o.fs, textW));
+  const boxH = r1(maxOf(texts.map((t) => t.length), 1) * o.fs * 1.28 + 2 * o.padY);
+  const pitch = boxH + o.gap, total = headH + steps.length * pitch;
+  const at = (i) => ({ x: r1(steps[i].lane * colW + o.inset), y: r1(headH + o.gap / 2 + i * pitch) });
+  const out = [`<line class="lg-rule" x1="0" y1="${r1(headH)}" x2="${o.W}" y2="${r1(headH)}"/>`];
+  for (let k = 1; k < count; k++) out.push(`<line class="lg-rule" x1="${r1(k * colW)}" y1="0" x2="${r1(k * colW)}" y2="${r1(total)}"/>`);
+  heads.forEach((h, k) => out.push(svgLines(h, (k + 0.5) * colW, headH / 2, o.hs, "lg-head")));
+  for (let i = 1; i < steps.length; i++) {
+    const a = at(i - 1), b = at(i);
+    out.push(laneLink(a.x + boxW / 2, a.y + boxH, b.x + boxW / 2, b.y));
+  }
+  steps.forEach((s, i) => {
+    const b = at(i);
+    out.push(`<rect class="lg-step${s.mark ? " is-" + s.mark : ""}" x="${b.x}" y="${b.y}" width="${boxW}" height="${boxH}" rx="8"/>`, svgLines(texts[i], b.x + boxW / 2, b.y + boxH / 2, o.fs, s.mark ? "lg-label is-marked" : "lg-label"));
+  });
+  return `<svg class="${o.cls}" viewBox="-1 -1 ${o.W + 2} ${r1(total + 2)}" aria-hidden="true" focusable="false">${out.join("")}</svg>`;
+}
+
+const LANE_SAID = { acc: "highlighted", new: "new" };
+// The steps as the drawing reads them: each in a lane that exists, each mark one it knows.
+function laneSteps(fig, count) {
+  return arr(fig.steps).map((s) => {
+    s = s && typeof s === "object" ? s : {};
+    return { lane: Math.min(Math.max(int(s.lane), 0), count - 1), text: String(s.text ?? ""), mark: oneOf(s.mark, ["acc", "new"]) };
+  });
+}
+function drawLanes(fig) {
+  const lanes = arr(fig.lanes).map((l) => String(l ?? ""));
+  const steps = laneSteps(fig, Math.max(lanes.length, 1));
+  const heard = `<ol class="sr">${steps.map((s) => `<li>${esc(lanes[s.lane] ?? "")}: ${esc(s.text)}${sr(own(LANE_SAID, s.mark))}</li>`).join("")}</ol>`;
+  return `<div class="lanes">${laneDrawing(lanes, steps, LANE_SIZES.wide)}${laneDrawing(lanes, steps, LANE_SIZES.narrow)}${heard}</div>`;
+}
+
+// Words of a lane figure too wide for their box on a phone (the narrow drawing), where they would be
+// cut: { where: "lanes[i]" | "steps[i]", word }.
+export function laneWordsTooWide(fig) {
+  const lanes = arr(fig.lanes), count = Math.max(lanes.length, 1), o = laneSize(count);
+  const out = [];
+  const check = (text, fs, w, where) => { for (const word of String(text ?? "").split(/\s+/)) if (word && textWidth(word, fs) > w) out.push({ where, word }); };
+  lanes.forEach((l, i) => check(l, o.hs, o.W / count - 2 * o.inset, `lanes[${i}]`));
+  arr(fig.steps).forEach((s, i) => check(s && s.text, o.fs, laneTextWidth(count), `steps[${i}]`));
+  return out;
+}
+
 export function drawBody(fig, spec, assets) {
   switch (fig && fig.type) {
     case "screenshot": return drawScreenshot(fig, assets);
@@ -210,6 +413,8 @@ export function drawBody(fig, spec, assets) {
     case "flow": return drawFlow(fig);
     case "layers": return drawLayers(fig);
     case "pair": return drawPair(fig, spec, assets);
+    case "screen": return drawScreen(fig);
+    case "lanes": return drawLanes(fig);
     default: throw new Error(`unknown figure type ${String(fig && fig.type)}`);
   }
 }
@@ -226,7 +431,7 @@ function figureHtml(fig, id, spec, assets) {
 
 // A card spans both columns when its figure needs the width, when it says so, or when it would
 // otherwise sit alone in its row (an empty cell beside a card reads as a mistake).
-const WIDE = ["code", "table", "pair", "flow", "timeline", "layers"];
+const WIDE = ["code", "table", "pair", "flow", "timeline", "layers", "screen", "lanes"];
 export function cardWidths(cards) {
   const wide = cards.map((c) => (c.wide !== undefined ? Boolean(c.wide) : Boolean(c.figure && WIDE.includes(c.figure.type))));
   let i = 0;
@@ -319,35 +524,85 @@ function sectionHtml(sec, i, n, spec, assets, links) {
 }
 
 const OV_KINDS = ["Decided", "Change", "Kept", "Open"];
+
+// ---------- features: styles a page carries only when it uses them ----------
+//
+// guide.css is every page's. features.css holds blocks, each headed "/* feature: <name> */", that
+// a page carries only when it uses what they style, so a page that uses none of them is the same
+// bytes it always was. featureCss(text) reads that file into { name: css }.
+export const FEATURES = ["business", "ask", "screen", "lanes"];
+export function featureCss(text) {
+  const out = {};
+  const parts = String(text ?? "").split(/^\/\* feature: ([a-z]+) \*\/\n/m);
+  for (let i = 1; i + 1 < parts.length; i += 2) if (FEATURES.includes(parts[i])) out[parts[i]] = parts[i + 1];
+  return out;
+}
+const isBusiness = (spec) => spec && spec.audience === "business";
+const isAsk = (o) => o && o.kind === "Ask";
+// The features a spec uses, in a fixed order.
+export function featuresOf(spec) {
+  const used = new Set();
+  if (isBusiness(spec)) used.add("business").add("ask");
+  if (arr(spec && spec.overview).some(isAsk)) used.add("ask");
+  const visit = (f) => {
+    if (!f || typeof f !== "object") return;
+    if (f.type === "screen" || f.type === "lanes") used.add(f.type);
+    if (f.type === "pair") for (const sd of arr(f.sides)) visit(sd && sd.figure);
+  };
+  for (const sec of arr(spec && spec.sections)) {
+    if (!sec || typeof sec !== "object") continue;
+    visit(sec.figure);
+    for (const c of arr(sec.cards)) visit(c && c.figure);
+  }
+  return FEATURES.filter((f) => used.has(f));
+}
+
+// The decide panel: one line per Ask row, the recommended answer beside the question. A business
+// guided plan with no Ask row says so: there is nothing to decide, and nothing is made up.
+const ASK_ID = "decide_h"; // an underscore, so no section or card id can be the same
+const NOTHING_TO_DECIDE = "Nothing to decide. This guided plan asks you no question.";
+function askPanel(spec, secIndex) {
+  const asks = arr(spec.overview).filter(isAsk);
+  if (!asks.length && !isBusiness(spec)) return "";
+  const item = (o) => {
+    const where = secIndex.has(o.section) ? `<span class="decide-at">${pad2(secIndex.get(o.section) + 1)}</span>` : "";
+    const answer = o.recommended ? `<span class="decide-rec"><span class="sr">Recommended: </span>${inline(o.recommended)}</span>` : "";
+    return `<li><a class="decide-row" href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="decide-q">${inline(o.text)}</span>${answer}${where}</a></li>`;
+  };
+  const body = asks.length ? `<ol class="decide-list">${asks.map(item).join("")}</ol>` : `<p class="decide-none">${NOTHING_TO_DECIDE}</p>`;
+  return `\n  <section class="decide" aria-labelledby="${ASK_ID}"><h2 id="${ASK_ID}">What you are asked to decide</h2>${body}</section>`;
+}
+
 export function render(spec, opts) {
   const { css, runtime } = opts;
+  const features = opts.features && typeof opts.features === "object" ? opts.features : {};
+  const extraCss = featuresOf(spec).map((f) => (typeof own(features, f) === "string" ? own(features, f) : "")).join("");
   const assets = opts.assets || {};
   const links = opts.links || { source: () => null, file: () => null };
   const sections = arr(spec.sections).map((s) => s || {});
   const n = sections.length;
   const secIndex = new Map(sections.map((s, i) => [s.id, i]));
-  const overview = arr(spec.overview).map((o) => {
+  const overview = arr(spec.overview).filter((o) => !isAsk(o)).map((o) => {
     o = o || {};
     const kind = oneOf(o.kind, OV_KINDS) || "Change";
     const at = secIndex.has(o.section) ? pad2(secIndex.get(o.section) + 1) : "";
     return `<li class="ov ov-${kind.toLowerCase()}"><a href="#${esc(o.section)}" data-jump="${esc(o.section)}"><span class="ov-k">${kind}</span><span class="ov-t">${inline(o.text)}</span><span class="ov-n">${at}</span></a></li>`;
   }).join("");
   const intentSrc = arr(spec.intentCites).map((id) => sourceRow(id, own(spec.sources, id), links, spec.base)).join("");
-  const meta = [`${n} section${n === 1 ? "" : "s"}`, spec.plan && spec.plan.name ? `from ${esc(spec.plan.name)}` : "", spec.model ? `generated by ${esc(spec.model)}` : ""].filter(Boolean).join(" · ");
+  const meta = [`${n} section${n === 1 ? "" : "s"}`, isBusiness(spec) ? "for business stakeholders" : "", spec.plan && spec.plan.name ? `from ${esc(spec.plan.name)}` : "", spec.model ? `generated by ${esc(spec.model)}` : ""].filter(Boolean).join(" · ");
   return `<!doctype html>
 <!-- Guided plan (${FORMAT}). Built by the guided-plan skill's system/build.mjs from a content file. Do not edit by hand. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="generator" content="${FORMAT}">
 <title>${esc(spec.title)} · guided plan</title>
 <script>(function(){var q=new URLSearchParams(location.search).get('theme');if(q==='dark'||q==='light')document.documentElement.dataset.theme=q;})();</script>
-<style>${css}</style></head>
+<style>${css}${extraCss}</style></head>
 <body>
 <main class="page">
 <button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
-<header class="top">
+<header class="top">${isBusiness(spec) ? `\n  <p class="audience"><b>For business stakeholders</b> who shape the product</p>` : ""}
   <h1>${esc(spec.title)}</h1>
-  <p class="intent">${inline(spec.intent)}</p>
-  <ol class="overview" aria-label="Decisions and changes">${overview}</ol>
+  <p class="intent">${inline(spec.intent)}</p>${askPanel(spec, secIndex)}${overview ? `\n  <ol class="overview" aria-label="Decisions and changes">${overview}</ol>` : ""}
   <p class="line">${meta}</p>
   ${intentSrc ? `<details class="src top-src"><summary>Sources for this summary</summary><ul class="srcs">${intentSrc}</ul></details>` : ""}
 </header>
@@ -387,7 +642,7 @@ const hrefw = (h) => (safeHref(h) ? tw(h) : 0);
 // every string the page draws, as many times as the page draws it (a source once in every section
 // that cites it, and once for each time intentCites names it), and a generous allowance for the
 // markup around each element. `uriLength(assetId)` is the length of that screenshot's data: URI.
-export function renderSizeBound(spec, { css = "", runtime = "", uriLength = () => 0, links } = {}) {
+export function renderSizeBound(spec, { css = "", runtime = "", uriLength = () => 0, links, features = {} } = {}) {
   links = links || { source: () => null, file: () => null };
   const sources = spec.sources;
   const sourceRow = (id) => {
@@ -414,12 +669,27 @@ export function renderSizeBound(spec, { css = "", runtime = "", uriLength = () =
       case "flow": return 200 + arr(f.steps).reduce((n, s) => n + 450 + tw((s || {}).label) + tw((s || {}).sub) + 2 * tw((s || {}).via), 0);
       case "layers": return 60 + arr(f.rows).reduce((n, r) => { r = r || {}; return n + 400 + tw(r.label) + tw(r.sub) + tw(r.text) + tw(r.tag) + arr(r.items).reduce((m, t) => m + 200 + tw(typeof t === "string" ? t : (t || {}).text), 0); }, 0);
       case "pair": return 100 + arr(f.sides).reduce((n, s) => { s = s || {}; return n + 300 + tw(s.label) + tw(s.note) + tw(s.caption) + (s.figure && s.figure.type !== "pair" ? body(s.figure) : 0); }, 0);
+      case "screen": {
+        const parts = (ps, depth) => arr(ps).reduce((n, p) => { p = p && typeof p === "object" ? p : {}; return n + 300 + tw(p.text) + tw(p.by) + arr(p.items).reduce((m, t) => m + 40 + tw(t), 0) + (depth === 0 ? parts(p.parts, 1) : 0); }, 0);
+        return 400 + tw(f.address) + parts(f.parts, 0);
+      }
+      case "lanes": {
+        // Two drawings and a list: each string three times; each wrapped line of it (at most one
+        // per character, plus one) a <text> element in each drawing; each step a box, a connector
+        // and a list item.
+        const strs = [...arr(f.lanes), ...arr(f.steps).map((s) => (s && typeof s === "object" ? s.text : ""))];
+        const lines = (t) => String(t ?? "").length + 1;
+        const lanesW = arr(f.lanes).reduce((n, l) => n + tw(l), 0);
+        return 1200 + arr(f.lanes).length * 400 + strs.reduce((n, t) => n + 3 * tw(t) + 2 * 200 * lines(t), 0) + arr(f.steps).length * (2 * 900 + 100 + lanesW);
+      }
       default: return 0;
     }
   };
   const figure = (f, idw) => (f ? 500 + idw + tw(f.title) + tw(f.caption) + body(f) : 0);
   let n = 3000 + tw(css) + tw(runtime) + 2 * tw(spec.title) + tw(spec.intent) + tw(spec.plan && spec.plan.name) + tw(spec.model);
-  for (const o of arr(spec.overview)) n += 300 + tw((o || {}).text) + 2 * tw((o || {}).section);
+  for (const f of FEATURES) if (typeof own(features, f) === "string") n += tw(own(features, f));
+  n += 600; // the audience line, the decide panel's frame and the meta line's audience
+  for (const o of arr(spec.overview)) n += 300 + tw((o || {}).text) + tw((o || {}).recommended) + 2 * tw((o || {}).section);
   for (const id of arr(spec.intentCites)) n += sourceRow(id);
   for (const sec of arr(spec.sections)) {
     const s = sec || {};

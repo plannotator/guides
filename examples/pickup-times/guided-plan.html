@@ -1,0 +1,564 @@
+<!doctype html>
+<!-- Guided plan (guided-plan/2). Built by the guided-plan skill's system/build.mjs from a content file. Do not edit by hand. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="guided-plan/2">
+<title>Order ahead for a pickup time · guided plan</title>
+<script>(function(){var q=new URLSearchParams(location.search).get('theme');if(q==='dark'||q==='light')document.documentElement.dataset.theme=q;})();</script>
+<style>:root{color-scheme:light;--bg:#fafaf9;--surface:#ffffff;--tint:#f5f5f3;--ink:#1d1d1f;--ink2:rgba(29,29,31,.66);--ink3:rgba(29,29,31,.64);--line:rgba(29,29,31,.2);--hair:rgba(29,29,31,.1);--grey:rgba(29,29,31,.1);--accent:#2f5ad6;--accent-soft:rgba(47,90,214,.12);--ghost:.55;--shot-dim:1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#141416;--surface:#1b1b1e;--tint:#18181a;--ink:#f1f1f2;--ink2:rgba(241,241,242,.68);--ink3:rgba(241,241,242,.56);--line:rgba(241,241,242,.22);--hair:rgba(241,241,242,.1);--grey:rgba(241,241,242,.12);--accent:#88a3ff;--accent-soft:rgba(136,163,255,.15);--ghost:.7;--shot-dim:.92}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:16px;line-height:1.5}
+code,.mono,.mono-t,.pos,.ov-n,.code pre,.chip,.tag,.s-w,.f-n,.pr-tag{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+code{font-size:.86em;background:var(--grey);padding:.08em .32em;border-radius:4px;overflow-wrap:anywhere}
+button{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+h2:focus,h3:focus{outline:none}
+h2:focus-visible,h3:focus-visible{outline:2px solid var(--accent)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.acc{color:var(--accent)}
+.ink{color:var(--ink)}
+
+/* page and top */
+.page{position:relative;max-width:1340px;margin:0 auto;padding:48px 40px 96px}
+.theme{position:absolute;top:48px;right:40px;border:1px solid var(--hair);background:transparent;border-radius:14px;padding:3px 12px;font-size:12.5px;color:var(--ink2);cursor:pointer}
+.theme:hover{color:var(--ink);border-color:var(--line)}
+.top{max-width:820px;margin-bottom:32px}
+h1{font-size:28px;line-height:1.2;letter-spacing:-.015em;font-weight:600;margin:0 0 10px;padding-right:80px;text-wrap:balance}
+.intent{margin:0 0 22px;color:var(--ink2);font-size:16px;line-height:1.55;max-width:72ch}
+.overview{list-style:none;margin:0 0 4px;padding:0;border-top:1px solid var(--hair)}
+.ov a{display:grid;grid-template-columns:76px minmax(0,1fr) 28px;gap:14px;align-items:baseline;padding:9px 4px;border-bottom:1px solid var(--hair);text-decoration:none;color:inherit;border-radius:0}
+.ov a:hover .ov-n{color:var(--accent)}
+.ov-k{font-size:12.5px;color:var(--ink3)}
+.ov-t{font-size:15px;color:var(--ink)}
+.ov-n{font-size:11.5px;color:var(--ink3);text-align:right}
+.ov-open .ov-k{color:var(--accent);font-weight:600}
+.ov-open .ov-t{color:var(--accent)}
+.line{margin:16px 0 0;font-size:12.5px;color:var(--ink3)}
+.top-src{margin-top:8px}
+
+/* cards: the story on the left stays in view; the figures on the right scroll */
+.cards{display:flex;flex-direction:column;gap:18px}
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:14px;overflow:clip;scroll-margin-top:16px}
+.card-grid{display:grid;grid-template-columns:380px minmax(0,1fr)}
+.left{padding:26px 28px 24px;border-right:1px solid var(--hair);min-width:0}
+.left-in{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain;margin:-4px;padding:4px}
+.label{display:flex;gap:12px;align-items:baseline;margin:0 0 10px;font-size:13.5px;color:var(--ink3)}
+.pos{font-size:12px;flex:none}
+.left h2{font-size:24px;line-height:1.2;letter-spacing:-.012em;font-weight:650;margin:0 0 12px;text-wrap:balance}
+.question{margin:0 0 14px;font-size:19px;line-height:1.3;font-weight:600;color:var(--accent);max-width:34ch;text-wrap:balance}
+.sub{margin:0 0 8px;color:var(--ink2);font-size:15.5px;line-height:1.55;max-width:60ch}
+.right{background:var(--tint);padding:24px;min-width:0}
+
+/* figures */
+.fx{container-type:inline-size}
+.fig{margin:0;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:24px;min-width:0}
+.fig-h{display:flex;flex-direction:column;gap:1px;margin-bottom:18px}
+.fig-k{font-size:12px;color:var(--ink3)}
+.fig-t{font-size:15px;font-weight:600;color:var(--ink)}
+.cap{margin:18px 0 0;font-size:14.5px;line-height:1.5;color:var(--ink2);max-width:66ch}
+.mini{margin:8px 0 0;font-size:13.5px;line-height:1.45;color:var(--ink2)}
+.mini.ink{color:var(--ink)}
+
+/* side cards */
+.sides-w{container-type:inline-size;margin-top:16px}
+.sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@container (max-width:620px){.sides{grid-template-columns:minmax(0,1fr)}}
+.side{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:22px;min-width:0;scroll-margin-top:16px}
+.side.wide{grid-column:1 / -1}
+.side h3{margin:0 0 8px;font-size:16px;font-weight:600}
+.side-t p{margin:0 0 8px;font-size:14.5px;line-height:1.55;color:var(--ink2);max-width:66ch}
+.side .fig{border:0;padding:0;margin-top:14px;background:transparent;border-radius:0}
+.side .fig-h{margin-bottom:10px}
+.side .fig-t{font-size:13.5px;font-weight:500;color:var(--ink2)}
+.fold{margin-top:10px}
+.fold summary,.src summary{cursor:pointer;width:max-content;max-width:100%;list-style:none;font-size:13px;color:var(--ink2)}
+.fold summary::-webkit-details-marker,.src summary::-webkit-details-marker{display:none}
+.fold summary::before,.src summary::before{content:"\203A";display:inline-block;width:12px;transition:transform 160ms ease-out}
+.fold[open] summary::before,.src[open] summary::before{transform:rotate(90deg)}
+.fold summary:hover,.src summary:hover{color:var(--ink)}
+
+/* files and sources */
+.folds{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.src{font-size:12.5px;color:var(--ink3)}
+.files{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;max-width:720px}
+.file{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:baseline;column-gap:10px;width:100%;text-align:left;border:1px solid var(--hair);border-radius:8px;padding:7px 10px;background:var(--surface);text-decoration:none;color:inherit}
+a.file{cursor:pointer}
+a.file:hover{border-color:var(--line)}
+.f-n{font-size:12px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.f-d{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.f-d code{background:none;padding:0;color:var(--ink2)}
+.srcs{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;max-width:780px}
+.srcs li{display:flex;flex-direction:column;gap:1px}
+.s-l{color:var(--ink2);font-size:13px}
+.s-w{font-size:11px;overflow-wrap:anywhere;color:inherit}
+.s-q q{font-style:italic;color:var(--ink3)}
+.s-q q::before{content:"\201C"}.s-q q::after{content:"\201D"}
+.tag{font-size:11px;color:var(--ink3);border:1px solid var(--hair);border-radius:10px;padding:0 7px;white-space:nowrap}
+.tag-acc{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+
+/* screenshot */
+.cap-wrap{display:flex;justify-content:center}
+.shot{position:relative;width:100%;border:1px solid var(--hair);border-radius:10px;overflow:hidden;background:var(--surface)}
+.shot img{display:block;width:100%;height:auto;filter:brightness(var(--shot-dim))}
+.shot .ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.shot .ring rect{fill:none;stroke:var(--accent);stroke-width:2.5}
+
+/* code: lines wrap, nothing scrolls sideways */
+.code{width:100%;border:1px solid var(--hair);border-radius:10px;background:var(--surface);overflow:hidden}
+.code-h{display:flex;flex-wrap:wrap;gap:2px 12px;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--hair);font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px}
+.code-p{color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.code-at{color:var(--ink3)}
+.code pre{margin:0;padding:8px 0;font-size:12.5px;line-height:1.6;white-space:normal}
+.code pre:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.ln{display:grid;grid-template-columns:44px 16px minmax(0,1fr)}
+.ln .no{text-align:right;padding-right:8px;color:var(--ink3);user-select:none}
+.ln .sg{color:var(--accent);user-select:none}
+.ln .tx{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink2);padding-right:12px}
+.ln.out,.ln.hl{background:var(--accent-soft)}
+.ln.out .tx,.ln.hl .tx{color:var(--ink)}
+.ln.hl{box-shadow:inset 3px 0 0 var(--accent)}
+@container (max-width:420px){.ln{grid-template-columns:34px 12px minmax(0,1fr)}.code pre{font-size:12px}}
+
+/* list */
+.rows{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--hair);border-radius:10px}
+.rows li{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:11px 14px;border-top:1px solid var(--hair)}
+.rows li:first-child{border-top:0}
+.rows .mono-t{font-size:13px;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.rows .t{font-size:14.5px;color:var(--ink)}
+.rows .n{font-size:13.5px;color:var(--ink3);flex:1 1 12ch}
+.rows .tag{margin-left:auto}
+.rows li.out .t,.rows li.out .mono-t{color:var(--ink3);text-decoration:line-through;text-decoration-color:var(--line)}
+.rows li.new{box-shadow:inset 3px 0 0 var(--accent)}
+.rows li.new .t,.rows li.new .mono-t,.rows li.acc .t,.rows li.acc .mono-t{color:var(--accent)}
+
+/* table: one grid; under 520 px of room each row becomes a small block with its labels */
+.tbw{border:1px solid var(--hair);border-radius:10px;background:var(--surface)}
+.tb{display:grid}
+.tr{display:contents}
+.td{padding:9px 14px;border-top:1px solid var(--hair);font-size:13.5px;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.tr:first-child .td{border-top:0}
+.th .td{font-size:12px;color:var(--ink3)}
+.td.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px}
+.td.acc{color:var(--accent);font-weight:600}
+.td.end{text-align:right}
+@container (max-width:520px){
+  .tb{display:block}
+  .tr{display:block;padding:10px 12px;border-top:1px solid var(--hair)}
+  .tr:first-child{border-top:0}
+  .th{display:none}
+  .th+.tr{border-top:0}
+  .td{display:flex;gap:10px;align-items:baseline;padding:2px 0;border-top:0;text-align:left}
+  .td.end{text-align:left}
+  .td::before{content:attr(data-l);flex:none;width:34%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;font-size:12px;font-weight:400;color:var(--ink3)}
+}
+
+/* chips */
+.chips{list-style:none;margin:0;padding:2px 0;display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12.5px;padding:3px 9px;border:1px solid var(--hair);border-radius:8px;color:var(--ink2);background:var(--surface);position:relative;overflow-wrap:anywhere;min-width:0}
+.chip.acc{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip.new{border:1.5px dashed var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip.out{border:1.5px dashed var(--accent);color:var(--accent);text-decoration:line-through;background:transparent}
+.chip.changed i{position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)}
+.chip.sm{font-size:11px;padding:0 6px;margin:0 6px 0 0}
+.key{margin:14px 0 0;font-size:12.5px;color:var(--ink3);display:flex;flex-wrap:wrap;gap:6px 18px}
+.key-i{display:inline-flex;align-items:center}
+.lay .chips{margin-top:8px}
+
+/* timeline: a row of stops; under 460 px of room it runs down the page */
+.trk{list-style:none;margin:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));row-gap:16px;padding:4px 0 2px}
+.band{grid-row:1;grid-column:var(--b1) / var(--b2);margin:0 4px;border-radius:6px;background:var(--grey);color:var(--ink);font-size:13px;text-align:center;padding:5px 8px}
+.band.acc{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.25px var(--accent);font-weight:500}
+.stop{grid-row:2;grid-column:var(--c);position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:30px 6px 0;min-width:0}
+.trk:not(.has-bands) .stop{grid-row:1}
+.stop::before{content:"";position:absolute;top:10px;left:0;right:0;height:1.5px;background:var(--line)}
+.stop.first::before{left:50%}.stop.last::before{right:50%}
+.stop.first.last::before{display:none}
+.stop .dot{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink3);background:var(--surface);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--accent)}
+.stop .dot.acc{border-color:var(--accent);background:var(--accent-soft)}
+.stop .dot.ask{width:24px;height:24px;top:-1px;border-color:var(--accent)}
+.stop b{font-size:14px;font-weight:600;overflow-wrap:anywhere;max-width:100%}
+.stop b.mono{font-size:12.5px;font-weight:500}
+.stop span{font-size:13px;color:var(--ink2);line-height:1.4;overflow-wrap:anywhere;max-width:100%}
+@container (max-width:460px){
+  .trk{grid-template-columns:minmax(0,1fr);row-gap:0}
+  .trk.has-bands{grid-template-columns:96px minmax(0,1fr);column-gap:12px}
+  .band{grid-column:1;grid-row:var(--b1) / var(--b2);margin:4px 0;display:flex;align-items:center;justify-content:center}
+  .stop{grid-row:var(--c);grid-column:1;align-items:flex-start;text-align:left;padding:0 0 14px 30px}
+  .trk.has-bands .stop{grid-column:2;grid-row:var(--c)}
+  .stop::before{top:0;bottom:0;left:7px;right:auto;width:1.5px;height:auto}
+  .stop.first::before{top:10px;left:7px}.stop.last::before{bottom:auto;height:10px;right:auto}
+  .stop.first.last::before{display:none}
+  .stop .dot{top:2px;left:0;transform:none}
+  .stop .dot.ask{left:-4px;top:-2px}
+}
+
+/* flow: steps in order with arrows; under 560 px of room it runs down the page */
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:var(--tpl);gap:8px;align-items:stretch}
+@container (max-width:760px){.flow.long{grid-template-columns:minmax(0,1fr);gap:4px}.flow.long .fl-a{flex-direction:row;justify-content:flex-start;padding-left:18px;gap:10px;min-height:26px}.flow.long .fl-ar{width:10px;height:20px;background:linear-gradient(currentColor,currentColor) center top/1.5px 14px no-repeat}.flow.long .fl-ar::after{margin:12px 0 0 1.5px;transform:rotate(135deg)}}
+.fl-s{display:flex;flex-direction:column;gap:2px;justify-content:center;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);min-width:0}
+.fl-s b{font-size:14px;font-weight:600;overflow-wrap:break-word}
+.fl-s b.mono{font-size:12.5px;font-weight:500}
+.fl-s span{font-size:12.5px;color:var(--ink2);line-height:1.4;overflow-wrap:break-word}
+.fl-acc{border-color:var(--accent);background:var(--accent-soft)}
+.fl-acc b{color:var(--accent)}
+.fl-new{border-color:var(--accent);border-style:dashed;background:var(--accent-soft)}
+.fl-new b{color:var(--accent)}
+.fl-gone{border-style:dashed;background:transparent;opacity:var(--ghost)}
+.fl-gone b{text-decoration:line-through;text-decoration-color:var(--line);color:var(--ink3)}
+.fl-muted{border-color:transparent;background:var(--grey)}
+.fl-muted b{color:var(--ink2)}
+.fl-a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:22px;color:var(--ink3)}
+.fl-ar{display:block;width:22px;height:10px;background:linear-gradient(currentColor,currentColor) left center/16px 1.5px no-repeat}
+.fl-ar::after{content:"";display:block;margin-left:13px;margin-top:1px;width:7px;height:7px;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;transform:rotate(45deg)}
+.fl-v{font-size:11px;color:var(--ink3);text-align:center;line-height:1.2;white-space:nowrap}
+@container (max-width:560px){
+  .flow,.flow.long{grid-template-columns:minmax(0,1fr);gap:4px}
+  .fl-a{flex-direction:row;justify-content:flex-start;padding-left:18px;gap:10px;min-height:26px}
+  .fl-ar{width:10px;height:20px;background:linear-gradient(currentColor,currentColor) center top/1.5px 14px no-repeat}
+  .fl-ar::after{margin:12px 0 0 1.5px;transform:rotate(135deg)}
+  .fl-v{max-width:none;text-align:left}
+}
+
+/* layers: a label, what is there, and what happens to it */
+.lay{list-style:none;margin:0;padding:0}
+.lay-r{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:20px;padding:20px 0;border-top:1px solid var(--hair)}
+.lay-r:first-child{border-top:0;padding-top:0}
+.lay-r:last-child{padding-bottom:0}
+.lay-n b{display:block;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.lay-n span{font-size:13px;color:var(--ink3)}
+.lay-c{min-width:0}
+.lay-c .mini:first-child{margin-top:0}
+.lay-tag{text-align:right}
+.pr-tag{display:inline-block;font-size:12px;font-weight:600;color:var(--ink2);background:var(--grey);border-radius:10px;padding:2px 9px;white-space:nowrap}
+.pr-tag.acc{color:var(--accent);background:var(--accent-soft)}
+@container (max-width:640px){
+  .lay-r{grid-template-columns:minmax(0,1fr) auto;gap:10px 12px}
+  .lay-c{grid-column:1 / -1}
+  .lay-tag{grid-row:1;grid-column:2}
+}
+
+/* pair: before and after, side by side */
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.pair-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pair-s{min-width:0}
+.pair-h{margin:0 0 8px;display:flex;flex-direction:column;font-size:13.5px}
+.pair-h b{font-weight:600}
+.pair-h span{font-size:12.5px;color:var(--ink3)}
+@container (max-width:860px){.pair-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:600px){.pair,.pair-3{grid-template-columns:minmax(0,1fr)}}
+
+.keys{margin:28px 0 0;font-size:12.5px;color:var(--ink3)}
+
+@media (max-width:1100px){.card-grid{grid-template-columns:320px minmax(0,1fr)}}
+@media (max-width:760px){
+  .page{padding:24px 16px 64px}
+  .theme{top:24px;right:16px}
+  h1{font-size:24px;padding-right:64px}
+  .ov a{grid-template-columns:62px minmax(0,1fr) 22px;gap:10px}
+  .card-grid{grid-template-columns:minmax(0,1fr)}
+  .left{padding:18px 18px 14px;border-right:0;border-bottom:1px solid var(--hair)}
+  .left-in{position:static;max-height:none;overflow:visible}
+  .right{padding:14px}
+  .fig{padding:16px}
+  .side{padding:16px}
+  .keys{display:none}
+}
+/* Windows high contrast and other forced colours: colour and shadows are dropped, so every mark
+   that relies on them gets a border or outline in system colours (and words for a screen reader). */
+@media (forced-colors:active){
+  .ln.hl,.ln.out{box-shadow:none;border-left:3px solid Highlight}
+  .ln.out .tx{text-decoration:line-through}
+  .rows li.new,.rows li.acc{box-shadow:none;border-left:4px solid Highlight}
+  .rows li.out .t,.rows li.out .mono-t{text-decoration:line-through}
+  .fl-acc{border:3px solid Highlight}
+  .fl-new{border:3px dashed Highlight}
+  .fl-gone{border:1.5px dashed GrayText}
+  .band{border:1px solid CanvasText}
+  .band.acc{box-shadow:none;border:3px solid Highlight}
+  .stop .dot.acc{border:3px solid Highlight}
+  .stop .dot.ask{border:2px solid Highlight}
+  .stop::before{background:CanvasText}
+  .chip.acc,.chip.new{border:2px solid Highlight}
+  .chip.out{border:2px dashed Highlight}
+  .chip.changed i{forced-color-adjust:none;background:Highlight;border-color:Canvas}
+  .td.acc{text-decoration:underline}
+  .tag-acc,.pr-tag.acc{border:1px solid Highlight}
+  .shot .ring rect{stroke:Highlight}
+  .fl-a,.fl-a .fl-v{forced-color-adjust:none;color:CanvasText}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+.audience{margin:0 0 8px;padding-right:80px;font-size:12.5px;line-height:1.6;color:var(--ink3)}
+.audience b{margin-right:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);white-space:nowrap}
+@media (max-width:760px){.audience{padding-right:64px}}
+@media (forced-colors:active){.audience b{outline:1px solid Highlight}}
+.decide{margin:0 0 22px;padding:16px 18px 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.decide h2{margin:0;font-size:15px;line-height:1.4;font-weight:600}
+.decide-list{margin:6px 0 0;padding:0;list-style:none}
+.decide-list li+li{border-top:1px solid var(--hair)}
+.decide-row{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:12px;row-gap:6px;padding:10px 0;color:inherit;text-decoration:none}
+.decide-q{flex:1 1 22ch;min-width:0;font-size:15px;font-weight:600;color:var(--accent);overflow-wrap:anywhere}
+.decide-rec{flex:0 1 auto;max-width:32ch;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-soft);overflow-wrap:anywhere}
+.decide-at{flex:none;width:24px;text-align:end;font:11.5px ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;color:var(--ink3)}
+.decide-row:hover .decide-at{color:var(--accent)}
+.decide-none{margin:8px 0 10px;font-size:15px;color:var(--ink2)}
+@media (max-width:760px){.decide{padding:12px 14px 6px}.decide-q{flex-basis:calc(100% - 40px)}.decide-rec{order:3;max-width:none}}
+@media (forced-colors:active){.decide-rec{outline:1px solid Highlight}}
+.mock{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.mock-top{display:flex;align-items:center;min-height:30px;padding:6px 10px 6px 46px;position:relative;background:var(--tint);border-bottom:1px solid var(--hair)}
+.mock-top::before{content:"";position:absolute;left:10px;top:50%;width:28px;height:8px;margin-top:-4px;background:radial-gradient(circle 4px at 4px 4px,var(--grey) 98%,transparent) 0 0/10px 8px repeat-x}
+.mock-url{flex:1;min-width:0;padding:1px 8px;border:1px solid var(--hair);border-radius:6px;background:var(--surface);font-size:11.5px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mock-body{display:grid;gap:10px;padding:14px;min-width:0}
+.mock-body>*,.mk-card>*{margin:0;min-width:0;overflow-wrap:anywhere}
+.mk-heading{font-size:16px;font-weight:600;line-height:1.3}
+.mk-text{font-size:13px;line-height:1.45;color:var(--ink2)}
+.mk-box{position:relative;min-height:42px;padding:11px 12px;border:1px solid var(--hair);border-radius:8px;background:var(--surface);font-size:13px;color:var(--ink2)}
+.mk-box[data-pin]::after{content:"";position:absolute;top:-8px;right:16px;width:15px;height:15px;background:var(--accent);border-radius:50% 50% 50% 0;transform:rotate(-45deg);outline:3px solid var(--bg)}
+.mk-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.mk-btn{padding:3px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:12px;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.mk-msg{display:grid;gap:2px;padding-left:9px;border-left:2px solid transparent;font-size:13px;line-height:1.4}
+.mk-by{font-size:12px;font-weight:600;color:var(--ink2)}
+.mk-status{display:flex;gap:7px;align-items:baseline;font-size:12px;line-height:1.4;color:var(--ink3)}
+.mk-status::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:currentColor;transform:translateY(-1px)}
+.mk-menu{width:max-content;max-width:100%;min-width:min(150px,100%);padding:4px;list-style:none;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:12.5px}
+.mk-menu li{padding:3px 8px;overflow-wrap:anywhere}
+.mk-card{display:grid;gap:9px;margin-left:12%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 6px 16px var(--grey)}
+.mk-card .mk-buttons,.mk-card .mk-menu,.mk-card .mk-status{margin-left:11px}
+.mk-card .mk-menu{max-width:calc(100% - 11px)}
+[data-mark=new],[data-mark=acc]{color:var(--accent)}
+:is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=new]{border:1.5px dashed var(--accent);background:var(--accent-soft)}
+:is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=acc]{border:1.5px solid var(--accent);background:var(--accent-soft)}
+.mk-msg:is([data-mark=new],[data-mark=acc]){color:var(--ink);border-left-color:var(--accent)}
+.mk-msg[data-mark=new]{border-left-style:dashed}
+.mk-msg:is([data-mark=new],[data-mark=acc]) .mk-by,[data-mark=changed]{color:var(--accent)}
+[data-mark=out]{text-decoration:line-through;text-decoration-color:var(--ink3);opacity:var(--ghost)}
+.pair:has(>.pair-s>.mock){align-items:stretch}
+.pair-s:has(>.mock){display:flex;flex-direction:column}
+.pair-s>.mock{flex:1}
+@container (max-width:470px){.mk-card{margin-left:0}}
+@media (forced-colors:active){
+  :is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=new]{border:2px dashed Highlight}
+  :is(.mk-btn,.mk-menu,.mk-box,.mk-card)[data-mark=acc]{border:2px solid Highlight}
+  .mk-msg:is([data-mark=new],[data-mark=acc]){border-left:3px solid Highlight}
+  .mk-box[data-pin]::after,.mock-top::before{forced-color-adjust:none;background:CanvasText}
+}
+.lanes>svg{display:block;width:100%;height:auto;overflow:visible}
+.lanes>.lanes-n{display:none;max-width:440px;margin-inline:auto}
+@container (max-width:480px){.lanes>.lanes-w{display:none}.lanes>.lanes-n{display:block}}
+.lanes text{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;font-weight:500;fill:var(--ink)}
+.lanes .lg-head{fill:var(--ink2)}
+.lanes .lg-label.is-marked{fill:var(--accent);font-weight:600}
+.lg-rule{stroke:var(--hair)}
+.lg-step{fill:var(--surface);stroke:var(--line)}
+.lg-step.is-acc,.lg-step.is-new{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.5}
+.lg-step.is-new{stroke-dasharray:4 3}
+.lg-link{fill:none;stroke:var(--ink3);stroke-width:1.5}
+.lg-tip{fill:var(--ink3)}
+@media (forced-colors:active){
+  .lanes>svg{forced-color-adjust:none}
+  .lanes text,.lanes .lg-head{fill:CanvasText}
+  .lanes .lg-label.is-marked{fill:Highlight}
+  .lg-rule{stroke:GrayText}
+  .lg-step{fill:Canvas;stroke:CanvasText}
+  .lg-step.is-acc,.lg-step.is-new{fill:Canvas;stroke:Highlight;stroke-width:3}
+  .lg-link{stroke:CanvasText}
+  .lg-tip{fill:CanvasText}
+}
+</style></head>
+<body>
+<main class="page">
+<button type="button" class="theme" id="theme" aria-label="Switch light or dark">Dark</button>
+<header class="top">
+  <p class="audience"><b>For business stakeholders</b> who shape the product</p>
+  <h1>Order ahead for a pickup time</h1>
+  <p class="intent">Customers can order for a day and an hour, and the counter and the baker work from that pickup time. Last month the counter took 41 order-ahead requests by phone. Orders for now work as today.</p>
+  <section class="decide" aria-labelledby="decide_h"><h2 id="decide_h">What you are asked to decide</h2><ol class="decide-list"><li><a class="decide-row" href="#decisions" data-jump="decisions"><span class="decide-q">How far ahead may a customer order?</span><span class="decide-rec"><span class="sr">Recommended: </span>Up to two days</span><span class="decide-at">05</span></a></li><li><a class="decide-row" href="#decisions" data-jump="decisions"><span class="decide-q">Do customers pay when they order ahead, or at pickup?</span><span class="decide-rec"><span class="sr">Recommended: </span>At pickup, as today</span><span class="decide-at">05</span></a></li></ol></section>
+  <p class="line">7 sections · for business stakeholders · from PLAN.md · generated by Claude Opus 5.5</p>
+  <details class="src top-src"><summary>Sources for this summary</summary><ul class="srcs"><li><span class="s-l">Why customers ask for it</span><span class="s-w">PLAN.<wbr>md:5</span><span class="s-q"><q>Customers ask to order on Friday for a Saturday cake, and today they cannot.</q> <q>The counter staff took 41 order-ahead requests by phone last month and wrote them on paper.</q></span></li><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details>
+</header>
+<div class="cards">
+<section class="card" id="customer-sees" data-sec="0" aria-labelledby="customer-sees-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">01 / 07</span><span>What the customer sees</span></p>
+      <h2 id="customer-sees-h" tabindex="-1">A pickup time on the order page</h2>
+      
+      <p class="sub">The customer picks when to collect: as soon as possible, as today, or a day and an hour.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 2</summary><ul class="srcs"><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The order page today</span><span class="s-w">views/<wbr>order.<wbr>html:6-<wbr>14 at 42ec8feb0</span><span class="s-q"><q>Order for pickup</q> <q>Your name</q> <q>Phone</q> <q>What you would like</q> <q>Ready as soon as it is baked. We text you when it is on the counter.</q> <q>Place order</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-pair" id="customer-sees-f">
+  <div class="fig-h"><span class="fig-k">Before and after</span><span class="fig-t">The order page, today and with this plan</span></div>
+  <div class="pair pair-2"><div class="pair-s">
+    <p class="pair-h"><b class="">Today</b></p>
+    <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">larkspur.example/order</span></div><div class="mock-body"><p class="mk-heading">Order for pickup</p><div class="mk-box">Your name</div><div class="mk-box">Phone</div><div class="mk-box">What you would like</div><p class="mk-text">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="mk-buttons"><span class="mk-btn">Place order</span></div></div></div>
+    
+  </div><div class="pair-s">
+    <p class="pair-h"><b class="acc">With this plan</b></p>
+    <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">larkspur.example/order</span></div><div class="mock-body"><p class="mk-heading">Order for pickup</p><div class="mk-box">Your name</div><div class="mk-box">Phone</div><div class="mk-box">What you would like</div><div class="mk-box" data-mark="new">Pickup time: as soon as possible<span class="sr"> (new)</span></div><ul class="mk-menu" data-mark="new"><li>As soon as possible</li><li>Tomorrow, morning</li><li>Saturday, noon</li><li class="sr">new</li></ul><p class="mk-text">Ready as soon as it is baked. We text you when it is on the counter.</p><div class="mk-buttons"><span class="mk-btn">Place order</span></div></div></div>
+    
+  </div></div>
+  <figcaption class="cap">As soon as possible stays the default, so an order for now works as today.</figcaption>
+</figure></div>
+  </div>
+</section>
+<section class="card" id="who-does-what" data-sec="1" aria-labelledby="who-does-what-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">02 / 07</span><span>Who does what</span></p>
+      <h2 id="who-does-what-h" tabindex="-1">Everyone works from the pickup time</h2>
+      
+      <p class="sub">The counter&#39;s board and the baker&#39;s morning list follow the pickup time, not the time the order arrived.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 6</summary><ul class="srcs"><li><span class="s-l">The board by pickup time</span><span class="s-w">PLAN.<wbr>md:10</span><span class="s-q"><q>The counter&#39;s board lists orders by pickup time, not by when they arrived.</q> <q>Orders for later days sit under a &quot;Later&quot; heading.</q></span></li><li><span class="s-l">The baker&#39;s morning list</span><span class="s-w">PLAN.<wbr>md:11</span><span class="s-q"><q>The baker&#39;s morning list is the board for that day, grouped by hour.</q></span></li><li><span class="s-l">The board today</span><span class="s-w">src/<wbr>orders.<wbr>js:2 at 42ec8feb0</span><span class="s-q"><q>Every order is for now: the board shows orders in the order they arrived.</q></span></li><li><span class="s-l">The pickup time choice</span><span class="s-w">PLAN.<wbr>md:9</span><span class="s-q"><q>The order page gets a pickup time choice: as soon as possible, which is today&#39;s behaviour and stays the default, or a day and an hour.</q></span></li><li><span class="s-l">The morning text</span><span class="s-w">PLAN.<wbr>md:12</span><span class="s-q"><q>The customer gets one text message on the morning of pickup.</q> <q>The text we send today when an order is on the counter stays.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-lanes" id="who-does-what-f">
+  <div class="fig-h"><span class="fig-k">Who does what</span><span class="fig-t">One order ahead, from the page to the counter</span></div>
+  <div class="lanes"><svg class="lanes-w" viewBox="-1 -1 642 565.8" aria-hidden="true" focusable="false"><line class="lg-rule" x1="0" y1="40" x2="640" y2="40"/><line class="lg-rule" x1="213.3" y1="0" x2="213.3" y2="563.8"/><line class="lg-rule" x1="426.7" y1="0" x2="426.7" y2="563.8"/><text class="lg-head" x="106.7" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="lg-head" x="320" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="lg-head" x="533.3" y="20" font-size="12.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="lg-link" d="M106.7 112.3 V121.3 A6 6 0 0 0 112.7 127.3 H314 A6 6 0 0 1 320 133.3 V135.3"/><polygon class="lg-tip" points="320,142.3 316,135.3 324,135.3"/><path class="lg-link" d="M320 199.6 V208.6 A6 6 0 0 0 326 214.6 H527.4 A6 6 0 0 1 533.4 220.6 V222.6"/><polygon class="lg-tip" points="533.4,229.6 529.4,222.6 537.4,222.6"/><path class="lg-link" d="M533.4 286.9 V295.9 A6 6 0 0 1 527.4 301.9 H112.7 A6 6 0 0 0 106.7 307.9 V309.9"/><polygon class="lg-tip" points="106.7,316.9 102.7,309.9 110.7,309.9"/><path class="lg-link" d="M106.7 374.2 V383.2 A6 6 0 0 0 112.7 389.2 H314 A6 6 0 0 1 320 395.2 V397.2"/><polygon class="lg-tip" points="320,404.2 316,397.2 324,397.2"/><path class="lg-link" d="M320 461.5 V470.5 A6 6 0 0 1 314 476.5 H112.7 A6 6 0 0 0 106.7 482.5 V484.5"/><polygon class="lg-tip" points="106.7,491.5 102.7,484.5 110.7,484.5"/><rect class="lg-step is-new" x="6" y="55" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="106.7" y="75.3" font-size="13" text-anchor="middle" dominant-baseline="central">Orders and picks</text><text class="lg-label is-marked" x="106.7" y="92" font-size="13" text-anchor="middle" dominant-baseline="central">a pickup time</text><rect class="lg-step is-acc" x="219.3" y="142.3" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="320" y="162.6" font-size="13" text-anchor="middle" dominant-baseline="central">Sees it on the board</text><text class="lg-label is-marked" x="320" y="179.3" font-size="13" text-anchor="middle" dominant-baseline="central">by pickup time</text><rect class="lg-step is-new" x="432.7" y="229.6" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="533.4" y="249.9" font-size="13" text-anchor="middle" dominant-baseline="central">Bakes from the morning</text><text class="lg-label is-marked" x="533.4" y="266.6" font-size="13" text-anchor="middle" dominant-baseline="central">list, grouped by hour</text><rect class="lg-step is-new" x="6" y="316.9" width="201.3" height="57.3" rx="8"/><text class="lg-label is-marked" x="106.7" y="337.2" font-size="13" text-anchor="middle" dominant-baseline="central">Gets a text on the</text><text class="lg-label is-marked" x="106.7" y="353.9" font-size="13" text-anchor="middle" dominant-baseline="central">morning of pickup</text><rect class="lg-step" x="219.3" y="404.2" width="201.3" height="57.3" rx="8"/><text class="lg-label" x="320" y="432.9" font-size="13" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="lg-step" x="6" y="491.5" width="201.3" height="57.3" rx="8"/><text class="lg-label" x="106.7" y="520.2" font-size="13" text-anchor="middle" dominant-baseline="central">Pays at pickup</text></svg><svg class="lanes-n" viewBox="-1 -1 342 693.1" aria-hidden="true" focusable="false"><line class="lg-rule" x1="0" y1="34.7" x2="340" y2="34.7"/><line class="lg-rule" x1="113.3" y1="0" x2="113.3" y2="691.1"/><line class="lg-rule" x1="226.7" y1="0" x2="226.7" y2="691.1"/><text class="lg-head" x="56.7" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Customer</text><text class="lg-head" x="170" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Counter</text><text class="lg-head" x="283.3" y="17.4" font-size="11.5" text-anchor="middle" dominant-baseline="central">Baker</text><path class="lg-link" d="M56.7 130.1 V138.1 A6 6 0 0 0 62.7 144.1 H164 A6 6 0 0 1 170 150.1 V151.1"/><polygon class="lg-tip" points="170,158.1 166,151.1 174,151.1"/><path class="lg-link" d="M170 239.5 V247.5 A6 6 0 0 0 176 253.5 H277.3 A6 6 0 0 1 283.3 259.5 V260.5"/><polygon class="lg-tip" points="283.3,267.5 279.3,260.5 287.3,260.5"/><path class="lg-link" d="M283.3 348.9 V356.9 A6 6 0 0 1 277.3 362.9 H62.7 A6 6 0 0 0 56.7 368.9 V369.9"/><polygon class="lg-tip" points="56.7,376.9 52.7,369.9 60.7,369.9"/><path class="lg-link" d="M56.7 458.3 V466.3 A6 6 0 0 0 62.7 472.3 H164 A6 6 0 0 1 170 478.3 V479.3"/><polygon class="lg-tip" points="170,486.3 166,479.3 174,479.3"/><path class="lg-link" d="M170 567.7 V575.7 A6 6 0 0 1 164 581.7 H62.7 A6 6 0 0 0 56.7 587.7 V588.7"/><polygon class="lg-tip" points="56.7,595.7 52.7,588.7 60.7,588.7"/><rect class="lg-step is-new" x="3" y="48.7" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="56.7" y="74" font-size="12" text-anchor="middle" dominant-baseline="central">Orders and</text><text class="lg-label is-marked" x="56.7" y="89.4" font-size="12" text-anchor="middle" dominant-baseline="central">picks a</text><text class="lg-label is-marked" x="56.7" y="104.8" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="lg-step is-acc" x="116.3" y="158.1" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="170" y="183.4" font-size="12" text-anchor="middle" dominant-baseline="central">Sees it on</text><text class="lg-label is-marked" x="170" y="198.8" font-size="12" text-anchor="middle" dominant-baseline="central">the board by</text><text class="lg-label is-marked" x="170" y="214.2" font-size="12" text-anchor="middle" dominant-baseline="central">pickup time</text><rect class="lg-step is-new" x="229.7" y="267.5" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="283.3" y="285.2" font-size="12" text-anchor="middle" dominant-baseline="central">Bakes from</text><text class="lg-label is-marked" x="283.3" y="300.5" font-size="12" text-anchor="middle" dominant-baseline="central">the morning</text><text class="lg-label is-marked" x="283.3" y="315.9" font-size="12" text-anchor="middle" dominant-baseline="central">list, grouped</text><text class="lg-label is-marked" x="283.3" y="331.2" font-size="12" text-anchor="middle" dominant-baseline="central">by hour</text><rect class="lg-step is-new" x="3" y="376.9" width="107.3" height="81.4" rx="8"/><text class="lg-label is-marked" x="56.7" y="402.2" font-size="12" text-anchor="middle" dominant-baseline="central">Gets a text on</text><text class="lg-label is-marked" x="56.7" y="417.6" font-size="12" text-anchor="middle" dominant-baseline="central">the morning</text><text class="lg-label is-marked" x="56.7" y="433" font-size="12" text-anchor="middle" dominant-baseline="central">of pickup</text><rect class="lg-step" x="116.3" y="486.3" width="107.3" height="81.4" rx="8"/><text class="lg-label" x="170" y="527" font-size="12" text-anchor="middle" dominant-baseline="central">Hands it over</text><rect class="lg-step" x="3" y="595.7" width="107.3" height="81.4" rx="8"/><text class="lg-label" x="56.7" y="636.4" font-size="12" text-anchor="middle" dominant-baseline="central">Pays at pickup</text></svg><ol class="sr"><li>Customer: Orders and picks a pickup time<span class="sr"> (new)</span></li><li>Counter: Sees it on the board by pickup time<span class="sr"> (highlighted)</span></li><li>Baker: Bakes from the morning list, grouped by hour<span class="sr"> (new)</span></li><li>Customer: Gets a text on the morning of pickup<span class="sr"> (new)</span></li><li>Counter: Hands it over</li><li>Customer: Pays at pickup</li></ol></div>
+  <figcaption class="cap">Orders for later days wait on the board under a Later heading.</figcaption>
+</figure></div>
+  </div>
+</section>
+<section class="card" id="morning-text" data-sec="2" aria-labelledby="morning-text-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">03 / 07</span><span>What the customer gets that morning</span></p>
+      <h2 id="morning-text-h" tabindex="-1">One more text, on pickup morning</h2>
+      
+      <p class="sub">The text sent today when an order is on the counter stays. An order ahead adds one text on the morning of pickup.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">The morning text</span><span class="s-w">PLAN.<wbr>md:12</span><span class="s-q"><q>The customer gets one text message on the morning of pickup.</q> <q>The text we send today when an order is on the counter stays.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-screen" id="morning-text-f">
+  <div class="fig-h"><span class="fig-k">Mock-up</span><span class="fig-t">The customer&#39;s messages on pickup day</span></div>
+  <div class="mock"><div class="mock-top" aria-hidden="true"><span class="mock-url">Messages: Larkspur</span></div><div class="mock-body"><p class="mk-status" data-mark="new">Sent on the morning of pickup<span class="sr"> (new)</span></p><div class="mk-msg" data-mark="new"><b class="mk-by">Larkspur</b><span>Good morning! Your order is for today. See you at the counter.</span><span class="sr"> (new)</span></div><p class="mk-status">Sent when it is on the counter, as today</p><div class="mk-msg"><b class="mk-by">Larkspur</b><span>Your order is on the counter.</span></div></div></div>
+  <figcaption class="cap">The wording here is an example; the plan names when each text goes, not what it says.</figcaption>
+</figure></div>
+  </div>
+</section>
+<section class="card" id="for-us" data-sec="3" aria-labelledby="for-us-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">04 / 07</span><span>What changes for the shop</span></p>
+      <h2 id="for-us-h" tabindex="-1">Nothing new to buy</h2>
+      
+      <p class="sub">The board changes its order, the baker gets a morning list, and the text service sends one more message per order ahead.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 4</summary><ul class="srcs"><li><span class="s-l">The board by pickup time</span><span class="s-w">PLAN.<wbr>md:10</span><span class="s-q"><q>The counter&#39;s board lists orders by pickup time, not by when they arrived.</q> <q>Orders for later days sit under a &quot;Later&quot; heading.</q></span></li><li><span class="s-l">The baker&#39;s morning list</span><span class="s-w">PLAN.<wbr>md:11</span><span class="s-q"><q>The baker&#39;s morning list is the board for that day, grouped by hour.</q></span></li><li><span class="s-l">What it costs</span><span class="s-w">PLAN.<wbr>md:29</span><span class="s-q"><q>The morning text uses the text service we already pay for, one more message per order ahead.</q></span></li><li><span class="s-l">What stays</span><span class="s-w">PLAN.<wbr>md:16</span><span class="s-q"><q>Paying at pickup stays.</q> <q>Orders for now work exactly as today.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-list" id="for-us-f">
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">New for the shop, and what stays</span></div>
+  <ul class="rows"><li class=""><span class="t">The order board, by pickup time</span><span class="tag tag-acc">Changes</span></li><li class=""><span class="t">The baker&#39;s morning list</span><span class="tag">New</span></li><li class=""><span class="t">One more text per order ahead</span><span class="tag">Text service we pay for</span></li><li class=""><span class="t">Paying at pickup</span><span class="tag">Stays</span></li></ul>
+  
+</figure></div>
+  </div>
+</section>
+<section class="card" id="decisions" data-sec="4" aria-labelledby="decisions-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">05 / 07</span><span>Your choices</span></p>
+      <h2 id="decisions-h" tabindex="-1">Two choices, each with a recommendation</h2>
+      
+      <p class="sub">The baker cannot plan flour a week ahead, and paying online needs a card service, a second project.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 2</summary><ul class="srcs"><li><span class="s-l">Question: how far ahead</span><span class="s-w">PLAN.<wbr>md:20</span><span class="s-q"><q>How far ahead may a customer order? We recommend up to two days.</q> <q>A week would let customers plan parties, but the baker cannot plan flour that far.</q></span></li><li><span class="s-l">Question: when customers pay</span><span class="s-w">PLAN.<wbr>md:21</span><span class="s-q"><q>Should a customer pay when they order ahead, or at pickup? We recommend at pickup, as today.</q> <q>Paying online needs a card service, which is a second project.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-table" id="decisions-f">
+  <div class="fig-h"><span class="fig-k">Table</span><span class="fig-t">Our pick for each question, and the other option</span></div>
+  <div class="tbw"><div class="tb" role="table" aria-label="Our pick for each question, and the other option" style="grid-template-columns:auto auto minmax(0,1fr)"><div class="tr th" role="row"><span class="td" role="columnheader">Question</span><span class="td" role="columnheader">Recommended</span><span class="td fill" role="columnheader">Instead</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">How far ahead?</span><span class="td acc" role="cell" data-l="Recommended">Up to two days<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">A week, for parties</span></div><div class="tr" role="row"><span class="td" role="cell" data-l="Question">When do they pay?</span><span class="td acc" role="cell" data-l="Recommended">At pickup, as today<span class="sr"> (highlighted)</span></span><span class="td fill" role="cell" data-l="Instead">When they order, online</span></div></div></div>
+  
+</figure></div>
+  </div>
+</section>
+<section class="card" id="work" data-sec="5" aria-labelledby="work-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">06 / 07</span><span>The work</span></p>
+      <h2 id="work-h" tabindex="-1">Four pieces, in order</h2>
+      
+      <p class="sub">The pickup time on the page comes first and the morning text comes last.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">The order of the work</span><span class="s-w">PLAN.<wbr>md:25</span><span class="s-q"><q>(1) the pickup time on the order page; (2) the board by pickup time; (3) the baker&#39;s morning list; (4) the morning text.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-timeline" id="work-f">
+  <div class="fig-h"><span class="fig-k">Timeline</span><span class="fig-t">Pieces of work, first to last</span></div>
+  <ol class="trk has-bands" style="--n:4"><span class="band acc" style="--b1:1;--b2:2">What customers see<span class="sr"> (highlighted)</span></span><span class="band" style="--b1:2;--b2:5">Behind the counter</span><li class="stop first" style="--c:1"><span class="dot acc" aria-hidden="true"></span><b class="">Pickup time on the page</b><span class="sr"> (highlighted)</span></li><li class="stop" style="--c:2"><span class="dot" aria-hidden="true"></span><b class="">Board by pickup time</b></li><li class="stop" style="--c:3"><span class="dot" aria-hidden="true"></span><b class="">Baker&#39;s morning list</b></li><li class="stop last" style="--c:4"><span class="dot" aria-hidden="true"></span><b class="">Morning text</b></li></ol>
+  
+</figure></div>
+  </div>
+</section>
+<section class="card" id="risks" data-sec="6" aria-labelledby="risks-h">
+  <div class="card-grid">
+    <div class="left"><div class="left-in">
+      <p class="label"><span class="pos">07 / 07</span><span>Risks</span></p>
+      <h2 id="risks-h" tabindex="-1">When we would end order ahead</h2>
+      
+      <p class="sub">If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.</p>
+      <div class="folds">
+  <details class="src"><summary>Sources · 1</summary><ul class="srcs"><li><span class="s-l">Risks</span><span class="s-w">PLAN.<wbr>md:33-<wbr>35</span><span class="s-q"><q>Too many orders for one hour on a Saturday. We would cap the orders per hour</q> <q>If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.</q> <q>The board&#39;s new order confuses the counter for a week. The counter staff see it before it goes live.</q></span></li></ul></details></div>
+    </div></div>
+    <div class="right"><figure class="fig fx fig-list" id="risks-f">
+  <div class="fig-h"><span class="fig-k">List</span><span class="fig-t">What could go wrong, and our answer</span></div>
+  <ul class="rows"><li class=""><span class="t">Customers order ahead and do not come</span><span class="tag tag-acc">Stop order ahead</span></li><li class=""><span class="t">Too many orders for one hour on a Saturday</span><span class="tag">Cap orders per hour</span></li><li class=""><span class="t">The new board confuses the counter</span><span class="tag">Shown to the counter first</span></li></ul>
+  
+</figure></div>
+  </div>
+</section>
+</div>
+<p class="keys">j and k, or the up and down arrows, move between sections.</p>
+</main>
+<script>
+(function () {
+  var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var root = document.documentElement;
+  var themeBtn = document.getElementById('theme');
+  function isDark() { return root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+  function paintTheme() {
+    var dark = isDark();
+    themeBtn.textContent = dark ? 'Light' : 'Dark';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light' : 'Switch to dark');
+  }
+  themeBtn.addEventListener('click', function () { root.dataset.theme = isDark() ? 'light' : 'dark'; paintTheme(); });
+  paintTheme();
+
+  function focusIn(el) {
+    var h = el.matches('section') ? el.querySelector('h2') : el.querySelector('h3');
+    if (h) { if (!h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+  // Jumps scroll without writing history: the page may sit inside a frame that owns the address.
+  document.querySelectorAll('[data-jump]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var t = document.getElementById(a.dataset.jump);
+      if (!t) return;
+      e.preventDefault();
+      t.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+      focusIn(t);
+    });
+  });
+
+  // j and k (or the arrows) move between sections.
+  var cards = Array.prototype.slice.call(document.querySelectorAll('[data-sec]'));
+  function current() {
+    var best = -1;
+    cards.forEach(function (c, i) { if (c.getBoundingClientRect().top <= 90) best = i; });
+    return best;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.tagName === 'PRE' || t.isContentEditable)) return;
+    var d = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!d) return;
+    var i = current() + d;
+    if (i < 0) { if (d < 0) { e.preventDefault(); window.scrollTo({ top: 0, behavior: still ? 'auto' : 'smooth' }); } return; }
+    if (i >= cards.length) return;
+    e.preventDefault();
+    cards[i].scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    focusIn(cards[i]);
+  });
+})();
+
+</script>
+</body></html>

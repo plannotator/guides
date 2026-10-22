@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Order from Larkspur</title></head>
+<body>
+<main>
+  <h1>Order for pickup</h1>
+  <form method="post" action="/orders">
+    <label>Your name <input name="name" required></label>
+    <label>Phone <input name="phone" type="tel" required></label>
+    <label>What you would like <textarea name="items" required></textarea></label>
+    <p class="note">Ready as soon as it is baked. We text you when it is on the counter.</p>
+    <button type="submit">Place order</button>
+  </form>
+  <p class="pay">You pay when you pick up.</p>
+</main>
+</body>
+</html>

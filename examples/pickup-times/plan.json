@@ -1,0 +1,522 @@
+{
+  "format": "guided-plan/2",
+  "audience": "business",
+  "title": "Order ahead for a pickup time",
+  "intent": "Customers can order for a day and an hour, and the counter and the baker work from that pickup time. Last month the counter took 41 order-ahead requests by phone. Orders for now work as today.",
+  "intentCites": [
+    "WHY",
+    "PLAN-CHOICE",
+    "PLAN-KEPT"
+  ],
+  "plan": {
+    "name": "PLAN.md"
+  },
+  "model": "Claude Opus 5.5",
+  "base": "e443b483e561abb39fe19954e31aff5900396b12",
+  "repos": {
+    "larkspur": {
+      "path": ".repo"
+    }
+  },
+  "sources": {
+    "WHY": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "5",
+      "label": "Why customers ask for it",
+      "quote": [
+        "Customers ask to order on Friday for a Saturday cake, and today they cannot.",
+        "The counter staff took 41 order-ahead requests by phone last month and wrote them on paper."
+      ]
+    },
+    "FORM": {
+      "kind": "git",
+      "repo": "larkspur",
+      "path": "views/order.html",
+      "lines": "6-14",
+      "label": "The order page today",
+      "quote": [
+        "Order for pickup",
+        "Your name",
+        "Phone",
+        "What you would like",
+        "Ready as soon as it is baked. We text you when it is on the counter.",
+        "Place order"
+      ]
+    },
+    "BOARD-TODAY": {
+      "kind": "git",
+      "repo": "larkspur",
+      "path": "src/orders.js",
+      "lines": "2",
+      "label": "The board today",
+      "quote": "Every order is for now: the board shows orders in the order they arrived."
+    },
+    "PLAN-CHOICE": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "9",
+      "label": "The pickup time choice",
+      "quote": "The order page gets a pickup time choice: as soon as possible, which is today's behaviour and stays the default, or a day and an hour."
+    },
+    "PLAN-BOARD": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "10",
+      "label": "The board by pickup time",
+      "quote": [
+        "The counter's board lists orders by pickup time, not by when they arrived.",
+        "Orders for later days sit under a \"Later\" heading."
+      ]
+    },
+    "PLAN-BAKER": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "11",
+      "label": "The baker's morning list",
+      "quote": "The baker's morning list is the board for that day, grouped by hour."
+    },
+    "PLAN-TEXT": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "12",
+      "label": "The morning text",
+      "quote": [
+        "The customer gets one text message on the morning of pickup.",
+        "The text we send today when an order is on the counter stays."
+      ]
+    },
+    "PLAN-KEPT": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "16",
+      "label": "What stays",
+      "quote": [
+        "Paying at pickup stays.",
+        "Orders for now work exactly as today."
+      ]
+    },
+    "Q-AHEAD": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "20",
+      "label": "Question: how far ahead",
+      "quote": [
+        "How far ahead may a customer order? We recommend up to two days.",
+        "A week would let customers plan parties, but the baker cannot plan flour that far."
+      ]
+    },
+    "Q-PAY": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "21",
+      "label": "Question: when customers pay",
+      "quote": [
+        "Should a customer pay when they order ahead, or at pickup? We recommend at pickup, as today.",
+        "Paying online needs a card service, which is a second project."
+      ]
+    },
+    "ORDER": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "25",
+      "label": "The order of the work",
+      "quote": "(1) the pickup time on the order page; (2) the board by pickup time; (3) the baker's morning list; (4) the morning text."
+    },
+    "COST": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "29",
+      "label": "What it costs",
+      "quote": "The morning text uses the text service we already pay for, one more message per order ahead."
+    },
+    "RISKS": {
+      "kind": "file",
+      "path": "PLAN.md",
+      "lines": "33-35",
+      "label": "Risks",
+      "quote": [
+        "Too many orders for one hour on a Saturday. We would cap the orders per hour",
+        "If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.",
+        "The board's new order confuses the counter for a week. The counter staff see it before it goes live."
+      ]
+    }
+  },
+  "overview": [
+    {
+      "kind": "Ask",
+      "text": "How far ahead may a customer order?",
+      "recommended": "Up to two days",
+      "section": "decisions",
+      "cites": [
+        "Q-AHEAD"
+      ]
+    },
+    {
+      "kind": "Ask",
+      "text": "Do customers pay when they order ahead, or at pickup?",
+      "recommended": "At pickup, as today",
+      "section": "decisions",
+      "cites": [
+        "Q-PAY"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "customer-sees",
+      "title": "What the customer sees",
+      "heading": "A pickup time on the order page",
+      "lead": "The customer picks when to collect: as soon as possible, as today, or a day and an hour.",
+      "cites": [
+        "PLAN-CHOICE"
+      ],
+      "figure": {
+        "type": "pair",
+        "title": "The order page, today and with this plan",
+        "cites": [
+          "FORM",
+          "PLAN-CHOICE"
+        ],
+        "sides": [
+          {
+            "label": "Today",
+            "figure": {
+              "type": "screen",
+              "address": "larkspur.example/order",
+              "parts": [
+                {
+                  "as": "heading",
+                  "text": "Order for pickup"
+                },
+                {
+                  "as": "box",
+                  "text": "Your name"
+                },
+                {
+                  "as": "box",
+                  "text": "Phone"
+                },
+                {
+                  "as": "box",
+                  "text": "What you would like"
+                },
+                {
+                  "as": "text",
+                  "text": "Ready as soon as it is baked. We text you when it is on the counter."
+                },
+                {
+                  "as": "button",
+                  "text": "Place order"
+                }
+              ]
+            }
+          },
+          {
+            "label": "With this plan",
+            "acc": true,
+            "figure": {
+              "type": "screen",
+              "address": "larkspur.example/order",
+              "parts": [
+                {
+                  "as": "heading",
+                  "text": "Order for pickup"
+                },
+                {
+                  "as": "box",
+                  "text": "Your name"
+                },
+                {
+                  "as": "box",
+                  "text": "Phone"
+                },
+                {
+                  "as": "box",
+                  "text": "What you would like"
+                },
+                {
+                  "as": "box",
+                  "text": "Pickup time: as soon as possible",
+                  "mark": "new"
+                },
+                {
+                  "as": "menu",
+                  "mark": "new",
+                  "items": [
+                    "As soon as possible",
+                    "Tomorrow, morning",
+                    "Saturday, noon"
+                  ]
+                },
+                {
+                  "as": "text",
+                  "text": "Ready as soon as it is baked. We text you when it is on the counter."
+                },
+                {
+                  "as": "button",
+                  "text": "Place order"
+                }
+              ]
+            }
+          }
+        ],
+        "caption": "As soon as possible stays the default, so an order for now works as today."
+      }
+    },
+    {
+      "id": "who-does-what",
+      "title": "Who does what",
+      "heading": "Everyone works from the pickup time",
+      "lead": "The counter's board and the baker's morning list follow the pickup time, not the time the order arrived.",
+      "cites": [
+        "PLAN-BOARD",
+        "PLAN-BAKER",
+        "BOARD-TODAY"
+      ],
+      "figure": {
+        "type": "lanes",
+        "title": "One order ahead, from the page to the counter",
+        "cites": [
+          "PLAN-CHOICE",
+          "PLAN-BOARD",
+          "PLAN-BAKER",
+          "PLAN-TEXT",
+          "PLAN-KEPT"
+        ],
+        "lanes": [
+          "Customer",
+          "Counter",
+          "Baker"
+        ],
+        "steps": [
+          {
+            "lane": 0,
+            "text": "Orders and picks a pickup time",
+            "mark": "new"
+          },
+          {
+            "lane": 1,
+            "text": "Sees it on the board by pickup time",
+            "mark": "acc"
+          },
+          {
+            "lane": 2,
+            "text": "Bakes from the morning list, grouped by hour",
+            "mark": "new"
+          },
+          {
+            "lane": 0,
+            "text": "Gets a text on the morning of pickup",
+            "mark": "new"
+          },
+          {
+            "lane": 1,
+            "text": "Hands it over"
+          },
+          {
+            "lane": 0,
+            "text": "Pays at pickup"
+          }
+        ],
+        "caption": "Orders for later days wait on the board under a Later heading."
+      }
+    },
+    {
+      "id": "morning-text",
+      "title": "What the customer gets that morning",
+      "heading": "One more text, on pickup morning",
+      "lead": "The text sent today when an order is on the counter stays. An order ahead adds one text on the morning of pickup.",
+      "cites": [
+        "PLAN-TEXT"
+      ],
+      "figure": {
+        "type": "screen",
+        "title": "The customer's messages on pickup day",
+        "cites": [
+          "PLAN-TEXT"
+        ],
+        "address": "Messages: Larkspur",
+        "parts": [
+          {
+            "as": "status",
+            "text": "Sent on the morning of pickup",
+            "mark": "new"
+          },
+          {
+            "as": "message",
+            "by": "Larkspur",
+            "text": "Good morning! Your order is for today. See you at the counter.",
+            "mark": "new"
+          },
+          {
+            "as": "status",
+            "text": "Sent when it is on the counter, as today"
+          },
+          {
+            "as": "message",
+            "by": "Larkspur",
+            "text": "Your order is on the counter."
+          }
+        ],
+        "caption": "The wording here is an example; the plan names when each text goes, not what it says."
+      }
+    },
+    {
+      "id": "for-us",
+      "title": "What changes for the shop",
+      "heading": "Nothing new to buy",
+      "lead": "The board changes its order, the baker gets a morning list, and the text service sends one more message per order ahead.",
+      "cites": [
+        "PLAN-BOARD",
+        "PLAN-BAKER",
+        "COST"
+      ],
+      "figure": {
+        "type": "list",
+        "title": "What the shop takes on",
+        "cites": [
+          "PLAN-BOARD",
+          "PLAN-BAKER",
+          "COST",
+          "PLAN-KEPT"
+        ],
+        "rows": [
+          {
+            "text": "The order board, by pickup time",
+            "tag": "Changes",
+            "tagAcc": true
+          },
+          {
+            "text": "The baker's morning list",
+            "tag": "New"
+          },
+          {
+            "text": "One more text per order ahead",
+            "tag": "Text service we pay for"
+          },
+          {
+            "text": "Paying at pickup",
+            "tag": "Stays"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decisions",
+      "title": "The decisions",
+      "heading": "Two choices, each with a recommendation",
+      "lead": "The baker cannot plan flour a week ahead, and paying online needs a card service, a second project.",
+      "cites": [
+        "Q-AHEAD",
+        "Q-PAY"
+      ],
+      "figure": {
+        "type": "table",
+        "title": "What we recommend, and the alternative",
+        "cites": [
+          "Q-AHEAD",
+          "Q-PAY"
+        ],
+        "columns": [
+          "Question",
+          "Recommended",
+          "Instead"
+        ],
+        "rows": [
+          [
+            "How far ahead?",
+            {
+              "text": "Up to two days",
+              "acc": true
+            },
+            "A week, for parties"
+          ],
+          [
+            "When do they pay?",
+            {
+              "text": "At pickup, as today",
+              "acc": true
+            },
+            "When they order, online"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "work",
+      "title": "The work",
+      "heading": "Four pieces, in order",
+      "lead": "The pickup time on the page comes first and the morning text comes last.",
+      "cites": [
+        "ORDER"
+      ],
+      "figure": {
+        "type": "timeline",
+        "title": "The order of the work",
+        "cites": [
+          "ORDER"
+        ],
+        "stops": [
+          {
+            "label": "Pickup time on the page",
+            "mark": "acc"
+          },
+          {
+            "label": "Board by pickup time"
+          },
+          {
+            "label": "Baker's morning list"
+          },
+          {
+            "label": "Morning text"
+          }
+        ],
+        "bands": [
+          {
+            "from": 0,
+            "to": 0,
+            "label": "What customers see",
+            "acc": true
+          },
+          {
+            "from": 1,
+            "to": 3,
+            "label": "Behind the counter"
+          }
+        ]
+      }
+    },
+    {
+      "id": "risks",
+      "title": "Risks",
+      "heading": "What would make us stop",
+      "lead": "If more than one in ten orders ahead are not picked up in the first month, we stop order ahead and talk to the owners.",
+      "cites": [
+        "RISKS"
+      ],
+      "figure": {
+        "type": "list",
+        "title": "Each risk, and what we do",
+        "cites": [
+          "RISKS"
+        ],
+        "rows": [
+          {
+            "text": "Customers order ahead and do not come",
+            "tag": "Stop order ahead",
+            "tagAcc": true
+          },
+          {
+            "text": "Too many orders for one hour on a Saturday",
+            "tag": "Cap orders per hour"
+          },
+          {
+            "text": "The new board confuses the counter",
+            "tag": "Shown to the counter first"
+          }
+        ]
+      }
+    }
+  ]
+}

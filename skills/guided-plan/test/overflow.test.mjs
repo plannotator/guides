@@ -12,6 +12,26 @@ test("nothing is wider than the window at 390, 1130 and 1440, light and dark", {
   assert.deepEqual(problems, []);
 });
 
+test("the business example, with its mock-ups and lanes, fits too, and so does its nothing-to-decide state", { skip: chromium ? false : "Playwright not found; set PLAYWRIGHT", timeout: 180000 }, async () => {
+  const { readFileSync, writeFileSync, mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { buildPage } = await import("../system/page.mjs");
+  const biz = join(EXAMPLE, "..", "pickup-times");
+  const { problems } = await renderPage(join(biz, "guided-plan.html"), { chromium });
+  assert.deepEqual(problems, []);
+  // the decide panel with nothing to decide, and a screen as a card's figure beside a list card
+  const spec = JSON.parse(readFileSync(join(biz, "plan.json"), "utf8"));
+  spec.overview = [{ kind: "Decided", text: "Customers can order for a day and an hour.", section: "customer-sees", cites: ["PLAN-CHOICE"] }];
+  const dir = mkdtempSync(join(tmpdir(), "guided-plan-none-"));
+  try {
+    const page = buildPage(spec, new Map());
+    assert.deepEqual(page.errors, []);
+    writeFileSync(join(dir, "none.html"), page.html);
+    const r = await renderPage(join(dir, "none.html"), { chromium });
+    assert.deepEqual(r.problems, []);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test("the overflow check catches a page that is too wide", { skip: chromium ? false : "Playwright not found; set PLAYWRIGHT", timeout: 120000 }, async () => {
   const { mkdtempSync, writeFileSync, rmSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");

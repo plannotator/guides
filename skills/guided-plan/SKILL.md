@@ -6,12 +6,16 @@ description: >
   content file: a summary on top, then one card per section with the story on the left and large
   pictures on the right. Use when someone asks for a guided plan, a plan walkthrough, an explainer
   of a planned change, or wants a plan their team can read and review before the work starts.
-  Needs Node 18+ and git.
+  Also writes the guided plan for business stakeholders who shape the product (mock-ups of what
+  people will see, who does what, the decisions asked of them) when asked for one. Needs Node 18+
+  and git.
 ---
 
 # Guided Plan
 
 A guided plan explains a change before (or as) it is made. The top of the page has the title, one paragraph, and one-line rows (Decided, Change, Kept, Open) that jump to their sections. Below, each section is one card: on the left a small label, a heading of a few words, one paragraph, then the files and the sources; on the right one large picture, with the section's other points as small cards under it. The left side stays in view while the right side scrolls.
+
+A guided plan is written for engineers unless you say otherwise. For business stakeholders, who shape the product and do not build it, set `"audience": "business"` and follow section 3.
 
 You write one file, `plan.json` (plus its screenshots, if any). It is the guided plan's source of truth. The build script in this skill draws everything else: layout, light and dark, the phone layout, the keys. You never write HTML, CSS or script.
 
@@ -33,7 +37,7 @@ Read only what the change touches. Stop when every claim you will make has a pla
 1. **Why.** The reason, with the before and after of the one screen or behaviour that shows it. A reader who stops here has the gist.
 2. **Background.** What exists today, as the user or the caller sees it.
 3. **Intuition.** One example that makes the rule obvious: the real screen at each setting, or a small made-up case marked `toy`.
-4. **The changes, in flow order.** Follow a user or a request from the outside in: screen, then page, then server, then stored data. For a product change, show what a person notices first, then the code that does it.
+4. **The changes, in flow order.** Follow a user or a request from the outside in: screen, then page, then server, then stored data. For each change, show what changes before you explain how: what a person will see (a `pair` of screenshots or `screen` mock-ups), or who does what differently (a `lanes` figure). Then the code that does it.
 5. **What stays.** Only what people would fear goes.
 6. **Open.** At most three questions that are hard to undo, and who must decide.
 
@@ -46,7 +50,37 @@ Usually 4 to 8 sections, never more than 10. A section is one idea:
 
 Big pictures, few words. If a section needs more than four cards, it is two sections.
 
-## 3. Words
+## 3. For business stakeholders
+
+Set `"audience": "business"` when the reader shapes the product and does not build it: an owner, a manager, sales, support. The page says so above the title, and the rest of this skill still holds (cite every claim, plain words, re-check). What changes is what you show, and in what order. Anchor on what the reader can see: in most cases, show them what is changing rather than tell them. And show the right thing at the right time: a picture where a picture carries the point, a list where the point is a list.
+
+Teach it in this order:
+
+1. **Show what changes.** For each change ask: what will a person see, what process changes, who does what differently? Then pick the one picture that carries it:
+   - what a person sees, before and after: a `pair` of two `screen` mock-ups, or of real screenshots when they exist;
+   - the process, as who does what in order: one `lanes` figure;
+   - the customer's moment of truth, the screen where they meet the change: one `screen`.
+2. **The decision.** One `Ask` row per question the plan leaves open for this reader, its recommended answer beside it, and one `table` of the choices (the question, the recommended answer, the alternative).
+3. **The work**, as named pieces in order: a `timeline`. Never days, and never an amount the plan does not cite.
+4. **The risks and the stop rule**: a short `list`, each risk tagged with what you do, and one line that says what would make you stop.
+
+Words only where a picture cannot carry the point:
+
+- **The lead is one or two short sentences**: the plain claim. The figure shows it.
+- **One figure per section.** Cards only when a point needs one; usually none. No decoration: a list stays a list, and a section that is best as six words is six words. A plan with nothing a person will see differently shows its facts as a list, not a made-up before and after.
+- **A word budget for the whole page: under 1,200 words**, counting everything a reader sees (title, summary, the decide panel, headings, leads, figure titles, captions, cards, table cells, list rows, steps) except the folded sources. Keeping the lead short does not count if the words move into captions, cards and tables. The build warns past the budget; pages that read well were far under it.
+- **Nothing to decide.** Write an `Ask` row only for a question the plan leaves open for this reader. When the plan has already decided, write no `Ask` row: the panel then says "Nothing to decide. This guided plan asks you no question." Never invent a decision to fill the panel, and never ask the reader to choose what the plan already chose; show what it chose as a `Decided` row.
+- **Who does what is a `lanes` figure.** Never a `table` with a column per person: most of its cells are empty, the empty columns collapse, and the page breaks.
+- **Do not strengthen.** Say the plan's claims in plain words, never more firmly than the plan says them. No "never", "only" or "always" (nor "every", "all", "guaranteed") unless the plan says it of that claim: "not in the first version" is not "never", and "only members can send" is not "only members see the button". The build warns when never, only or always is in a business guided plan's text and in none of the quotes that text cites.
+- **Define each technical term once**, in plain words the first time, then use the same name.
+- **No code.** The build refuses a `code` figure and a section's `files` when the audience is business: the reader does not open code.
+- **Money is who pays for what**, never an amount the plan does not cite.
+
+When you hand it over (section 9), also post the `Ask` questions to the person as `:::question` blocks, in a comment that tags them where your team comments (a document comment, or a message to them), with the page's link, so they answer where they work.
+
+[`examples/pickup-times`](https://github.com/plannotator/guides/tree/main/examples/pickup-times) is a whole business guided plan: an invented bakery and a plan to let customers order ahead for a pickup time.
+
+## 4. Words
 
 - Short sentences, plain words. Say what a thing does the first time you name it, then use the same name.
 - Code names go in backticks in `intent`, `lead`, card `body`, `overview` text and file notes, where they are drawn as code. Figure text (titles, captions, labels, cells, steps) is plain: the build refuses backticks there. Section titles, headings and card titles are plain too: backticks in them are removed, not drawn.
@@ -57,7 +91,7 @@ Big pictures, few words. If a section needs more than four cards, it is two sect
 - Jargon is checked in prose only; code in backticks and `mono` text are skipped.
 - When you mean the page you are writing, say "this guided plan", not "this plan".
 
-## 4. Cite every claim, then re-check
+## 5. Cite every claim, then re-check
 
 Every section, card, figure and overview row has `cites`: ids of entries in `sources`. Each source has `quote`, the exact text (or a list of exact texts) found inside its `lines`. Whitespace differences are ignored; nothing else is.
 
@@ -77,13 +111,13 @@ node <skill>/system/build.mjs --check plan.json --repo name=/path/to/clone
 
 It reopens every source at its commit and confirms each quote is there, each code excerpt matches the commit byte for byte, and each file exists. It proves the text is there; only you can prove it means what your sentence says. Reread each section beside its quotes. Fix or drop any claim that fails either test. Deliver nothing with a failed check.
 
-## 5. The content file (`guided-plan/2`)
+## 6. The content file (`guided-plan/2`)
 
 This is the whole format. A file that follows it builds to the same page anywhere: the build reads nothing but `plan.json`, the files inside its folder, and git at the named commits. Every field below is checked, and an error names the field and what to fix. **A field not listed here is an error** (with a hint when it is a typo of one that is, such as `tagacc` for `tagAcc`), so nothing is silently ignored.
 
 [`system/guided-plan.schema.json`](system/guided-plan.schema.json) is a JSON Schema (draft 2020-12) of the same fields, generated from the table `build.mjs` checks against (`node system/schema.mjs > system/guided-plan.schema.json`). It states the shape; `build.mjs` checks more than a schema can say (cites that exist, numbers inside quotes, jargon, ids that do not collide, paths inside the folder, text that fits). A file that passes `build.mjs` passes the schema.
 
-`system/schema.mjs`, `system/validate.mjs` (the shape checks and the word lint), `system/renderer.mjs`, `system/page.mjs` (`buildPage(spec, files)`: the checks, the screenshots and the page) and `system/static.generated.mjs` (`guide.css` and `runtime.js` as strings; `node system/make-static.mjs` writes it) are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them, run them in a browser or a Worker, and draw the same bytes. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
+`system/schema.mjs`, `system/validate.mjs` (the shape checks and the word lint), `system/renderer.mjs`, `system/page.mjs` (`buildPage(spec, files)`: the checks, the screenshots and the page) and `system/static.generated.mjs` (`guide.css`, `runtime.js` and `features.css` as strings; `node system/make-static.mjs` writes it; a page carries a block of `features.css` only when it uses what that block styles, so pages that use none are the same bytes as before) are the pure core: plain ES modules with no file system, process or Node import, so another tool can copy them, run them in a browser or a Worker, and draw the same bytes. `build.mjs` is the Node shell around them: it reads the files, runs `--check` with git, and writes the HTML.
 
 A host that runs `buildPage` on files it did not write keeps it bounded with `DEFAULT_LIMITS` (exported, frozen, from `page.mjs` and `validate.mjs`). Each one is far above what a real guided plan needs, is reported as an error before the work it guards, and can be changed per call with `buildPage(spec, files, { limits: { ... } })`. A value counts only when it is a whole number from 0 to 2^53 - 1; anything else (`Infinity`, `NaN`, `-1`, `"5"`) keeps the default, so no value turns a limit off. `build.mjs` uses the defaults.
 
@@ -103,6 +137,8 @@ A host that runs `buildPage` on files it did not write keeps it bounded with `DE
 | `maxLegend` | 20 | One chips figure's `legend`. |
 | `maxMarked` | 40 | One code figure's `marked`; an excerpt has at most 40 lines. |
 | `maxLayerItems` | 40 | One layer's `items`. |
+| `maxScreenParts` | 40 | One screen's `parts`, or one card's inside it. |
+| `maxMenuItems` | 20 | One menu's `items` in a screen. |
 | `maxImageBytes` | 10 MiB | One screenshot file, checked before it is encoded. |
 | `maxImageBytesTotal` | 25 MiB | All screenshot files the page draws, each counted once. |
 | `maxHtmlBytes` | 50 MB | The page in UTF-8 bytes. Checked before anything is encoded or drawn, against an upper bound on the page (every string as often as it is drawn, a source once in each section that cites it, each drawing of a screenshot with its whole image), and again after. |
@@ -129,11 +165,12 @@ Rules that apply everywhere:
 | `intentCites` | no | Source ids for the intent; listed under "Sources for this summary". |
 | `plan` | no | `{ "name": "PR 42" }`: what the guided plan was written from, shown in the meta line. |
 | `model` | no | Who wrote it, shown in the meta line ("generated by …"). |
+| `audience` | no | `"engineering"` (the default when it is left out) or `"business"`. A business guided plan carries a line above the title, "For business stakeholders who shape the product", and "for business stakeholders" in the meta line; it may hold no `code` figure and no section `files` (section 3). |
 | `base` | yes | The commit the guided plan is written against (7 to 40 hex characters). |
 | `repos` | no | `{ "<name>": { "url"?, "path"? } }`. `url` (`https://` only) turns sources and files into links at their commit. `path` (relative to `plan.json`) says where the clone is, if not the current repository. With more than one repo, every `git` source names its `repo`. |
 | `sources` | yes | `{ "<id>": source }`, below. |
 | `assets` | no | `{ "<id>": { "file", "from"? } }`. `file` is a PNG or JPEG inside the folder of `plan.json`; the build embeds it. `from` names the `capture` source that vouches for it. |
-| `overview` | yes | The rows under the intent: `[{ "kind", "text", "section", "cites" }]`. `kind` is `Decided`, `Change`, `Kept` or `Open` (Open is drawn in the accent colour); `section` is the id it jumps to. |
+| `overview` | yes | The rows under the intent: `[{ "kind", "text", "section", "cites", "recommended"? }]`. `kind` is `Decided`, `Change`, `Kept`, `Open` (drawn in the accent colour) or `Ask`; `section` is the id it jumps to. An `Ask` row is a question for the reader (120 characters at most) and may name the answer this guided plan recommends in `recommended` (60 at most), which the row's `cites` vouch for like its text. `Ask` rows are drawn above the others as a panel, "What you are asked to decide", one line each with the recommended answer beside the question; when every row is an `Ask`, there is no other list. A business guided plan with no `Ask` row draws the panel with "Nothing to decide. This guided plan asks you no question." An engineering guided plan with none has no panel. |
 | `sections` | yes | 1 to 10 sections, in reading order. |
 | `ban` | no | More words the lint refuses. |
 
@@ -180,18 +217,20 @@ Every figure has `type`, `title`, `cites`, and usually a `caption` (the line und
 | `flow` | A request or an action moving through parts | `steps` (2 to 6): `{ label, sub?, via?, mark?, mono? }`; `via` labels the arrow into the step (16 characters at most); `mark` is `plain`, `acc` (what changes), `new` (added), `gone` (removed) or `muted`. On a phone it runs down the page. |
 | `layers` | Where something lives: screen, server, data | `rows` (1 to 5): `{ label, sub?, text?, items?, tag?, tagAcc? }`; `items` are chips (text, or `{ text, mark }`); `tag` says what happens to the layer ("changes", "goes in PR 2") |
 | `pair` | Before and after, or a few cases side by side | `sides` (2 to 4): `{ label, note?, acc?, toy?, figure, caption? }`. A side's figure is any type but `pair`, and needs no title or cites of its own: the pair's cover it. |
+| `screen` | What a person will see when there is no screen to capture yet: a mock-up drawn in the page's own colours, labelled "Mock-up". Alone, or two as the sides of a `pair` (before and after). | `address?` (the bar at the top), `parts` (1 or more): `{ as, text?, by?, pin?, items?, mark?, parts? }`. `as` is `heading`, `text`, `box` (a region of the page; `pin: true` puts a note marker on it), `button` (buttons next to each other share a row), `message` (one entry of a thread; `by` is its author), `status` (a quiet line with a dot), `menu` (an open list of `items`) or `card` (floats over the page and holds its own `parts`, one level deep: no card in a card). `mark` is `new` (accent, dashed edge), `changed` (accent), `out` (faded and struck through) or `acc`. A part takes only what its kind uses. A mock-up shows invented example content (a name, a sentence a customer might write), so, like a `toy`, its contents may hold no digit; its title and caption are claims and cite as usual. |
+| `lanes` | Who does what, in order: who hands off to whom | `lanes` (2 to 5): a label each, a person or a role. `steps` (2 to 12): `{ lane, text, mark? }`; `lane` is the index of its lane in `lanes` (from 0); `mark` is `acc` or `new` (dashed). Drawn as a column per lane and a row per step, every box the same size, with a connector from each step to the next. A screen reader hears the steps in order, "lane: step". |
 
 There is nothing to click in a figure. Behaviour that changes with an input is shown as its cases: a `pair` for before and after, or a `table` with a row per case.
 
 Marks (`acc`, `new`, `out`, `changed`, a marked code line, a band or stop in the accent) are drawn with a colour and a line style, keep a border in forced colours (Windows high contrast), and carry words for a screen reader ("added", "removed", "highlighted", "open question").
 
-Text has to fit where it is drawn, and the build refuses text that will not: a timeline label or a flow step 40 characters, their second lines 60, a layer label or tag 24, a pair label 40.
+Text has to fit where it is drawn, and the build refuses text that will not: a timeline label or a flow step 40 characters, their second lines 60, a layer label or tag 24, a pair label 40, a lane label 40 and a lane step 60, a screen's address 80, a button or menu item 40, a heading 80, a status or box 120, a text 200, a message 240 and its author 60.
 
 ### From `guided-plan/1`
 
 A `guided-plan/1` file (lettered parts) is refused with a message, never drawn wrong. To move one: give each section `heading`, `lead` and `cites`; pick its strongest part's figure as the section `figure`; turn the other parts into `cards` (`body`, `cites`, `figure`); turn `toggle` and `steps` into a `pair`, a `drawing` into a `flow` or `layers`, and a figure with `controls` into a `table` with a row per case; rename a file's `part` to `card`.
 
-## 6. A worked example
+## 7. A worked example
 
 [`examples/paste-expiry`](https://github.com/plannotator/guides/tree/main/examples/paste-expiry) in this skill's repository is a whole guided plan for an invented small project, pastebox, and a change that lets pastes expire. Model yours on it. One section from it:
 
@@ -239,7 +278,7 @@ A `guided-plan/1` file (lettered parts) is refused with a message, never drawn w
 }
 ```
 
-## 7. Build it
+## 8. Build it
 
 ```bash
 node <skill>/system/build.mjs --lint plan.json             # structure and words only
@@ -250,7 +289,7 @@ node <skill>/system/build.mjs plan.json guided-plan.html
 
 On the page: `j` and `k` (or the arrows) move between sections; the overview rows and file links jump to their section or card without changing the address. `guided-plan.html#why` opens a section, `#server-check` a card, `?theme=dark` or `?theme=light` sets the theme (otherwise it follows the system).
 
-## 8. Hand it over
+## 9. Hand it over
 
 Give the user:
 

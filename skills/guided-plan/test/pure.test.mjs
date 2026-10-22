@@ -33,9 +33,9 @@ test("the pure core imports only itself, never a node: module", () => {
   }
 });
 
-test("the pure core loads and draws both examples, byte for byte, with no process and no Buffer", () => {
+test("the pure core loads and draws every example, byte for byte, with no process and no Buffer", () => {
   const url = (f) => pathToFileURL(join(SYSTEM, f)).href;
-  const examples = ["paste-expiry", "inbox-text-size"].map((name) => join(EXAMPLE, "..", name));
+  const examples = ["paste-expiry", "inbox-text-size", "pickup-times"].map((name) => join(EXAMPLE, "..", name));
   // The child reads the examples first (plain Uint8Array copies), then takes away the Node globals
   // a browser lacks, and only then imports the core and builds each page.
   const script = `

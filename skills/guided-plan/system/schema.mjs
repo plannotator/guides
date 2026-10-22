@@ -30,6 +30,8 @@ export const DEFAULT_LIMITS = Object.freeze({
   maxLegend: 20,              // one chips figure's "legend"
   maxMarked: 40,              // one code figure's "marked" (an excerpt has at most 40 lines)
   maxLayerItems: 40,          // one layer's "items"
+  maxScreenParts: 40,         // one screen's "parts", or one card's inside it
+  maxMenuItems: 20,           // one menu's "items" in a screen
   maxImageBytes: 10 * 1024 * 1024,      // one screenshot file
   maxImageBytesTotal: 25 * 1024 * 1024, // all screenshot files the page draws
   maxHtmlBytes: 50 * 1000 * 1000,       // the page, in UTF-8 bytes
@@ -64,7 +66,7 @@ const figureCommon = { "type": null, "title?": "string", "caption?": "string", "
 export const KINDS = {
   plan: {
     "format": { const: FORMAT }, "title": text, "intent": text, "intentCites?": idsOpt,
-    "plan?": { ref: "planName" }, "model?": "string", "base": { pattern: COMMIT },
+    "plan?": { ref: "planName" }, "model?": "string", "audience?": { enum: ["engineering", "business"] }, "base": { pattern: COMMIT },
     "repos?": { map: "repo", limit: "maxRepos" }, "sources": { map: "source", limit: "maxSources" }, "assets?": { map: "asset", limit: "maxAssets" },
     "overview": { list: { ref: "overview" }, min: 1, limit: "maxOverviewRows" }, "sections": { list: { ref: "section" }, min: 1, max: 10 },
     "ban?": { list: text, limit: "maxBanWords" },
@@ -76,7 +78,7 @@ export const KINDS = {
     "quote?": { anyOf: [text, { list: text, min: 1, limit: "maxQuotes" }] }, "label?": "string", "at?": { pattern: COMMIT }, "repo?": text,
   },
   asset: { "file": text, "from?": text },
-  overview: { "kind": { enum: ["Decided", "Change", "Kept", "Open"] }, "text": text, "section": text, "cites": ids },
+  overview: { "kind": { enum: ["Decided", "Change", "Kept", "Open", "Ask"] }, "text": text, "recommended?": text, "section": text, "cites": ids },
   section: {
     "id": { pattern: ID }, "title": text, "heading": text, "question?": text, "lead": text, "cites": ids,
     "figure": { ref: "figure" }, "cards?": { list: { ref: "card" }, max: 6 }, "files?": { list: { ref: "file" }, limit: "maxFiles" },
@@ -116,6 +118,20 @@ export const KINDS = {
   layer: { "label": text, "sub?": "string", "text?": "string", "items?": { list: { anyOf: [text, { ref: "layerItem" }] }, limit: "maxLayerItems" }, "tag?": "string", "tagAcc?": "boolean" },
   layerItem: { "text": text, "mark?": { enum: ["out", "changed", "new", "acc"] }, "mono?": "boolean" },
   pair: { ...figureCommon, "type": { const: "pair" }, "sides": { list: { ref: "side" }, min: 2, max: 4 } },
+  // A mock-up of what a person sees. A card holds parts one level deep: its parts are cardParts,
+  // which have no parts of their own, so the depth is fixed by the table itself.
+  screen: { ...figureCommon, "type": { const: "screen" }, "address?": "string", "parts": { list: { ref: "screenPart" }, min: 1, limit: "maxScreenParts" } },
+  screenPart: {
+    "as": { enum: ["heading", "text", "box", "button", "message", "status", "menu", "card"] }, "text?": "string", "by?": "string", "pin?": "boolean",
+    "items?": { list: text, min: 1, limit: "maxMenuItems" }, "mark?": { enum: ["new", "changed", "out", "acc"] }, "parts?": { list: { ref: "cardPart" }, min: 1, limit: "maxScreenParts" },
+  },
+  cardPart: {
+    "as": { enum: ["heading", "text", "box", "button", "message", "status", "menu"] }, "text?": "string", "by?": "string", "pin?": "boolean",
+    "items?": { list: text, min: 1, limit: "maxMenuItems" }, "mark?": { enum: ["new", "changed", "out", "acc"] },
+  },
+  // Who does what, in order: a column per lane, a row per step.
+  lanes: { ...figureCommon, "type": { const: "lanes" }, "lanes": { list: text, min: 2, max: 5 }, "steps": { list: { ref: "laneStep" }, min: 2, max: 12 } },
+  laneStep: { "lane": "integer", "text": text, "mark?": { enum: ["acc", "new"] } },
   side: { "label": text, "note?": "string", "acc?": "boolean", "toy?": "boolean", "figure": { ref: "sideFigure" }, "caption?": "string" },
 };
 export const MAP_KEY = SAFE_KEY;

@@ -37,6 +37,12 @@
       "type": "string",
       "maxLength": 10000
     },
+    "audience": {
+      "enum": [
+        "engineering",
+        "business"
+      ]
+    },
     "base": {
       "type": "string",
       "maxLength": 10000,
@@ -253,10 +259,17 @@
             "Decided",
             "Change",
             "Kept",
-            "Open"
+            "Open",
+            "Ask"
           ]
         },
         "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000,
+          "pattern": "\\S"
+        },
+        "recommended": {
           "type": "string",
           "minLength": 1,
           "maxLength": 10000,
@@ -1268,6 +1281,240 @@
       ],
       "additionalProperties": false
     },
+    "screen": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "screen"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S"
+          },
+          "maxItems": 100
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "address": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/screenPart"
+          },
+          "minItems": 1,
+          "maxItems": 40
+        }
+      },
+      "required": [
+        "type",
+        "parts"
+      ],
+      "additionalProperties": false
+    },
+    "screenPart": {
+      "type": "object",
+      "properties": {
+        "as": {
+          "enum": [
+            "heading",
+            "text",
+            "box",
+            "button",
+            "message",
+            "status",
+            "menu",
+            "card"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "by": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "pin": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "mark": {
+          "enum": [
+            "new",
+            "changed",
+            "out",
+            "acc"
+          ]
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cardPart"
+          },
+          "minItems": 1,
+          "maxItems": 40
+        }
+      },
+      "required": [
+        "as"
+      ],
+      "additionalProperties": false
+    },
+    "cardPart": {
+      "type": "object",
+      "properties": {
+        "as": {
+          "enum": [
+            "heading",
+            "text",
+            "box",
+            "button",
+            "message",
+            "status",
+            "menu"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "by": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "pin": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S"
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "mark": {
+          "enum": [
+            "new",
+            "changed",
+            "out",
+            "acc"
+          ]
+        }
+      },
+      "required": [
+        "as"
+      ],
+      "additionalProperties": false
+    },
+    "lanes": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "lanes"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "cites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S"
+          },
+          "maxItems": 100
+        },
+        "toy": {
+          "type": "boolean"
+        },
+        "lanes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S"
+          },
+          "minItems": 2,
+          "maxItems": 5
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/laneStep"
+          },
+          "minItems": 2,
+          "maxItems": 12
+        }
+      },
+      "required": [
+        "type",
+        "lanes",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "laneStep": {
+      "type": "object",
+      "properties": {
+        "lane": {
+          "type": "integer"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000,
+          "pattern": "\\S"
+        },
+        "mark": {
+          "enum": [
+            "acc",
+            "new"
+          ]
+        }
+      },
+      "required": [
+        "lane",
+        "text"
+      ],
+      "additionalProperties": false
+    },
     "side": {
       "type": "object",
       "properties": {
@@ -1329,6 +1576,12 @@
         },
         {
           "$ref": "#/$defs/pair"
+        },
+        {
+          "$ref": "#/$defs/screen"
+        },
+        {
+          "$ref": "#/$defs/lanes"
         }
       ]
     },
@@ -1357,6 +1610,12 @@
         },
         {
           "$ref": "#/$defs/layers"
+        },
+        {
+          "$ref": "#/$defs/screen"
+        },
+        {
+          "$ref": "#/$defs/lanes"
         }
       ]
     }
